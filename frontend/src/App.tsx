@@ -5,10 +5,12 @@ import { DevUserSwitcher } from './components/DevUserSwitcher';
 import { FacultyDirectoryView } from './views/FacultyDirectoryView';
 import { TeachingAllocationsView } from './views/TeachingAllocationsView';
 import { DeadlinesView } from './views/DeadlinesView';
-import { CheckCircle2, ShieldAlert, LayoutDashboard, Users, BookOpen } from 'lucide-react';
+import { TrackingDashboardView } from './views/TrackingDashboardView';
+import { CheckCircle2, ShieldAlert, LayoutDashboard, Users, BookOpen, TrendingUp } from 'lucide-react';
 
-function DashboardHome() {
+function DashboardHome({ onNavigate }: { onNavigate: (tab: string) => void }) {
   const { user } = useAuth();
+  const isCoordinator = user?.role === 'COORDINATOR';
 
   return (
     <div className="space-y-6">
@@ -19,7 +21,7 @@ function DashboardHome() {
             {user ? `Welcome back, ${user.name}` : 'Welcome to IET Faculty Dashboard'}
           </h2>
           <p className="text-sm text-slate-600 mt-1">
-            {user?.role === 'COORDINATOR'
+            {isCoordinator
               ? 'Department Coordinator Workspace: Manage faculty allocations, monitor deadlines, and audit submission compliance.'
               : user?.role === 'FACULTY'
               ? 'Faculty Academic Workspace: Track assigned courses, upcoming deadlines, and submission statuses.'
@@ -47,31 +49,54 @@ function DashboardHome() {
       )}
 
       {/* Quick summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        <div className="bg-white rounded-lg border border-border p-5 shadow-xs">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div
+          onClick={() => onNavigate('deadlines')}
+          className="bg-white rounded-lg border border-border p-5 shadow-xs hover:border-primary/50 transition-colors cursor-pointer"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Deadlines</span>
+            <BookOpen className="w-4 h-4 text-primary" />
+          </div>
+          <div className="text-2xl font-bold font-serif text-slate-900 mt-2">Active Cycles</div>
+          <p className="text-xs text-slate-500 mt-1">Course files &amp; evaluation rubrics</p>
+        </div>
+
+        {isCoordinator && (
+          <div
+            onClick={() => onNavigate('tracking')}
+            className="bg-white rounded-lg border border-border p-5 shadow-xs hover:border-primary/50 transition-colors cursor-pointer"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Compliance</span>
+              <TrendingUp className="w-4 h-4 text-emerald-600" />
+            </div>
+            <div className="text-2xl font-bold font-serif text-slate-900 mt-2">Audit Roster</div>
+            <p className="text-xs text-slate-500 mt-1">Export Excel &amp; monitor tiers</p>
+          </div>
+        )}
+
+        <div
+          onClick={() => onNavigate('directory')}
+          className="bg-white rounded-lg border border-border p-5 shadow-xs hover:border-primary/50 transition-colors cursor-pointer"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Faculty Members</span>
             <Users className="w-4 h-4 text-primary" />
           </div>
-          <div className="text-2xl font-bold font-serif text-slate-900 mt-2">3 Profiles</div>
-          <p className="text-xs text-slate-500 mt-1">Structured skill-tagged faculty roster</p>
+          <div className="text-2xl font-bold font-serif text-slate-900 mt-2">Profiles</div>
+          <p className="text-xs text-slate-500 mt-1">Skill-tagged faculty directory</p>
         </div>
 
-        <div className="bg-white rounded-lg border border-border p-5 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Offerings</span>
-            <BookOpen className="w-4 h-4 text-secondary" />
-          </div>
-          <div className="text-2xl font-bold font-serif text-slate-900 mt-2">4 Courses</div>
-          <p className="text-xs text-slate-500 mt-1">Semester 5 offerings (2026-2027)</p>
-        </div>
-
-        <div className="bg-white rounded-lg border border-border p-5 shadow-xs">
+        <div
+          onClick={() => onNavigate('allocations')}
+          className="bg-white rounded-lg border border-border p-5 shadow-xs hover:border-primary/50 transition-colors cursor-pointer"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Allocations</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <CheckCircle2 className="w-4 h-4 text-secondary" />
           </div>
-          <div className="text-2xl font-bold font-serif text-slate-900 mt-2">4 Assigned</div>
+          <div className="text-2xl font-bold font-serif text-slate-900 mt-2">Teaching Matrix</div>
           <p className="text-xs text-slate-500 mt-1">Theory &amp; Lab components mapped</p>
         </div>
       </div>
@@ -80,7 +105,9 @@ function DashboardHome() {
 }
 
 function MainNavigation() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'allocations' | 'deadlines'>('dashboard');
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'tracking' | 'directory' | 'allocations' | 'deadlines'>('dashboard');
+  const isCoordinator = user?.role === 'COORDINATOR';
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
@@ -102,6 +129,22 @@ function MainNavigation() {
             <LayoutDashboard className="w-4 h-4" />
             Overview
           </button>
+
+          {isCoordinator && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('tracking')}
+              className={`flex items-center gap-2 py-3.5 text-xs font-semibold border-b-2 transition-all ${
+                activeTab === 'tracking'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <TrendingUp className="w-4 h-4" />
+              Compliance Tracking
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => setActiveTab('deadlines')}
@@ -142,7 +185,8 @@ function MainNavigation() {
       </div>
 
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
-        {activeTab === 'dashboard' && <DashboardHome />}
+        {activeTab === 'dashboard' && <DashboardHome onNavigate={(t) => setActiveTab(t as any)} />}
+        {activeTab === 'tracking' && isCoordinator && <TrackingDashboardView />}
         {activeTab === 'deadlines' && <DeadlinesView />}
         {activeTab === 'directory' && <FacultyDirectoryView />}
         {activeTab === 'allocations' && <TeachingAllocationsView />}

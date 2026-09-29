@@ -38,11 +38,11 @@
 - [x] Frontend: Notification bell in header, unread badge, dropdown list, mark-as-read, and deep linking
 - [x] Background scheduled reminder runner (upcoming due date, overdue alerts)
 
-## [ ] Slice 6: Tracking Dashboard & Excel Export
-- [ ] Tracking query projections: submission rate, on-time rate, overdue count, critical compliance faculty
-- [ ] Coordinator UI: 4 KPI metric cards and drill-down department tracking table
-- [ ] Excel report generator using Apache POI: `/api/reports/submissions/export`
-- [ ] Audit logging for coordinator actions (`audit_log` table)
+## [x] Slice 6: Tracking Dashboard & Excel Export
+- [x] Tracking query projections: submission rate, on-time rate, overdue count, critical compliance faculty
+- [x] Coordinator UI: 4 KPI metric cards and drill-down department tracking table
+- [x] Excel report generator using Apache POI: `/api/reports/submissions/export`
+- [x] Audit logging for coordinator actions (`audit_log` table)
 
 ## [ ] Slice 7: End-to-End Verification & UI Polish (UI-UX Pro Max)
 - [ ] Apply Swiss Modernism 2.0 aesthetics and refine spacing, cards, typography, and badges
