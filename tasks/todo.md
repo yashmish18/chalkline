@@ -12,11 +12,11 @@
 - [x] Controller: `GET /api/me` returning current user profile and role
 - [x] Frontend: Auth context, login simulation / Entra sign-in link, role-aware navigation bar
 
-## [ ] Slice 2: Faculty Directory & Teaching Allocations
-- [ ] Flyway migration `V2__directory_and_academics.sql` (`faculty`, `skill`, `faculty_skill`, `course`, `course_offering`, `teaching_assignment`)
-- [ ] Services & Repositories for Directory and Academics
-- [ ] Coordinator UI: Faculty directory with structured skill tags filtering
-- [ ] Coordinator UI: Course and teaching allocation matrix (course, year, semester, section, theory/lab)
+## [x] Slice 2: Faculty Directory & Teaching Allocations
+- [x] Flyway migration `V2__directory_and_academics.sql` (`faculty`, `skill`, `faculty_skill`, `course`, `course_offering`, `teaching_assignment`)
+- [x] Services & Repositories for Directory and Academics
+- [x] Coordinator UI: Faculty directory with structured skill tags filtering
+- [x] Coordinator UI: Course and teaching allocation matrix (course, year, semester, section, theory/lab)
 
 ## [ ] Slice 3: Deadlines & Dynamic Assignment
 - [ ] Flyway migration `V3__deadlines.sql` (`deadline`, `deadline_assignment`)
