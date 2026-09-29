@@ -28,15 +28,24 @@ public class CourseOffering {
     @Column(name = "section", nullable = false, length = 10)
     private String section;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "term_id")
+    private AcademicTerm term;
+
     public CourseOffering() {
     }
 
     public CourseOffering(Course course, String academicYear, int yearOfStudy, int semester, String section) {
+        this(course, academicYear, yearOfStudy, semester, section, null);
+    }
+
+    public CourseOffering(Course course, String academicYear, int yearOfStudy, int semester, String section, AcademicTerm term) {
         this.course = course;
         this.academicYear = academicYear;
         this.yearOfStudy = yearOfStudy;
         this.semester = semester;
         this.section = section;
+        this.term = term;
     }
 
     public Long getId() {
@@ -85,5 +94,13 @@ public class CourseOffering {
 
     public void setSection(String section) {
         this.section = section;
+    }
+
+    public AcademicTerm getTerm() {
+        return term;
+    }
+
+    public void setTerm(AcademicTerm term) {
+        this.term = term;
     }
 }

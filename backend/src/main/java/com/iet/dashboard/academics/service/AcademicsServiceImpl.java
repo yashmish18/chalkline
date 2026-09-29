@@ -26,17 +26,23 @@ public class AcademicsServiceImpl implements AcademicsService {
     private final CourseOfferingRepository offeringRepository;
     private final TeachingAssignmentRepository assignmentRepository;
     private final FacultyService facultyService;
+    private final com.iet.dashboard.academics.repo.AcademicTermRepository termRepository;
+    private final com.iet.dashboard.academics.repo.SyllabusTopicRepository syllabusRepository;
 
     public AcademicsServiceImpl(
             CourseRepository courseRepository,
             CourseOfferingRepository offeringRepository,
             TeachingAssignmentRepository assignmentRepository,
-            FacultyService facultyService
+            FacultyService facultyService,
+            com.iet.dashboard.academics.repo.AcademicTermRepository termRepository,
+            com.iet.dashboard.academics.repo.SyllabusTopicRepository syllabusRepository
     ) {
         this.courseRepository = courseRepository;
         this.offeringRepository = offeringRepository;
         this.assignmentRepository = assignmentRepository;
         this.facultyService = facultyService;
+        this.termRepository = termRepository;
+        this.syllabusRepository = syllabusRepository;
     }
 
     @Override
@@ -106,5 +112,69 @@ public class AcademicsServiceImpl implements AcademicsService {
         TeachingAssignment saved = assignmentRepository.save(assignment);
 
         return TeachingAssignmentDto.fromEntity(saved, faculty.name());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AcademicTermDto getActiveTerm() {
+        return termRepository.findByActiveTrue()
+                .map(AcademicTermDto::fromEntity)
+                .orElse(null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AcademicTermDto> getAllTerms() {
+        return termRepository.findAll().stream()
+                .map(AcademicTermDto::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public AcademicTermDto setActiveTerm(Long termId) {
+        com.iet.dashboard.academics.domain.AcademicTerm target = termRepository.findById(termId)
+                .orElseThrow(() -> new ResourceNotFoundException("Academic term not found: " + termId));
+
+        termRepository.findAll().forEach(t -> {
+            t.setActive(t.getId().equals(termId));
+            termRepository.save(t);
+        });
+
+        return AcademicTermDto.fromEntity(target);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SyllabusTopicDto> getSyllabusForCourse(Long courseId) {
+        return syllabusRepository.findByCourseIdOrderByLectureOrderAsc(courseId).stream()
+                .map(SyllabusTopicDto::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CourseOfferingDto getOfferingById(Long offeringId) {
+        CourseOffering offering = offeringRepository.findById(offeringId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course offering not found: " + offeringId));
+        return CourseOfferingDto.fromEntity(offering);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isFacultyAssignedToOffering(Long facultyId, Long offeringId) {
+        if (facultyId == null || offeringId == null) {
+            return false;
+        }
+        return assignmentRepository.findByOfferingId(offeringId).stream()
+                .anyMatch(a -> facultyId.equals(a.getFacultyId()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void assertFacultyAssignedToOffering(Long facultyId, Long offeringId) {
+        if (!isFacultyAssignedToOffering(facultyId, offeringId)) {
+            throw new com.iet.dashboard.shared.error.ForbiddenException(
+                    "You do not have access to course offering #" + offeringId + " (not assigned to you)");
+        }
     }
 }

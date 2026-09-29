@@ -19,13 +19,21 @@ public class Course {
     @Column(name = "type", nullable = false, length = 50)
     private String type = "THEORY";
 
+    @Column(name = "credits", nullable = false)
+    private int credits = 3;
+
     public Course() {
     }
 
     public Course(String code, String name, String type) {
+        this(code, name, type, 3);
+    }
+
+    public Course(String code, String name, String type, int credits) {
         this.code = code;
         this.name = name;
         this.type = type != null ? type : "THEORY";
+        this.credits = credits;
     }
 
     public Long getId() {
@@ -58,5 +66,13 @@ public class Course {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public int getCredits() {
+        return credits;
+    }
+
+    public void setCredits(int credits) {
+        this.credits = credits;
     }
 }

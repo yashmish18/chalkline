@@ -42,6 +42,12 @@ class AcademicsServiceTest {
     @Mock
     private FacultyService facultyService;
 
+    @Mock
+    private com.iet.dashboard.academics.repo.AcademicTermRepository termRepository;
+
+    @Mock
+    private com.iet.dashboard.academics.repo.SyllabusTopicRepository syllabusRepository;
+
     @InjectMocks
     private AcademicsServiceImpl academicsService;
 
@@ -91,5 +97,50 @@ class AcademicsServiceTest {
         assertEquals(100L, result.id());
         assertEquals("Dr. Amit", result.facultyName());
         assertEquals("THEORY", result.component());
+    }
+
+    @Test
+    void testGetActiveTerm() {
+        com.iet.dashboard.academics.domain.AcademicTerm term = new com.iet.dashboard.academics.domain.AcademicTerm(
+                "Odd 2026-27", "2026-2027", java.time.LocalDate.of(2026, 7, 15), java.time.LocalDate.of(2026, 12, 15), true
+        );
+        term.setId(1L);
+        when(termRepository.findByActiveTrue()).thenReturn(Optional.of(term));
+
+        com.iet.dashboard.academics.web.AcademicTermDto result = academicsService.getActiveTerm();
+        assertNotNull(result);
+        assertEquals("Odd 2026-27", result.name());
+        assertTrue(result.active());
+    }
+
+    @Test
+    void testGetSyllabusForCourse() {
+        Course course = new Course("CS501", "Networks", "THEORY");
+        course.setId(1L);
+        com.iet.dashboard.academics.domain.SyllabusTopic topic = new com.iet.dashboard.academics.domain.SyllabusTopic(
+                course, 1, "Unit 1", "OSI Model", 1, 1
+        );
+        topic.setId(10L);
+        when(syllabusRepository.findByCourseIdOrderByLectureOrderAsc(1L)).thenReturn(List.of(topic));
+
+        List<com.iet.dashboard.academics.web.SyllabusTopicDto> topics = academicsService.getSyllabusForCourse(1L);
+        assertEquals(1, topics.size());
+        assertEquals("OSI Model", topics.get(0).topicName());
+    }
+
+    @Test
+    void testAssertFacultyAssignedToOffering_SuccessAndForbidden() {
+        Course course = new Course("CS501", "Networks", "THEORY");
+        CourseOffering offering = new CourseOffering(course, "2026-2027", 3, 5, "A");
+        TeachingAssignment assignment = new TeachingAssignment(offering, 2L, CourseComponent.THEORY);
+
+        when(assignmentRepository.findByOfferingId(1L)).thenReturn(List.of(assignment));
+
+        // Faculty #2 is assigned -> should not throw
+        assertDoesNotThrow(() -> academicsService.assertFacultyAssignedToOffering(2L, 1L));
+
+        // Faculty #99 is NOT assigned -> throws ForbiddenException
+        assertThrows(com.iet.dashboard.shared.error.ForbiddenException.class,
+                () -> academicsService.assertFacultyAssignedToOffering(99L, 1L));
     }
 }

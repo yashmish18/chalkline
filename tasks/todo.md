@@ -49,3 +49,31 @@
 - [x] Empty states, loading spinners, and WCAG AA contrast verification
 - [x] Run full end-to-end integration flow tests
 
+## [x] Slice 8: Academic Core Refactor & Persistent Sidebar Navigation
+- [x] Flyway migration `V7__terms_and_syllabus.sql`: `academic_term` and `syllabus_topic`
+- [x] Domain & Repos: `AcademicTerm`, `SyllabusTopic` entities with active term resolution
+- [x] Academics API: Term management, Course catalog with syllabus topics, and IDOR protection
+- [x] Frontend: Persistent collapsible `Sidebar.tsx` with role switching (Coordinator vs Faculty) and active term indicator
+
+## [ ] Slice 9: Faculty Daily Session Logging & "Today" Screen
+- [ ] Flyway migration `V8__teaching_sessions.sql`: `teaching_session` and `session_topic_log`
+- [ ] Domain & Service: `TeachingSessionService` with strict ownership check (`faculty_id == currentUser.facultyId`)
+- [ ] Session API: `POST /api/teaching-sessions`, `GET /api/teaching-sessions/today`
+- [ ] Frontend: Faculty `TodayView.tsx` with 20-second quick-log form pre-selecting next uncovered topic
+
+## [ ] Slice 10: Syllabus as Data, Progress Pacing & "My Courses" View
+- [ ] Pacing calculation engine: Dynamic computation of coverage %, conduct rate %, and ahead/behind topic delta
+- [ ] Faculty API: `GET /api/academics/my-courses` with per-offering syllabus progress
+- [ ] Frontend: `MyCoursesView.tsx` with unit-by-unit syllabus breakdown, topic checkmarks, and pacing indicator
+
+## [ ] Slice 11: Sparse Coordinator Overview Dashboard & Compliance Matrix
+- [ ] Query projections: Worst-first coverage ranking, weekly conduct trajectory, and milestone compliance matrix
+- [ ] Web API: `/api/tracking/overview-summary` and `/api/tracking/compliance-matrix`
+- [ ] Frontend: Sparse `CoordinatorOverviewView.tsx` with 4 KPI numbers, Worst-First Bar Chart, Conduct Line Chart, Compliance Matrix, and actionable Needs-Attention list with 1-click reminders
+
+## [ ] Slice 12: Skills Tag Input & Final E2E Verification
+- [ ] Backend: Normalized `skill` table with case-insensitive unique lookup and dynamic insertion
+- [ ] Frontend: `TagInput.tsx` chip component with autosuggest
+- [ ] Integration tests: Complete daily log -> coverage calculation -> coordinator review flow
+- [ ] Floor guard check: Zero suppressions, stubs, secret leaks, or weakened tests
+

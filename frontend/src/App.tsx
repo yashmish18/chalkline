@@ -1,196 +1,126 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { Navbar } from './components/Navbar';
+import { Sidebar } from './components/Sidebar';
+import { NotificationCenter } from './components/NotificationCenter';
 import { DevUserSwitcher } from './components/DevUserSwitcher';
 import { FacultyDirectoryView } from './views/FacultyDirectoryView';
 import { TeachingAllocationsView } from './views/TeachingAllocationsView';
 import { DeadlinesView } from './views/DeadlinesView';
 import { TrackingDashboardView } from './views/TrackingDashboardView';
-import { CheckCircle2, ShieldAlert, LayoutDashboard, Users, BookOpen, TrendingUp } from 'lucide-react';
+import { TodayView } from './views/TodayView';
+import { MyCoursesView } from './views/MyCoursesView';
 
-function DashboardHome({ onNavigate }: { onNavigate: (tab: string) => void }) {
+function MainAppShell() {
   const { user } = useAuth();
   const isCoordinator = user?.role === 'COORDINATOR';
 
-  return (
-    <div className="space-y-6">
-      {/* Welcome Banner */}
-      <div className="bg-white rounded-lg border border-border p-6 shadow-xs flex items-start justify-between">
-        <div>
-          <h2 className="font-serif text-2xl font-bold text-slate-900 tracking-tight">
-            {user ? `Welcome back, ${user.name}` : 'Welcome to IET Faculty Dashboard'}
-          </h2>
-          <p className="text-sm text-slate-600 mt-1">
-            {isCoordinator
-              ? 'Department Coordinator Workspace: Manage faculty allocations, monitor deadlines, and audit submission compliance.'
-              : user?.role === 'FACULTY'
-              ? 'Faculty Academic Workspace: Track assigned courses, upcoming deadlines, and submission statuses.'
-              : 'Sign in to access your course deadlines and compliance submissions.'}
-          </p>
-        </div>
-        {user && (
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            Session Active ({user.role})
-          </div>
-        )}
-      </div>
+  const [activeTab, setActiveTab] = useState<string>(isCoordinator ? 'overview' : 'today');
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [activeTermName, setActiveTermName] = useState('Odd 2026-27');
+  const [unreadCount, setUnreadCount] = useState(0);
 
-      {!user && (
-        <div className="bg-amber-50 rounded-lg border border-amber-200 p-6 text-amber-900 flex items-start gap-4">
-          <ShieldAlert className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
-          <div>
-            <h3 className="text-sm font-bold text-amber-900">Authentication Required</h3>
-            <p className="text-xs text-amber-800 mt-1">
-              Please choose a role from the developer switcher above to preview coordinator or faculty views.
-            </p>
-          </div>
-        </div>
-      )}
+  // Sync default tab whenever the active role changes
+  useEffect(() => {
+    setActiveTab(isCoordinator ? 'overview' : 'today');
+  }, [user?.role]);
 
-      {/* Quick summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div
-          onClick={() => onNavigate('deadlines')}
-          className="bg-white rounded-lg border border-border p-5 shadow-xs hover:border-primary/50 transition-colors cursor-pointer"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Deadlines</span>
-            <BookOpen className="w-4 h-4 text-primary" />
-          </div>
-          <div className="text-2xl font-bold font-serif text-slate-900 mt-2">Active Cycles</div>
-          <p className="text-xs text-slate-500 mt-1">Course files &amp; evaluation rubrics</p>
-        </div>
+  // Fetch active term name
+  useEffect(() => {
+    fetch('/api/terms/active')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.name) {
+          setActiveTermName(data.name);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
-        {isCoordinator && (
-          <div
-            onClick={() => onNavigate('tracking')}
-            className="bg-white rounded-lg border border-border p-5 shadow-xs hover:border-primary/50 transition-colors cursor-pointer"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Compliance</span>
-              <TrendingUp className="w-4 h-4 text-emerald-600" />
-            </div>
-            <div className="text-2xl font-bold font-serif text-slate-900 mt-2">Audit Roster</div>
-            <p className="text-xs text-slate-500 mt-1">Export Excel &amp; monitor tiers</p>
-          </div>
-        )}
+  // Fetch unread count for badge
+  useEffect(() => {
+    if (!user) return;
+    const fetchUnread = () => {
+      fetch('/api/notifications/unread-count')
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && typeof data.unreadCount === 'number') {
+            setUnreadCount(data.unreadCount);
+          }
+        })
+        .catch(() => {});
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 45000);
+    return () => clearInterval(interval);
+  }, [user]);
 
-        <div
-          onClick={() => onNavigate('directory')}
-          className="bg-white rounded-lg border border-border p-5 shadow-xs hover:border-primary/50 transition-colors cursor-pointer"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Faculty Members</span>
-            <Users className="w-4 h-4 text-primary" />
-          </div>
-          <div className="text-2xl font-bold font-serif text-slate-900 mt-2">Profiles</div>
-          <p className="text-xs text-slate-500 mt-1">Skill-tagged faculty directory</p>
-        </div>
-
-        <div
-          onClick={() => onNavigate('allocations')}
-          className="bg-white rounded-lg border border-border p-5 shadow-xs hover:border-primary/50 transition-colors cursor-pointer"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Allocations</span>
-            <CheckCircle2 className="w-4 h-4 text-secondary" />
-          </div>
-          <div className="text-2xl font-bold font-serif text-slate-900 mt-2">Teaching Matrix</div>
-          <p className="text-xs text-slate-500 mt-1">Theory &amp; Lab components mapped</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MainNavigation() {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'tracking' | 'directory' | 'allocations' | 'deadlines'>('dashboard');
-  const isCoordinator = user?.role === 'COORDINATOR';
+  const getSectionTitle = () => {
+    switch (activeTab) {
+      case 'overview':
+        return 'Department Overview & Compliance Analytics';
+      case 'today':
+        return "Today's Academic Session Log";
+      case 'my-courses':
+        return 'My Allocated Courses & Syllabus Pacing';
+      case 'deadlines':
+        return isCoordinator ? 'Administrative Deadlines & Cycles' : 'Assigned Deadlines & Deliverables';
+      case 'faculty':
+        return 'Department Faculty Directory & Skills';
+      case 'academics':
+        return 'Academic Curriculum & Teaching Allocation Matrix';
+      case 'compliance':
+        return 'Submissions Compliance Audit Roster';
+      case 'audit':
+        return 'Departmental Security & Audit Trail';
+      default:
+        return 'Academic Workspace';
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      <DevUserSwitcher />
-      <Navbar onNavigate={(view) => setActiveTab(view as any)} />
+    <div className="min-h-screen bg-slate-50 font-sans flex text-slate-800 antialiased selection:bg-primary selection:text-white">
+      {/* Persistent Left Sidebar */}
+      <Sidebar
+        currentTab={activeTab}
+        onSelectTab={setActiveTab}
+        isCollapsed={isCollapsed}
+        onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
+        activeTermName={activeTermName}
+        unreadNotificationsCount={unreadCount}
+      />
 
-      {/* Sub-header navigation tabs */}
-      <div className="bg-white border-b border-border shadow-2xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-6">
-          <button
-            type="button"
-            onClick={() => setActiveTab('dashboard')}
-            className={`flex items-center gap-2 py-3.5 text-xs font-semibold border-b-2 transition-all ${
-              activeTab === 'dashboard'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <LayoutDashboard className="w-4 h-4" />
-            Overview
-          </button>
+      {/* Main Content Area */}
+      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-200 ${isCollapsed ? 'pl-18' : 'pl-64'}`}>
+        {/* Top Utility Header */}
+        <header className="h-16 bg-white border-b border-border sticky top-0 z-30 px-6 flex items-center justify-between shadow-2xs">
+          <div className="flex items-center gap-3">
+            <h1 className="font-serif text-lg font-bold text-slate-900 tracking-tight">{getSectionTitle()}</h1>
+            <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+              {activeTermName}
+            </span>
+          </div>
 
-          {isCoordinator && (
-            <button
-              type="button"
-              onClick={() => setActiveTab('tracking')}
-              className={`flex items-center gap-2 py-3.5 text-xs font-semibold border-b-2 transition-all ${
-                activeTab === 'tracking'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <TrendingUp className="w-4 h-4" />
-              Compliance Tracking
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {/* Top Notification Bell */}
+            <NotificationCenter />
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('deadlines')}
-            className={`flex items-center gap-2 py-3.5 text-xs font-semibold border-b-2 transition-all ${
-              activeTab === 'deadlines'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <BookOpen className="w-4 h-4" />
-            Deadlines
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('directory')}
-            className={`flex items-center gap-2 py-3.5 text-xs font-semibold border-b-2 transition-all ${
-              activeTab === 'directory'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            Faculty Directory
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('allocations')}
-            className={`flex items-center gap-2 py-3.5 text-xs font-semibold border-b-2 transition-all ${
-              activeTab === 'allocations'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <BookOpen className="w-4 h-4" />
-            Teaching Allocations
-          </button>
-        </div>
+            {/* Quick Dev Switcher */}
+            <DevUserSwitcher />
+          </div>
+        </header>
+
+        {/* View Content */}
+        <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-8">
+          {activeTab === 'overview' && isCoordinator && <TrackingDashboardView />}
+          {activeTab === 'compliance' && isCoordinator && <TrackingDashboardView />}
+          {activeTab === 'audit' && isCoordinator && <TrackingDashboardView />}
+          {activeTab === 'academics' && <TeachingAllocationsView />}
+          {activeTab === 'faculty' && <FacultyDirectoryView />}
+          {activeTab === 'deadlines' && <DeadlinesView />}
+          {activeTab === 'today' && <TodayView onNavigate={(t) => setActiveTab(t)} />}
+          {activeTab === 'my-courses' && <MyCoursesView />}
+        </main>
       </div>
-
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
-        {activeTab === 'dashboard' && <DashboardHome onNavigate={(t) => setActiveTab(t as any)} />}
-        {activeTab === 'tracking' && isCoordinator && <TrackingDashboardView />}
-        {activeTab === 'deadlines' && <DeadlinesView />}
-        {activeTab === 'directory' && <FacultyDirectoryView />}
-        {activeTab === 'allocations' && <TeachingAllocationsView />}
-      </main>
     </div>
   );
 }
@@ -198,7 +128,7 @@ function MainNavigation() {
 export default function App() {
   return (
     <AuthProvider>
-      <MainNavigation />
+      <MainAppShell />
     </AuthProvider>
   );
 }

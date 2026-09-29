@@ -69,3 +69,30 @@ Identity & Auth (AppUser, Roles, /api/me)
 * Apply Swiss Modernism 2.0 aesthetics across all screens.
 * Empty states, skeleton loaders, error boundaries, WCAG AA compliance, and keyboard navigation.
 * End-to-end user journey verification (Coordinator creates deadline -> Faculty receives notification and uploads -> Coordinator reviews and accepts).
+
+---
+
+## Phase 2: Faculty-Driven Academic Tracker & Compliance Engine
+
+### Slice 8: Academic Core Refactor & Persistent Sidebar Navigation
+* Flyway migration `V7__terms_and_syllabus.sql`: `academic_term` and `syllabus_topic`.
+* Academics module update: `Term`, `SyllabusTopic` entities, repos, service, and DTOs with IDOR protection.
+* Frontend: Collapsible persistent `Sidebar.tsx` with role-aware navigation (Coordinator vs Faculty), replacing top navbar.
+
+### Slice 9: Faculty Daily Session Logging & "Today" Screen
+* Flyway migration `V8__teaching_sessions.sql`: `teaching_session` and `session_topic_log`.
+* `TeachingSessionService`: Faculty logging of classes held/cancelled/swapped with covered syllabus topics; verified by caller `facultyId`.
+* Frontend: `TodayView.tsx` with 20-second quick-log form pre-selecting next uncovered syllabus topic.
+
+### Slice 10: Syllabus as Data, Progress Pacing & "My Courses" View
+* Backend calculation engine: Query-derived syllabus coverage %, weekly conduct rate %, and pacing status (ahead/on track/behind by N topics).
+* Frontend: `MyCoursesView.tsx` for faculty showing per-offering syllabus unit breakdown, lecture checkmarks, and pacing indicators.
+
+### Slice 11: Sparse Coordinator Overview Dashboard & Compliance Matrix
+* Backend query projections: Worst-first coverage ranking, weekly conduct trajectory, milestone compliance matrix.
+* Frontend: Sparse `CoordinatorOverviewView.tsx` with 4 KPI numbers in 1 row, Worst-First Bar Chart, Conduct Line Chart, Compliance Checkpoint Matrix, and an actionable "Needs Attention" list with instant 1-click reminders.
+
+### Slice 12: Skills Tag Input & Final E2E Verification
+* Normalized skill table (`skill.normalized_name`) with case-insensitive search and dynamic insertion.
+* Frontend: `TagInput.tsx` chip component with autosuggest.
+* End-to-end integration tests, ArchUnit verification, and floor guard audit.

@@ -50,4 +50,25 @@ public class AcademicsController {
     public ResponseEntity<TeachingAssignmentDto> createAssignment(@Valid @RequestBody CreateTeachingAssignmentRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(academicsService.createTeachingAssignment(request));
     }
+
+    @GetMapping("/terms")
+    public ResponseEntity<List<AcademicTermDto>> getTerms() {
+        return ResponseEntity.ok(academicsService.getAllTerms());
+    }
+
+    @GetMapping("/terms/active")
+    public ResponseEntity<AcademicTermDto> getActiveTerm() {
+        return ResponseEntity.ok(academicsService.getActiveTerm());
+    }
+
+    @PostMapping("/terms/{id}/activate")
+    @PreAuthorize("hasRole('COORDINATOR')")
+    public ResponseEntity<AcademicTermDto> activateTerm(@PathVariable Long id) {
+        return ResponseEntity.ok(academicsService.setActiveTerm(id));
+    }
+
+    @GetMapping("/courses/{courseId}/syllabus")
+    public ResponseEntity<List<SyllabusTopicDto>> getCourseSyllabus(@PathVariable Long courseId) {
+        return ResponseEntity.ok(academicsService.getSyllabusForCourse(courseId));
+    }
 }
