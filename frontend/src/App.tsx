@@ -4,6 +4,7 @@ import { Navbar } from './components/Navbar';
 import { DevUserSwitcher } from './components/DevUserSwitcher';
 import { FacultyDirectoryView } from './views/FacultyDirectoryView';
 import { TeachingAllocationsView } from './views/TeachingAllocationsView';
+import { DeadlinesView } from './views/DeadlinesView';
 import { CheckCircle2, ShieldAlert, LayoutDashboard, Users, BookOpen } from 'lucide-react';
 
 function DashboardHome() {
@@ -79,7 +80,7 @@ function DashboardHome() {
 }
 
 function MainNavigation() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'allocations'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'directory' | 'allocations' | 'deadlines'>('dashboard');
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
@@ -100,6 +101,18 @@ function MainNavigation() {
           >
             <LayoutDashboard className="w-4 h-4" />
             Overview
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('deadlines')}
+            className={`flex items-center gap-2 py-3.5 text-xs font-semibold border-b-2 transition-all ${
+              activeTab === 'deadlines'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            Deadlines
           </button>
           <button
             type="button"
@@ -130,6 +143,7 @@ function MainNavigation() {
 
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
         {activeTab === 'dashboard' && <DashboardHome />}
+        {activeTab === 'deadlines' && <DeadlinesView />}
         {activeTab === 'directory' && <FacultyDirectoryView />}
         {activeTab === 'allocations' && <TeachingAllocationsView />}
       </main>

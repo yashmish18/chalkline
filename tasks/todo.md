@@ -18,11 +18,11 @@
 - [x] Coordinator UI: Faculty directory with structured skill tags filtering
 - [x] Coordinator UI: Course and teaching allocation matrix (course, year, semester, section, theory/lab)
 
-## [ ] Slice 3: Deadlines & Dynamic Assignment
-- [ ] Flyway migration `V3__deadlines.sql` (`deadline`, `deadline_assignment`)
-- [ ] `DeadlineService.createDeadline`: dynamic resolution of targets (all, selected, by course/semester)
-- [ ] Coordinator UI: Deadline creation modal with targeting rules
-- [ ] Faculty UI: My Deadlines list (filtered to current user)
+## [x] Slice 3: Deadlines & Dynamic Assignment
+- [x] Flyway migration `V3__deadlines.sql` (`deadline`, `deadline_assignment`)
+- [x] `DeadlineService.createDeadline`: dynamic resolution of targets (all, selected, by course/semester)
+- [x] Coordinator UI: Deadline creation modal with targeting rules
+- [x] Faculty UI: My Deadlines list (filtered to current user)
 
 ## [ ] Slice 4: File Submissions & Versioned Storage Port
 - [ ] Flyway migration `V4__submissions.sql` (`submission`, `submission_file`)
