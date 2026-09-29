@@ -85,7 +85,7 @@ function MainNavigation() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       <DevUserSwitcher />
-      <Navbar />
+      <Navbar onNavigate={(view) => setActiveTab(view as any)} />
 
       {/* Sub-header navigation tabs */}
       <div className="bg-white border-b border-border shadow-2xs">

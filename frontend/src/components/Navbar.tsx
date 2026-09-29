@@ -1,12 +1,12 @@
-import { Bell, LogOut, UserCheck } from 'lucide-react';
+import { LogOut, UserCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { NotificationCenter } from './NotificationCenter';
 
 interface NavbarProps {
-  onOpenNotifications?: () => void;
-  unreadNotificationsCount?: number;
+  onNavigate?: (view: string) => void;
 }
 
-export function Navbar({ onOpenNotifications, unreadNotificationsCount = 0 }: NavbarProps) {
+export function Navbar({ onNavigate }: NavbarProps) {
   const { user, login, logout } = useAuth();
 
   return (
@@ -32,20 +32,8 @@ export function Navbar({ onOpenNotifications, unreadNotificationsCount = 0 }: Na
         <div className="flex items-center gap-3">
           {user ? (
             <>
-              {/* Notification Bell */}
-              <button
-                type="button"
-                onClick={onOpenNotifications}
-                className="relative p-2 rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors focus-visible:ring-2 focus-visible:ring-primary"
-                aria-label="View notifications"
-              >
-                <Bell className="w-5 h-5" />
-                {unreadNotificationsCount > 0 && (
-                  <span className="absolute top-1 right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold text-white shadow">
-                    {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
-                  </span>
-                )}
-              </button>
+              {/* Notification Center */}
+              <NotificationCenter onNavigate={onNavigate} />
 
               {/* User Pill */}
               <div className="flex items-center gap-2 pl-2 border-l border-slate-200">

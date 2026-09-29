@@ -57,6 +57,9 @@ class SubmissionServiceTest {
     @Mock
     private FacultyService facultyService;
 
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private SubmissionServiceImpl submissionService;
 

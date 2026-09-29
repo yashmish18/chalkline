@@ -31,12 +31,12 @@
 - [x] Faculty UI: Upload file, view status (`Pending`, `Submitted`, `Late`, `Returned`, `Accepted`)
 - [x] Coordinator UI: Review submission, download file, accept or return with comments
 
-## [ ] Slice 5: Notifications Center (In-App & Email)
-- [ ] Flyway migration `V5__notifications.sql` (`notification` table)
-- [ ] `NotificationService`: in-app persistence + async email dispatch
-- [ ] Controllers: `GET /api/notifications`, `GET /api/notifications/unread-count`, `PATCH /api/notifications/{id}/read`, `POST /api/notifications/read-all`
-- [ ] Frontend: Notification bell in header, unread badge, dropdown list, mark-as-read, and deep linking
-- [ ] Background scheduled reminder runner (upcoming due date, overdue alerts)
+## [x] Slice 5: Notifications Center (In-App & Email)
+- [x] Flyway migration `V5__notifications.sql` (`notification` table)
+- [x] `NotificationService`: in-app persistence + async email dispatch
+- [x] Controllers: `GET /api/notifications`, `GET /api/notifications/unread-count`, `PATCH /api/notifications/{id}/read`, `POST /api/notifications/read-all`
+- [x] Frontend: Notification bell in header, unread badge, dropdown list, mark-as-read, and deep linking
+- [x] Background scheduled reminder runner (upcoming due date, overdue alerts)
 
 ## [ ] Slice 6: Tracking Dashboard & Excel Export
 - [ ] Tracking query projections: submission rate, on-time rate, overdue count, critical compliance faculty

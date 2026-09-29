@@ -57,6 +57,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     private final DeadlineService deadlineService;
     private final UserService userService;
     private final FacultyService facultyService;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
     private final Tika tika = new Tika();
 
     public SubmissionServiceImpl(
@@ -65,7 +66,8 @@ public class SubmissionServiceImpl implements SubmissionService {
             FileStorage fileStorage,
             DeadlineService deadlineService,
             UserService userService,
-            FacultyService facultyService
+            FacultyService facultyService,
+            org.springframework.context.ApplicationEventPublisher eventPublisher
     ) {
         this.submissionRepository = submissionRepository;
         this.submissionFileRepository = submissionFileRepository;
@@ -73,6 +75,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         this.deadlineService = deadlineService;
         this.userService = userService;
         this.facultyService = facultyService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -185,6 +188,22 @@ public class SubmissionServiceImpl implements SubmissionService {
 
         submission.setUpdatedAt(Instant.now());
         Submission saved = submissionRepository.save(submission);
+
+        if (eventPublisher != null) {
+            try {
+                DeadlineAssignmentDto assignment = deadlineService.getAssignmentById(saved.getDeadlineAssignmentId());
+                eventPublisher.publishEvent(new com.iet.dashboard.shared.events.SubmissionReviewedEvent(
+                        assignment.id(),
+                        assignment.title(),
+                        assignment.facultyId(),
+                        request.action(),
+                        request.comment()
+                ));
+            } catch (Exception e) {
+                // Non-blocking for event publication
+            }
+        }
+
         return SubmissionDto.fromEntity(saved);
     }
 

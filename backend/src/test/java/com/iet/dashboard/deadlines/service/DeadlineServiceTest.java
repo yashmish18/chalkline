@@ -51,6 +51,9 @@ class DeadlineServiceTest {
     @Mock
     private UserService userService;
 
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private DeadlineServiceImpl deadlineService;
 

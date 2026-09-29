@@ -30,19 +30,22 @@ public class DeadlineServiceImpl implements DeadlineService {
     private final FacultyService facultyService;
     private final AcademicsService academicsService;
     private final UserService userService;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     public DeadlineServiceImpl(
             DeadlineRepository deadlineRepository,
             DeadlineAssignmentRepository assignmentRepository,
             FacultyService facultyService,
             AcademicsService academicsService,
-            UserService userService
+            UserService userService,
+            org.springframework.context.ApplicationEventPublisher eventPublisher
     ) {
         this.deadlineRepository = deadlineRepository;
         this.assignmentRepository = assignmentRepository;
         this.facultyService = facultyService;
         this.academicsService = academicsService;
         this.userService = userService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -162,6 +165,20 @@ public class DeadlineServiceImpl implements DeadlineService {
         }
 
         assignmentRepository.saveAll(assignmentsToCreate);
+
+        if (eventPublisher != null) {
+            List<Long> targetFacultyIds = assignmentsToCreate.stream()
+                    .map(DeadlineAssignment::getFacultyId)
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            eventPublisher.publishEvent(new com.iet.dashboard.shared.events.DeadlineAssignedEvent(
+                    savedDeadline.getId(),
+                    savedDeadline.getTitle(),
+                    savedDeadline.getDueAt(),
+                    targetFacultyIds
+            ));
+        }
 
         return DeadlineDto.fromEntity(savedDeadline, assignmentsToCreate.size());
     }
