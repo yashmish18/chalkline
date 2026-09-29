@@ -6,11 +6,11 @@
 - [x] Set up `docker-compose.yml` for PostgreSQL 16 and Mailpit
 - [x] Configure Tailwind CSS with Swiss Modernism tokens from `DESIGN.md`
 
-## [ ] Slice 1: Identity, Auth & Role Resolution
-- [ ] Flyway migration `V1__init_auth_and_users.sql` (`app_user`, roles `COORDINATOR`, `FACULTY`)
-- [ ] Security configuration with session cookie auth, CSRF, and user details service
-- [ ] Controller: `GET /api/me` returning current user profile and role
-- [ ] Frontend: Auth context, login simulation / Entra sign-in link, role-aware navigation bar
+## [x] Slice 1: Identity, Auth & Role Resolution
+- [x] Flyway migration `V1__init_auth_and_users.sql` (`app_user`, roles `COORDINATOR`, `FACULTY`)
+- [x] Security configuration with session cookie auth, CSRF, and user details service
+- [x] Controller: `GET /api/me` returning current user profile and role
+- [x] Frontend: Auth context, login simulation / Entra sign-in link, role-aware navigation bar
 
 ## [ ] Slice 2: Faculty Directory & Teaching Allocations
 - [ ] Flyway migration `V2__directory_and_academics.sql` (`faculty`, `skill`, `faculty_skill`, `course`, `course_offering`, `teaching_assignment`)
