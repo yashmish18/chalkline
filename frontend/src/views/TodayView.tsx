@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { TodayClassDto } from '../types/academics';
 import {
   CalendarCheck,
   CheckCircle2,
@@ -7,93 +8,96 @@ import {
   AlertCircle,
   Sparkles,
   ChevronRight,
-  PlusCircle
+  PlusCircle,
+  RefreshCw
 } from 'lucide-react';
-
-interface TodayClass {
-  offeringId: number;
-  courseCode: string;
-  courseName: string;
-  section: string;
-  component: string;
-  timeSlot: string;
-  nextTopic: string;
-  unitTitle: string;
-  targetWeek: number;
-  totalPlanned: number;
-  completedSoFar: number;
-  isLogged: boolean;
-}
 
 export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }) {
   const { user } = useAuth();
-  const [classes, setClasses] = useState<TodayClass[]>([]);
+  const [classes, setClasses] = useState<TodayClassDto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedClass, setSelectedClass] = useState<TodayClass | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const [selectedClass, setSelectedClass] = useState<TodayClassDto | null>(null);
   const [sessionStatus, setSessionStatus] = useState<'HELD' | 'CANCELLED' | 'SWAPPED'>('HELD');
+  const [reasonNotHeld, setReasonNotHeld] = useState('Institutional Holiday / Event');
   const [note, setNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    // In Phase 1 / Slice 8, provide structured initial classes mapped to active teaching assignments
-    setTimeout(() => {
-      setClasses([
-        {
-          offeringId: 1,
-          courseCode: 'CS501',
-          courseName: 'Computer Networks',
-          section: 'Sec A',
-          component: 'THEORY',
-          timeSlot: '10:00 AM – 11:00 AM (Room 304)',
-          nextTopic: 'TCP Congestion Control: AIMD, Slow Start & Fast Recovery',
-          unitTitle: 'Unit 5: Transport & Application Layer',
-          targetWeek: 11,
-          totalPlanned: 15,
-          completedSoFar: 13,
-          isLogged: false,
-        },
-        {
-          offeringId: 2,
-          courseCode: 'CS502',
-          courseName: 'Database Management Systems',
-          section: 'Sec A',
-          component: 'THEORY',
-          timeSlot: '02:00 PM – 03:00 PM (Room 201)',
-          nextTopic: 'Two-Phase Locking (2PL) Protocol & Deadlock Prevention',
-          unitTitle: 'Unit 4: Transaction & Concurrency Control',
-          targetWeek: 9,
-          totalPlanned: 15,
-          completedSoFar: 11,
-          isLogged: false,
-        },
-      ]);
+  const fetchTodayClasses = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/teaching-sessions/today', {
+        credentials: 'include',
+        headers: { 'Accept': 'application/json' }
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to load today's classes (${res.status})`);
+      }
+      const data: TodayClassDto[] = await res.json();
+      setClasses(data);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to connect to timetable service';
+      setError(msg);
+    } finally {
       setLoading(false);
-    }, 200);
+    }
   }, []);
 
-  const handleQuickLog = (cls: TodayClass) => {
+  useEffect(() => {
+    fetchTodayClasses();
+  }, [fetchTodayClasses]);
+
+  const handleQuickLog = (cls: TodayClassDto) => {
     setSelectedClass(cls);
     setSessionStatus('HELD');
+    setReasonNotHeld('Institutional Holiday / Event');
     setNote('');
   };
 
-  const handleSaveLog = (e: React.FormEvent) => {
+  const handleSaveLog = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedClass) return;
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      setClasses((prev) =>
-        prev.map((c) =>
-          c.offeringId === selectedClass.offeringId ? { ...c, isLogged: true, completedSoFar: c.completedSoFar + 1 } : c
-        )
-      );
-      setIsSubmitting(false);
+    try {
+      const payload = {
+        offeringId: selectedClass.offeringId,
+        sessionDate: new Date().toISOString().split('T')[0],
+        sessionType: selectedClass.component || 'LECTURE',
+        status: sessionStatus,
+        topicIds: sessionStatus === 'HELD' && selectedClass.nextTopicId ? [selectedClass.nextTopicId] : [],
+        note: note.trim() || undefined,
+        reasonNotHeld: sessionStatus !== 'HELD' ? reasonNotHeld : undefined
+      };
+
+      const res = await fetch('/api/teaching-sessions', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.detail || errorData.title || `Error logging session (${res.status})`);
+      }
+
+      setSuccessMessage(`Session logged successfully for ${selectedClass.courseCode}! Syllabus coverage updated.`);
       setSelectedClass(null);
-      setSuccessMessage(`Session logged successfully for ${selectedClass.courseCode}! Syllabus progress updated.`);
+      await fetchTodayClasses();
       setTimeout(() => setSuccessMessage(null), 4000);
-    }, 300);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error logging session';
+      alert(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -103,27 +107,51 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
         <div>
           <div className="flex items-center gap-2 text-xs font-bold text-primary tracking-wide uppercase font-sans">
             <CalendarCheck className="w-4 h-4" />
-            Faculty Academic Workspace — Today's Schedule
+            Faculty Academic Workspace — Daily Teaching Log
           </div>
           <h1 className="font-serif text-2xl font-bold text-slate-900 mt-1">
             {user?.name ? `Hello, ${user.name}` : 'Welcome, Faculty Member'}
           </h1>
           <p className="text-xs text-slate-600 mt-1">
-            Log today's held or cancelled sessions in 20 seconds. Syllabus coverage and compliance are derived automatically.
+            Log today's held or cancelled sessions in under 20 seconds. Syllabus coverage and conduct pacing are derived automatically.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={fetchTodayClasses}
+            className="p-2 border border-border rounded-md hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-colors"
+            title="Refresh schedule"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-primary' : ''}`} />
+          </button>
           <div className="px-3.5 py-1.5 rounded-md bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700">
-            Term: <span className="text-primary font-bold">Odd 2026-27 (Week 11)</span>
+            Term: <span className="text-primary font-bold">Odd 2026-27</span>
           </div>
         </div>
       </div>
 
       {successMessage && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 px-4 py-3 rounded-lg text-xs font-medium flex items-center gap-2">
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 px-4 py-3 rounded-lg text-xs font-medium flex items-center gap-2 animate-in fade-in">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>{successMessage}</span>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-rose-50 border border-rose-200 text-rose-900 px-4 py-3 rounded-lg text-xs font-medium flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button
+            type="button"
+            onClick={fetchTodayClasses}
+            className="font-bold underline text-rose-800 hover:text-rose-950 ml-4"
+          >
+            Retry
+          </button>
         </div>
       )}
 
@@ -141,18 +169,20 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
             </span>
           </div>
 
-          {loading ? (
-            <div className="p-8 text-center bg-white rounded-lg border border-border text-xs text-slate-500">
+          {loading && classes.length === 0 ? (
+            <div className="p-8 text-center bg-white rounded-lg border border-border text-xs text-slate-500 animate-pulse">
               Loading today's teaching timetable...
             </div>
           ) : classes.length === 0 ? (
             <div className="p-8 text-center bg-white rounded-lg border border-border text-xs text-slate-500">
-              No teaching sessions scheduled for today. Enjoy your research and prep time!
+              No teaching allocations found for your account in the active term.
             </div>
           ) : (
             <div className="space-y-3.5">
               {classes.map((cls) => {
-                const progressPct = Math.round((cls.completedSoFar / cls.totalPlanned) * 100);
+                const progressPct = cls.totalPlanned > 0
+                  ? Math.round((cls.completedSoFar / cls.totalPlanned) * 100)
+                  : 0;
 
                 return (
                   <div
@@ -184,7 +214,7 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
                       {cls.isLogged ? (
                         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-100 text-emerald-800 text-xs font-bold shrink-0">
                           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                          Logged
+                          Logged for Today
                         </div>
                       ) : (
                         <button
@@ -201,7 +231,7 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
                     {/* Pre-selected Next Syllabus Topic */}
                     <div className="mt-4 p-3 bg-slate-50 border border-slate-200/80 rounded-md">
                       <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                        Next Uncovered Syllabus Topic (Pre-selected)
+                        Next Uncovered Syllabus Topic (Auto Selected)
                       </div>
                       <div className="text-xs font-semibold text-slate-900 mt-0.5 flex items-start gap-1.5">
                         <span className="text-primary font-bold">›</span>
@@ -237,25 +267,31 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
             </h3>
 
             <div className="space-y-3">
-              <div className="p-3 rounded-md bg-slate-50 border border-slate-200">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-slate-900">CS501 (Sec A)</span>
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                    On Track
-                  </span>
-                </div>
-                <div className="text-[11px] text-slate-500 mt-1">Target: 3 lectures | Held: 3</div>
-              </div>
+              {classes.map((cls) => {
+                const targetTopicsThisWeek = Math.min(cls.totalPlanned, Math.max(1, Math.round(cls.totalPlanned * (11 / 14))));
+                const isBehind = cls.completedSoFar < targetTopicsThisWeek;
+                const delta = targetTopicsThisWeek - cls.completedSoFar;
 
-              <div className="p-3 rounded-md bg-slate-50 border border-slate-200">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-slate-900">CS502 (Sec A)</span>
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
-                    Behind by 1 Topic
-                  </span>
-                </div>
-                <div className="text-[11px] text-slate-500 mt-1">Target: 3 lectures | Held: 2</div>
-              </div>
+                return (
+                  <div key={cls.offeringId} className="p-3 rounded-md bg-slate-50 border border-slate-200">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-slate-900">{cls.courseCode} ({cls.section})</span>
+                      <span
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                          isBehind
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-emerald-100 text-emerald-800'
+                        }`}
+                      >
+                        {isBehind ? `Behind by ${delta} topic${delta > 1 ? 's' : ''}` : 'On Track'}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      Expected by Wk 11: {targetTopicsThisWeek} topics | Covered: {cls.completedSoFar}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             <button
@@ -339,7 +375,9 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
 
               {sessionStatus === 'HELD' && (
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-md">
-                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Topic Covered</div>
+                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Topic Covered (Pre-selected)
+                  </div>
                   <div className="font-bold text-slate-900 mt-1">{selectedClass.nextTopic}</div>
                   <div className="text-[11px] text-slate-500 mt-0.5">{selectedClass.unitTitle}</div>
                 </div>
@@ -347,12 +385,18 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
 
               {sessionStatus !== 'HELD' && (
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Reason for {sessionStatus.toLowerCase()}</label>
-                  <select className="w-full px-3 py-2 border border-border rounded-md text-xs bg-white">
-                    <option>Institutional Holiday / Event</option>
-                    <option>Faculty On Duty (OD) / Conference</option>
-                    <option>Medical Leave</option>
-                    <option>Rescheduled Timetable Swap</option>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Reason for {sessionStatus.toLowerCase()}
+                  </label>
+                  <select
+                    value={reasonNotHeld}
+                    onChange={(e) => setReasonNotHeld(e.target.value)}
+                    className="w-full px-3 py-2 border border-border rounded-md text-xs bg-white focus:ring-1 focus:ring-primary focus:border-primary outline-hidden"
+                  >
+                    <option value="Institutional Holiday / Event">Institutional Holiday / Event</option>
+                    <option value="Faculty On Duty (OD) / Conference">Faculty On Duty (OD) / Conference</option>
+                    <option value="Medical Leave">Medical Leave</option>
+                    <option value="Rescheduled Timetable Swap">Rescheduled Timetable Swap</option>
                   </select>
                 </div>
               )}
@@ -361,7 +405,7 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
                 <label className="block font-bold text-slate-700 mb-1">Teaching Note (Optional)</label>
                 <input
                   type="text"
-                  placeholder="e.g. Completed slide deck and distributed homework set #3"
+                  placeholder="e.g. Distributed assignment set #3 and discussed practice problems"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   className="w-full px-3 py-2 border border-border rounded-md text-xs focus:ring-1 focus:ring-primary focus:border-primary outline-hidden"
