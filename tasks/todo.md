@@ -1,10 +1,10 @@
 # Tasks List: Faculty Dashboard Implementation
 
-## [ ] Slice 0: Workspace Scaffolding & Foundational Setup
-- [ ] Initialize backend project structure (Maven `pom.xml` with Spring Boot 3.3+, Java 21, Spring Security, JPA, Flyway, Postgres)
-- [ ] Initialize frontend project structure (Vite + React + TypeScript + Tailwind CSS)
-- [ ] Set up `docker-compose.yml` for PostgreSQL 16 and Mailpit
-- [ ] Configure Tailwind CSS with Swiss Modernism tokens from `DESIGN.md`
+## [x] Slice 0: Workspace Scaffolding & Foundational Setup
+- [x] Initialize backend project structure (Maven `pom.xml` with Spring Boot 3.3+, Java 21, Spring Security, JPA, Flyway, Postgres)
+- [x] Initialize frontend project structure (Vite + React + TypeScript + Tailwind CSS)
+- [x] Set up `docker-compose.yml` for PostgreSQL 16 and Mailpit
+- [x] Configure Tailwind CSS with Swiss Modernism tokens from `DESIGN.md`
 
 ## [ ] Slice 1: Identity, Auth & Role Resolution
 - [ ] Flyway migration `V1__init_auth_and_users.sql` (`app_user`, roles `COORDINATOR`, `FACULTY`)

@@ -1,0 +1,53 @@
+server:
+  port: 8080
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        secure: false # set true in prod via env
+        same-site: lax
+
+spring:
+  application:
+    name: faculty-dashboard
+  profiles:
+    active: dev
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/iet_dashboard}
+    username: ${SPRING_DATASOURCE_USERNAME:iet_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:iet_password}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        default_schema: public
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 30MB
+  mail:
+    host: ${SPRING_MAIL_HOST:localhost}
+    port: ${SPRING_MAIL_PORT:1025}
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+app:
+  storage:
+    upload-dir: ${STORAGE_UPLOAD_DIR:./data/uploads}
+  notifications:
+    upcoming-reminder-days: 5
+    critical-threshold: 60.0
+    watch-threshold: 85.0
