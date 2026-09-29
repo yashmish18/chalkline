@@ -1,0 +1,1896 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {
+    "hyperedges": [
+      {
+        "id": "auth_and_identity_subsystem",
+        "label": "Authentication and Identity Subsystem",
+        "nodes": [
+          "faculty_dashboard__prd__mvp__architecture_microsoft_entra_id",
+          "faculty_dashboard__prd__mvp__architecture_bff_auth_pattern",
+          "faculty_dashboard__prd__mvp__architecture_identity_module",
+          "faculty_dashboard__prd__mvp__architecture_app_user_entity",
+          "faculty_dashboard__prd__mvp__architecture_signin_workflow"
+        ],
+        "relation": "form",
+        "confidence": "EXTRACTED",
+        "confidence_score": 1.0,
+        "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html"
+      },
+      {
+        "id": "modular_monolith_architecture_stack",
+        "label": "Modular Monolith Technical Architecture",
+        "nodes": [
+          "faculty_dashboard__prd__mvp__architecture_react_frontend",
+          "faculty_dashboard__prd__mvp__architecture_reverse_proxy",
+          "faculty_dashboard__prd__mvp__architecture_spring_boot_backend",
+          "faculty_dashboard__prd__mvp__architecture_postgresql_database",
+          "faculty_dashboard__prd__mvp__architecture_modular_monolith"
+        ],
+        "relation": "implement",
+        "confidence": "EXTRACTED",
+        "confidence_score": 1.0,
+        "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html"
+      },
+      {
+        "id": "submission_lifecycle_subsystem",
+        "label": "Submission Lifecycle Subsystem",
+        "nodes": [
+          "faculty_dashboard__prd__mvp__architecture_submissions_management",
+          "faculty_dashboard__prd__mvp__architecture_submissions_module",
+          "faculty_dashboard__prd__mvp__architecture_file_storage_abstraction",
+          "faculty_dashboard__prd__mvp__architecture_submission_entity",
+          "faculty_dashboard__prd__mvp__architecture_submission_file_entity",
+          "faculty_dashboard__prd__mvp__architecture_submission_upload_workflow"
+        ],
+        "relation": "form",
+        "confidence": "EXTRACTED",
+        "confidence_score": 1.0,
+        "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_archunit_boundary_checks",
+      "label": "ArchUnit Architecture Boundary Verification",
+      "author": null,
+      "captured_at": null,
+      "community": 0,
+      "community_name": "Core Architecture and Platform",
+      "contributor": null,
+      "file_type": "code",
+      "norm_label": "archunit architecture boundary verification",
+      "rationale": "ArchUnit tests in CI enforce package-by-feature boundaries: controllers depend only on services, modules communicate via service interfaces never repos, and entities are never returned from controllers.",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        209,
+        209
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_dc_dashboard_jsx",
+      "label": "dc_dashboard.jsx Prototype",
+      "author": null,
+      "captured_at": null,
+      "community": 0,
+      "community_name": "Core Architecture and Platform",
+      "contributor": null,
+      "file_type": "code",
+      "norm_label": "dc_dashboard.jsx prototype",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        4,
+        4
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_react_frontend",
+      "label": "React TypeScript SPA",
+      "author": null,
+      "captured_at": null,
+      "community": 0,
+      "community_name": "Core Architecture and Platform",
+      "contributor": null,
+      "file_type": "code",
+      "norm_label": "react typescript spa",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        109,
+        110
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_spring_boot_backend",
+      "label": "Spring Boot Backend Application",
+      "author": null,
+      "captured_at": null,
+      "community": 0,
+      "community_name": "Core Architecture and Platform",
+      "contributor": null,
+      "file_type": "code",
+      "norm_label": "spring boot backend application",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        115,
+        117
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_idor_prevention",
+      "label": "IDOR Prevention via Context Scoping",
+      "author": null,
+      "captured_at": null,
+      "community": 0,
+      "community_name": "Core Architecture and Platform",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "idor prevention via context scoping",
+      "rationale": "All faculty-scoped queries pull user identity directly from SecurityContext rather than request parameters, returning 404 instead of 403 on unauthorized access.",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        193,
+        193
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_modular_monolith",
+      "label": "Modular Monolith Architecture",
+      "author": null,
+      "captured_at": null,
+      "community": 0,
+      "community_name": "Core Architecture and Platform",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "modular monolith architecture",
+      "rationale": "Department-level workload makes microservices unnecessary and operationally costly; module boundaries are enforced in code so monolith remains clean.",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        106,
+        107
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_mvp_scope",
+      "label": "MVP Scope Definition",
+      "author": null,
+      "captured_at": null,
+      "community": 0,
+      "community_name": "Core Architecture and Platform",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "mvp scope definition",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        78,
+        103
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_postgresql_database",
+      "label": "PostgreSQL Database",
+      "author": null,
+      "captured_at": null,
+      "community": 0,
+      "community_name": "Core Architecture and Platform",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "postgresql database",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        120,
+        120
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_reverse_proxy",
+      "label": "Reverse Proxy (Nginx / Caddy)",
+      "author": null,
+      "captured_at": null,
+      "community": 0,
+      "community_name": "Core Architecture and Platform",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "reverse proxy (nginx / caddy)",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        112,
+        112
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_testing_strategy",
+      "label": "Comprehensive Testing Strategy",
+      "author": null,
+      "captured_at": null,
+      "community": 0,
+      "community_name": "Core Architecture and Platform",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "comprehensive testing strategy",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        272,
+        280
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_document",
+      "label": "Faculty Dashboard Documentation",
+      "author": null,
+      "captured_at": null,
+      "community": 0,
+      "community_name": "Core Architecture and Platform",
+      "contributor": null,
+      "file_type": "document",
+      "norm_label": "faculty dashboard documentation",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        3,
+        5
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_coordinator_role",
+      "label": "Department Coordinator Role",
+      "author": null,
+      "captured_at": null,
+      "community": 1,
+      "community_name": "Department Tracking and Reporting",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "department coordinator role",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        20,
+        24
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_dashboard_metrics",
+      "label": "Dashboard Metrics Feature",
+      "author": null,
+      "captured_at": null,
+      "community": 1,
+      "community_name": "Department Tracking and Reporting",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "dashboard metrics feature",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        47,
+        47
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_deadlines_management",
+      "label": "Deadlines Management Feature",
+      "author": null,
+      "captured_at": null,
+      "community": 1,
+      "community_name": "Department Tracking and Reporting",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "deadlines management feature",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        44,
+        44
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_dean_role",
+      "label": "Dean Role",
+      "author": null,
+      "captured_at": null,
+      "community": 1,
+      "community_name": "Department Tracking and Reporting",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "dean role",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        31,
+        34
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_progress_tracking",
+      "label": "Progress Tracking Feature",
+      "author": null,
+      "captured_at": null,
+      "community": 1,
+      "community_name": "Department Tracking and Reporting",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "progress tracking feature",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        46,
+        46
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_reporting_module",
+      "label": "Reporting Module",
+      "author": null,
+      "captured_at": null,
+      "community": 1,
+      "community_name": "Department Tracking and Reporting",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "reporting module",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        204,
+        204
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_reports_generation",
+      "label": "Reports Generation Feature",
+      "author": null,
+      "captured_at": null,
+      "community": 1,
+      "community_name": "Department Tracking and Reporting",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "reports generation feature",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        48,
+        48
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_teaching_allocation",
+      "label": "Teaching Allocation Feature",
+      "author": null,
+      "captured_at": null,
+      "community": 1,
+      "community_name": "Department Tracking and Reporting",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "teaching allocation feature",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        43,
+        43
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_tracking_module",
+      "label": "Tracking Module",
+      "author": null,
+      "captured_at": null,
+      "community": 1,
+      "community_name": "Department Tracking and Reporting",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "tracking module",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        203,
+        203
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_dc_sops_tracker_xlsx",
+      "label": "dc_sops_tracker.xlsx SOP Tracker",
+      "author": null,
+      "captured_at": null,
+      "community": 1,
+      "community_name": "Department Tracking and Reporting",
+      "contributor": null,
+      "file_type": "document",
+      "norm_label": "dc_sops_tracker.xlsx sop tracker",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        4,
+        4
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_file_storage_abstraction",
+      "label": "FileStorage Interface",
+      "author": null,
+      "captured_at": null,
+      "community": 2,
+      "community_name": "Submissions and File Storage",
+      "contributor": null,
+      "file_type": "code",
+      "norm_label": "filestorage interface",
+      "rationale": "Storing files directly in PostgreSQL bloats backups and slows queries; FileStorage abstraction keeps metadata in Postgres and bytes on disk or S3 with opaque UUID keys.",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        120,
+        122
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_local_disk_storage",
+      "label": "LocalDiskStorage Component",
+      "author": null,
+      "captured_at": null,
+      "community": 2,
+      "community_name": "Submissions and File Storage",
+      "contributor": null,
+      "file_type": "code",
+      "norm_label": "localdiskstorage component",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        121,
+        121
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_s3_storage",
+      "label": "S3Storage Component",
+      "author": null,
+      "captured_at": null,
+      "community": 2,
+      "community_name": "Submissions and File Storage",
+      "contributor": null,
+      "file_type": "code",
+      "norm_label": "s3storage component",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        122,
+        122
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_audit_logging",
+      "label": "Audit Logging Feature",
+      "author": null,
+      "captured_at": null,
+      "community": 2,
+      "community_name": "Submissions and File Storage",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "audit logging feature",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        91,
+        91
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_audit_module",
+      "label": "Audit Module",
+      "author": null,
+      "captured_at": null,
+      "community": 2,
+      "community_name": "Submissions and File Storage",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "audit module",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        206,
+        206
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_submission_entity",
+      "label": "submission Entity",
+      "author": null,
+      "captured_at": null,
+      "community": 2,
+      "community_name": "Submissions and File Storage",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "submission entity",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        220,
+        220
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_submission_file_entity",
+      "label": "submission_file Entity",
+      "author": null,
+      "captured_at": null,
+      "community": 2,
+      "community_name": "Submissions and File Storage",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "submission_file entity",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        221,
+        221
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_submission_upload_workflow",
+      "label": "Submission Upload Data Flow",
+      "author": null,
+      "captured_at": null,
+      "community": 2,
+      "community_name": "Submissions and File Storage",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "submission upload data flow",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        235,
+        253
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_submissions_module",
+      "label": "Submissions Module",
+      "author": null,
+      "captured_at": null,
+      "community": 2,
+      "community_name": "Submissions and File Storage",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "submissions module",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        202,
+        202
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_app_user_entity",
+      "label": "app_user Entity",
+      "author": null,
+      "captured_at": null,
+      "community": 3,
+      "community_name": "Identity and Authentication",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "app_user entity",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        212,
+        212
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_audit_log_entity",
+      "label": "audit_log Entity",
+      "author": null,
+      "captured_at": null,
+      "community": 3,
+      "community_name": "Identity and Authentication",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "audit_log entity",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        222,
+        222
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_bff_auth_pattern",
+      "label": "Backend-for-Frontend (BFF) Auth Pattern",
+      "author": null,
+      "captured_at": null,
+      "community": 3,
+      "community_name": "Identity and Authentication",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "backend-for-frontend (bff) auth pattern",
+      "rationale": "Spring Security handles OIDC with Entra ID, manages server-side sessions, and issues HttpOnly Secure SameSite=Lax cookies; SPA never holds tokens, preventing token exposure.",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        184,
+        185
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_identity_module",
+      "label": "Identity Module",
+      "author": null,
+      "captured_at": null,
+      "community": 3,
+      "community_name": "Identity and Authentication",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "identity module",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        198,
+        198
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_microsoft_entra_id",
+      "label": "Microsoft Entra ID (OIDC)",
+      "author": null,
+      "captured_at": null,
+      "community": 3,
+      "community_name": "Identity and Authentication",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "microsoft entra id (oidc)",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        124,
+        124
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_signin_workflow",
+      "label": "OIDC Sign-In Data Flow",
+      "author": null,
+      "captured_at": null,
+      "community": 3,
+      "community_name": "Identity and Authentication",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "oidc sign-in data flow",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        225,
+        234
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_deadline_assignment_entity",
+      "label": "deadline_assignment Entity",
+      "author": null,
+      "captured_at": null,
+      "community": 4,
+      "community_name": "Deadlines and Notifications",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "deadline_assignment entity",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        219,
+        219
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_deadline_creation_workflow",
+      "label": "Deadline Creation Data Flow",
+      "author": null,
+      "captured_at": null,
+      "community": 4,
+      "community_name": "Deadlines and Notifications",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "deadline creation data flow",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        254,
+        259
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_deadline_entity",
+      "label": "deadline Entity",
+      "author": null,
+      "captured_at": null,
+      "community": 4,
+      "community_name": "Deadlines and Notifications",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "deadline entity",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        218,
+        218
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_deadlines_module",
+      "label": "Deadlines Module",
+      "author": null,
+      "captured_at": null,
+      "community": 4,
+      "community_name": "Deadlines and Notifications",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "deadlines module",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        201,
+        201
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_notifications_module",
+      "label": "Notifications Module",
+      "author": null,
+      "captured_at": null,
+      "community": 4,
+      "community_name": "Deadlines and Notifications",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "notifications module",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        205,
+        205
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_reminders_feature",
+      "label": "Reminders and Notifications Feature",
+      "author": null,
+      "captured_at": null,
+      "community": 4,
+      "community_name": "Deadlines and Notifications",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "reminders and notifications feature",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        49,
+        49
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_directory_module",
+      "label": "Directory Module",
+      "author": null,
+      "captured_at": null,
+      "community": 5,
+      "community_name": "Faculty Directory and Skills",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "directory module",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        199,
+        199
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_faculty_directory",
+      "label": "Faculty Directory Feature",
+      "author": null,
+      "captured_at": null,
+      "community": 5,
+      "community_name": "Faculty Directory and Skills",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "faculty directory feature",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        42,
+        42
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_faculty_entity",
+      "label": "faculty Entity",
+      "author": null,
+      "captured_at": null,
+      "community": 5,
+      "community_name": "Faculty Directory and Skills",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "faculty entity",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        213,
+        213
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_faculty_role",
+      "label": "Faculty Role",
+      "author": null,
+      "captured_at": null,
+      "community": 5,
+      "community_name": "Faculty Directory and Skills",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "faculty role",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        26,
+        29
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_skill_entity",
+      "label": "skill Entity",
+      "author": null,
+      "captured_at": null,
+      "community": 5,
+      "community_name": "Faculty Directory and Skills",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "skill entity",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        214,
+        214
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_submissions_management",
+      "label": "Submissions Management Feature",
+      "author": null,
+      "captured_at": null,
+      "community": 5,
+      "community_name": "Faculty Directory and Skills",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "submissions management feature",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        45,
+        45
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_academics_module",
+      "label": "Academics Module",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "Academics and Course Allocations",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "academics module",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        200,
+        200
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_course_entity",
+      "label": "course Entity",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "Academics and Course Allocations",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "course entity",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        215,
+        215
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_course_offering_entity",
+      "label": "course_offering Entity",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "Academics and Course Allocations",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "course_offering entity",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        216,
+        216
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_teaching_assignment_entity",
+      "label": "teaching_assignment Entity",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "Academics and Course Allocations",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "teaching_assignment entity",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        217,
+        217
+      ],
+      "source_url": null
+    },
+    {
+      "id": "faculty_dashboard__prd__mvp__architecture_shared_module",
+      "label": "Shared Module",
+      "author": null,
+      "captured_at": null,
+      "community": 7,
+      "community_name": "Shared Infrastructure",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "shared module",
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        207,
+        207
+      ],
+      "source_url": null
+    }
+  ],
+  "links": [
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_deadline_creation_workflow",
+      "target": "faculty_dashboard__prd__mvp__architecture_deadlines_module",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        256,
+        257
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_deadline_creation_workflow",
+      "target": "faculty_dashboard__prd__mvp__architecture_notifications_module",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        258,
+        258
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_reverse_proxy",
+      "target": "faculty_dashboard__prd__mvp__architecture_spring_boot_backend",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        112,
+        115
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_signin_workflow",
+      "target": "faculty_dashboard__prd__mvp__architecture_identity_module",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        231,
+        232
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_spring_boot_backend",
+      "target": "faculty_dashboard__prd__mvp__architecture_postgresql_database",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        115,
+        120
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_submission_upload_workflow",
+      "target": "faculty_dashboard__prd__mvp__architecture_submissions_module",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        238,
+        240
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_submission_upload_workflow",
+      "target": "faculty_dashboard__prd__mvp__architecture_file_storage_abstraction",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        245,
+        245
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_submission_upload_workflow",
+      "target": "faculty_dashboard__prd__mvp__architecture_audit_module",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        247,
+        247
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_document",
+      "target": "faculty_dashboard__prd__mvp__architecture_dc_dashboard_jsx",
+      "relation": "cites",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        4,
+        4
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_document",
+      "target": "faculty_dashboard__prd__mvp__architecture_dc_sops_tracker_xlsx",
+      "relation": "cites",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        4,
+        4
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_bff_auth_pattern",
+      "target": "faculty_dashboard__prd__mvp__architecture_spring_boot_backend",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        184,
+        185
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_idor_prevention",
+      "target": "faculty_dashboard__prd__mvp__architecture_spring_boot_backend",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        193,
+        193
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_local_disk_storage",
+      "target": "faculty_dashboard__prd__mvp__architecture_file_storage_abstraction",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        121,
+        121
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_modular_monolith",
+      "target": "faculty_dashboard__prd__mvp__architecture_react_frontend",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        107,
+        110
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_modular_monolith",
+      "target": "faculty_dashboard__prd__mvp__architecture_spring_boot_backend",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        107,
+        117
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_s3_storage",
+      "target": "faculty_dashboard__prd__mvp__architecture_file_storage_abstraction",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        122,
+        122
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_archunit_boundary_checks",
+      "target": "faculty_dashboard__prd__mvp__architecture_modular_monolith",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        209,
+        209
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_audit_log_entity",
+      "target": "faculty_dashboard__prd__mvp__architecture_app_user_entity",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        222,
+        222
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_bff_auth_pattern",
+      "target": "faculty_dashboard__prd__mvp__architecture_microsoft_entra_id",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        184,
+        185
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_bff_auth_pattern",
+      "target": "faculty_dashboard__prd__mvp__architecture_react_frontend",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        184,
+        185
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_coordinator_role",
+      "target": "faculty_dashboard__prd__mvp__architecture_teaching_allocation",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        43,
+        43
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_coordinator_role",
+      "target": "faculty_dashboard__prd__mvp__architecture_deadlines_management",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        44,
+        44
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_coordinator_role",
+      "target": "faculty_dashboard__prd__mvp__architecture_progress_tracking",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        46,
+        46
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_coordinator_role",
+      "target": "faculty_dashboard__prd__mvp__architecture_reports_generation",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        48,
+        48
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_course_offering_entity",
+      "target": "faculty_dashboard__prd__mvp__architecture_course_entity",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        216,
+        216
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_deadline_assignment_entity",
+      "target": "faculty_dashboard__prd__mvp__architecture_deadline_entity",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        219,
+        219
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_deadline_assignment_entity",
+      "target": "faculty_dashboard__prd__mvp__architecture_faculty_entity",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        219,
+        219
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_deadline_creation_workflow",
+      "target": "faculty_dashboard__prd__mvp__architecture_academics_module",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        257,
+        257
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_document",
+      "target": "faculty_dashboard__prd__mvp__architecture_modular_monolith",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        106,
+        107
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_document",
+      "target": "faculty_dashboard__prd__mvp__architecture_mvp_scope",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        78,
+        103
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_faculty_entity",
+      "target": "faculty_dashboard__prd__mvp__architecture_app_user_entity",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        213,
+        213
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_faculty_role",
+      "target": "faculty_dashboard__prd__mvp__architecture_faculty_directory",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        42,
+        42
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_faculty_role",
+      "target": "faculty_dashboard__prd__mvp__architecture_submissions_management",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        45,
+        45
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_modular_monolith",
+      "target": "faculty_dashboard__prd__mvp__architecture_postgresql_database",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        107,
+        120
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_reverse_proxy",
+      "target": "faculty_dashboard__prd__mvp__architecture_react_frontend",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        112,
+        112
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_signin_workflow",
+      "target": "faculty_dashboard__prd__mvp__architecture_microsoft_entra_id",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        228,
+        230
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_spring_boot_backend",
+      "target": "faculty_dashboard__prd__mvp__architecture_file_storage_abstraction",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        115,
+        120
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_submission_entity",
+      "target": "faculty_dashboard__prd__mvp__architecture_deadline_assignment_entity",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        220,
+        220
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_submission_file_entity",
+      "target": "faculty_dashboard__prd__mvp__architecture_submission_entity",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        221,
+        221
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_submissions_module",
+      "target": "faculty_dashboard__prd__mvp__architecture_file_storage_abstraction",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        202,
+        202
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_teaching_assignment_entity",
+      "target": "faculty_dashboard__prd__mvp__architecture_course_offering_entity",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        217,
+        217
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_teaching_assignment_entity",
+      "target": "faculty_dashboard__prd__mvp__architecture_faculty_entity",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        217,
+        217
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_testing_strategy",
+      "target": "faculty_dashboard__prd__mvp__architecture_archunit_boundary_checks",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        279,
+        279
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_dean_role",
+      "target": "faculty_dashboard__prd__mvp__architecture_progress_tracking",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        31,
+        33
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_dc_dashboard_jsx",
+      "target": "faculty_dashboard__prd__mvp__architecture_react_frontend",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        149,
+        149
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_testing_strategy",
+      "target": "faculty_dashboard__prd__mvp__architecture_modular_monolith",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        272,
+        280
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_dc_sops_tracker_xlsx",
+      "target": "faculty_dashboard__prd__mvp__architecture_dashboard_metrics",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        47,
+        47
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_academics_module",
+      "target": "faculty_dashboard__prd__mvp__architecture_teaching_allocation",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        200,
+        200
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_audit_module",
+      "target": "faculty_dashboard__prd__mvp__architecture_audit_logging",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        206,
+        206
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_deadlines_module",
+      "target": "faculty_dashboard__prd__mvp__architecture_deadlines_management",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        201,
+        201
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_directory_module",
+      "target": "faculty_dashboard__prd__mvp__architecture_faculty_directory",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        199,
+        199
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_identity_module",
+      "target": "faculty_dashboard__prd__mvp__architecture_bff_auth_pattern",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        198,
+        198
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_notifications_module",
+      "target": "faculty_dashboard__prd__mvp__architecture_reminders_feature",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        205,
+        205
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_reporting_module",
+      "target": "faculty_dashboard__prd__mvp__architecture_reports_generation",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        204,
+        204
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_submissions_module",
+      "target": "faculty_dashboard__prd__mvp__architecture_submissions_management",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        202,
+        202
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_tracking_module",
+      "target": "faculty_dashboard__prd__mvp__architecture_dashboard_metrics",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        203,
+        203
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_tracking_module",
+      "target": "faculty_dashboard__prd__mvp__architecture_progress_tracking",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        203,
+        203
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_academics_module",
+      "target": "faculty_dashboard__prd__mvp__architecture_course_entity",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        200,
+        215
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_academics_module",
+      "target": "faculty_dashboard__prd__mvp__architecture_course_offering_entity",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        200,
+        216
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_academics_module",
+      "target": "faculty_dashboard__prd__mvp__architecture_teaching_assignment_entity",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        200,
+        217
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_audit_module",
+      "target": "faculty_dashboard__prd__mvp__architecture_audit_log_entity",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        206,
+        222
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_deadlines_module",
+      "target": "faculty_dashboard__prd__mvp__architecture_deadline_entity",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        201,
+        218
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_deadlines_module",
+      "target": "faculty_dashboard__prd__mvp__architecture_deadline_assignment_entity",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        201,
+        219
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_directory_module",
+      "target": "faculty_dashboard__prd__mvp__architecture_faculty_entity",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        199,
+        213
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_directory_module",
+      "target": "faculty_dashboard__prd__mvp__architecture_skill_entity",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        199,
+        214
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_identity_module",
+      "target": "faculty_dashboard__prd__mvp__architecture_app_user_entity",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        198,
+        212
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_submissions_module",
+      "target": "faculty_dashboard__prd__mvp__architecture_submission_entity",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        202,
+        220
+      ],
+      "weight": 1.0
+    },
+    {
+      "source": "faculty_dashboard__prd__mvp__architecture_submissions_module",
+      "target": "faculty_dashboard__prd__mvp__architecture_submission_file_entity",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html",
+      "source_location": [
+        202,
+        221
+      ],
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "auth_and_identity_subsystem",
+      "label": "Authentication and Identity Subsystem",
+      "nodes": [
+        "faculty_dashboard__prd__mvp__architecture_microsoft_entra_id",
+        "faculty_dashboard__prd__mvp__architecture_bff_auth_pattern",
+        "faculty_dashboard__prd__mvp__architecture_identity_module",
+        "faculty_dashboard__prd__mvp__architecture_app_user_entity",
+        "faculty_dashboard__prd__mvp__architecture_signin_workflow"
+      ],
+      "relation": "form",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html"
+    },
+    {
+      "id": "modular_monolith_architecture_stack",
+      "label": "Modular Monolith Technical Architecture",
+      "nodes": [
+        "faculty_dashboard__prd__mvp__architecture_react_frontend",
+        "faculty_dashboard__prd__mvp__architecture_reverse_proxy",
+        "faculty_dashboard__prd__mvp__architecture_spring_boot_backend",
+        "faculty_dashboard__prd__mvp__architecture_postgresql_database",
+        "faculty_dashboard__prd__mvp__architecture_modular_monolith"
+      ],
+      "relation": "implement",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html"
+    },
+    {
+      "id": "submission_lifecycle_subsystem",
+      "label": "Submission Lifecycle Subsystem",
+      "nodes": [
+        "faculty_dashboard__prd__mvp__architecture_submissions_management",
+        "faculty_dashboard__prd__mvp__architecture_submissions_module",
+        "faculty_dashboard__prd__mvp__architecture_file_storage_abstraction",
+        "faculty_dashboard__prd__mvp__architecture_submission_entity",
+        "faculty_dashboard__prd__mvp__architecture_submission_file_entity",
+        "faculty_dashboard__prd__mvp__architecture_submission_upload_workflow"
+      ],
+      "relation": "form",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Faculty Dashboard_ PRD, MVP, Architecture.html"
+    }
+  ]
+}

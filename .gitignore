@@ -1,0 +1,28 @@
+# Git branch
+# OS
+.DS_Store
+Thumbs.db
+
+# Java & Gradle & Maven
+.gradle/
+build/
+target/
+*.class
+*.jar
+*.war
+.idea/
+*.iml
+.vscode/
+
+# Node & Frontend
+node_modules/
+dist/
+.vite/
+*.local
+
+# Graphify temporary caches
+graphify-out/.graphify_*
+graphify-out/.needs_update
+
+# Uploads directory
+data/uploads/

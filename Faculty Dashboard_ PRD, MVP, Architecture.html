@@ -1,0 +1,369 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}</style><style>:root{color-scheme:light dark;--md-bg:#fff;--md-text:rgba(0,0,0,.8);--md-muted:rgba(0,0,0,.6);--md-fill:rgba(0,0,0,.04);--md-fill-strong:rgba(0,0,0,.06);--md-rule:rgba(0,0,0,.1);--md-rule-strong:rgba(0,0,0,.16);--md-link:hsl(210 100% 45%)}@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){--md-bg:#0d0d0d;--md-text:rgba(255,255,255,.85);--md-muted:rgba(255,255,255,.6);--md-fill:rgba(255,255,255,.06);--md-fill-strong:rgba(255,255,255,.09);--md-rule:rgba(255,255,255,.14);--md-rule-strong:rgba(255,255,255,.22);--md-link:hsl(210 100% 72%)}}:root[data-theme="dark"]{color-scheme:dark;--md-bg:#0d0d0d;--md-text:rgba(255,255,255,.85);--md-muted:rgba(255,255,255,.6);--md-fill:rgba(255,255,255,.06);--md-fill-strong:rgba(255,255,255,.09);--md-rule:rgba(255,255,255,.14);--md-rule-strong:rgba(255,255,255,.22);--md-link:hsl(210 100% 72%)}:root[data-theme="light"]{color-scheme:light}@media print{:root,:root[data-theme="dark"]{color-scheme:light;--md-bg:#fff;--md-text:rgba(0,0,0,.8);--md-muted:rgba(0,0,0,.6);--md-fill:rgba(0,0,0,.04);--md-fill-strong:rgba(0,0,0,.06);--md-rule:rgba(0,0,0,.1);--md-rule-strong:rgba(0,0,0,.16);--md-link:hsl(210 100% 45%)}}body{background:var(--md-bg);color:var(--md-text);max-width:720px;margin:0 auto;padding:32px;display:flex;flex-direction:column;gap:10px;font:14px/1.55 -apple-system,BlinkMacSystemFont,'SF Pro','Segoe UI',sans-serif;overflow-wrap:break-word}body>:first-child{margin-top:0}h1,h2,h3,h4,h5,h6{margin:6px 0 0;line-height:1.25;font-weight:600;text-wrap:balance}h1{font-size:1.35em}h2{font-size:1.15em;color:var(--md-muted)}h3,h4,h5,h6{font-size:1em}p,ul,ol,blockquote,table,pre,hr{margin:0}strong{font-weight:600}a{color:var(--md-link);text-decoration:none}a:hover{text-decoration:underline}ul,ol{display:flex;flex-direction:column;gap:6px;padding-left:22px}ul{list-style:disc}ol{list-style:decimal}:is(li,td,th)>*+:is(p,ul,ol,blockquote){margin-top:6px}blockquote{display:flex;flex-direction:column;gap:10px;border-left:2px solid var(--md-rule);padding-left:10px;color:var(--md-muted)}:not(pre)>code{background:var(--md-fill);padding:1px 3px;border-radius:4px;font:.92em 'SF Mono',ui-monospace,Menlo,Consolas,monospace}a>code{background:none;color:inherit}pre{background:var(--md-fill);padding:10px 12px;border-radius:6px;overflow-x:auto;font:12px/1.5 'SF Mono',ui-monospace,Menlo,Consolas,monospace;margin-block:4px}pre code{background:none;padding:0;font:inherit}table{width:100%;border-collapse:separate;border-spacing:2px;font:inherit}th,td{padding:6px 8px;border-radius:3px;text-align:left;vertical-align:top}th{background:var(--md-fill-strong);font-weight:600}td{background:var(--md-fill)}:is(th,td) :not(pre)>code{background:transparent}hr{border:0;border-top:1px solid var(--md-rule-strong);margin-block:10px}img{max-width:100%;height:auto;border-radius:4px}</style>
+</head><body>
+<h1>Faculty Dashboard: Product and Architecture Documentation</h1>
+<p>Status: Draft v0.1. Scope: Department Coordinator, IET. Derived from the current React prototype (<code>dc_dashboard.jsx</code>) and the SOP tracker workbook (<code>dc_sops_tracker.xlsx</code>).</p>
+<hr>
+<h2>1. Product Requirements Document</h2>
+<h3>1.1 Purpose</h3>
+<p>A single system where the Department Coordinator assigns work to faculty, sets deadlines, collects submissions, and sees who is on track, replacing the spreadsheet, email chasing and the Apps Script reminders currently used to run the department.</p>
+<p>The problem today: submission status lives in email threads, teaching allocation lives in a sheet, and compliance (course files, evaluation, marks upload) is checked by hand each month. The coordinator finds out about problems late.</p>
+<h3>1.2 Roles</h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Who</th>
+<th>Access &amp; Responsibilities</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Coordinator</strong> (admin)</td>
+<td>Department Coordinator</td>
+<td>Full department administration: manage faculty directory, skills, courses, semester offerings, teaching allocations, deadlines, review submissions (return with comment or accept), view real-time department compliance tracking, download Excel/CSV reports, and receive submission/overdue alerts.</td>
+</tr>
+<tr>
+<td><strong>Faculty</strong></td>
+<td>Teaching staff</td>
+<td>Self-service academic portal: view assigned courses and offerings, track upcoming/overdue deadlines, upload and resubmit files with revision history, receive in-app and email notifications (assignment, return feedback, acceptance, reminders), and maintain personal skills profile. Strict zero-trust scoping: can never see another faculty member's submissions.</td>
+</tr>
+<tr>
+<td><strong>Dean</strong> (Phase 2)</td>
+<td>Dean-IET</td>
+<td>Read-only executive escalation view: department-wide aggregate compliance metrics, critical risk rosters, and monthly compliance exports. Out of MVP.</td>
+</tr>
+<tr>
+<td><strong>System / Scheduler</strong> (internal)</td>
+<td>Automated background service</td>
+<td>Non-interactive runner: triggers scheduled reminder scans for approaching and overdue deadlines, writes in-app notifications to database, dispatches emails via SMTP/Graph, and executes nightly orphan file cleanup.</td>
+</tr>
+</tbody>
+</table>
+<p>Roles are stored in the application database, not derived from the frontend. A user with a valid Microsoft sign-in but no faculty record cannot use the app.</p>
+<h3>1.3 Scope</h3>
+<p>In scope: Microsoft sign-in, faculty directory with skills and academic profile, teaching allocation (faculty to course, year, semester, section), deadlines, file submissions, progress tracking, dashboard metrics, report downloads, in-app notification center (bell, unread badge, deep-link navigation), and email notifications.</p>
+<p>Out of scope for now: student data, attendance, marks, timetable generation, multi-department support, mobile app.</p>
+<h3>1.4 Features</h3>
+<p><strong>Faculty directory.</strong> Name, email, designation, qualifications, skills, areas of expertise. Skills are structured tags, not free text, so the coordinator can filter &quot;who can teach Computer Networks&quot;.</p>
+<p><strong>Teaching allocation.</strong> Each row answers: which faculty teaches which course, to which year, semester and section, and whether it is theory or lab. One course offering can have several faculty (theory plus lab, or co-teaching). This is the backbone: deadlines and compliance are attached to allocations.</p>
+<p><strong>Deadlines.</strong> The coordinator creates a deadline with a title, description, due date, type (course file, evaluation, marks upload, syllabus report, other), and who it applies to (all faculty, selected faculty, or all faculty teaching a given course or semester). Creating a deadline generates one submission slot per assignee.</p>
+<p><strong>Submissions.</strong> Faculty upload files against a deadline they are assigned to. Status: Pending, Submitted, Late, Returned, Accepted. The coordinator can return a submission with a comment, and the faculty member resubmits. Every version is kept.</p>
+<p><strong>Progress tracking.</strong> Per faculty and per deadline: submitted, late, overdue, not started. Coordinator can drill from a department number to the faculty member to the file.</p>
+<p><strong>Dashboard metrics.</strong> Submission rate, overdue count, on-time rate, and per-faculty compliance. The thresholds from the current SOP workbook carry over as configuration: 85% and above is On track, 60 to 84% is Watch, below 60% is Critical.</p>
+<p><strong>Reports.</strong> Download as Excel or CSV: submission status by deadline, compliance by faculty, allocation by semester. PDF later.</p>
+<p><strong>Notifications &amp; Reminders (In-App and Email).</strong> Dual-channel notification system: (1) In-app notification center in the top navigation with live unread badge, dropdown notification list, mark-as-read, and one-click deep links to assignments or returned submissions. (2) Automated email dispatches for new deadline assignments, coordinator return comments with feedback, upcoming due date reminders (5 days and 1 day prior), and overdue escalations. The SOP workbook uses 5 days before month end as the default.</p>
+<h3>1.5 User stories</h3>
+<p>Coordinator:</p>
+<ul>
+<li>As coordinator, I create a deadline for the course file and assign it to every faculty member teaching in semester 5, so that I do not email each person.</li>
+<li>As coordinator, I see all overdue submissions in one list sorted by days overdue, so I know whom to chase today.</li>
+<li>As coordinator, I open a faculty member's page and see their courses, submissions, and compliance rate, so I can prepare for reviews.</li>
+<li>As coordinator, I filter faculty by skill when allocating courses, so that assignments match expertise.</li>
+<li>As coordinator, I download the monthly compliance report as Excel to send to the Dean.</li>
+<li>As coordinator, I return a submission with a reason, so the faculty member knows exactly what to fix.</li>
+<li>As coordinator, I receive an in-app notification when a faculty member submits or resubmits work, so I can review it promptly.</li>
+</ul>
+<p>Faculty:</p>
+<ul>
+<li>As faculty, I sign in with my university Microsoft account and never create a new password.</li>
+<li>As faculty, I see my courses (year, semester, section) and my pending deadlines on one screen.</li>
+<li>As faculty, I see a notification bell in the header with an unread badge indicating new deadlines or feedback.</li>
+<li>As faculty, I receive an email and in-app alert the moment a deadline is assigned or returned to me.</li>
+<li>As faculty, I click an in-app notification to navigate directly to the relevant submission form.</li>
+<li>As faculty, I upload a file against a deadline and immediately see it recorded as submitted or late.</li>
+<li>As faculty, I replace a returned submission and see the coordinator's comment beside it.</li>
+<li>As faculty, I keep my skills and academic details current.</li>
+<li>As faculty, I can never see another faculty member's submissions.</li>
+</ul>
+<h3>1.4 Non-functional requirements</h3>
+<p>Security: server-side authorization on every endpoint, uploads validated and stored outside the web root, audit trail for coordinator actions. Availability: business hours matter most, nightly backups, restore tested. Scale: dozens of users and thousands of files per year, so simplicity beats horizontal scaling. Accessibility: keyboard usable, WCAG AA contrast.</p>
+<h3>1.5 Open questions that change the design</h3>
+<ol>
+<li>Who enters syllabus coverage and class conduct: coordinator or faculty? The prototype has the coordinator entering it. Faculty self-reporting with coordinator verification scales better but needs a review flow.</li>
+<li>Are Entra accounts shared with students? Almost always yes. This decides how sign-in is restricted (section 3.2).</li>
+<li>Does the coordinator role ever rotate or become multiple people? Assume yes, so it is a role, not a hardcoded user.</li>
+</ol>
+<hr>
+<h2>2. Minimum Viable Product</h2>
+<p>The MVP must let the coordinator replace email for one full deadline cycle. Everything else waits.</p>
+<p><strong>In MVP</strong></p>
+<ol>
+<li>Microsoft sign-in, coordinator and faculty roles, coordinator-managed faculty list.</li>
+<li>Faculty directory with skills (tags).</li>
+<li>Courses and teaching allocation (year, semester, section, theory or lab).</li>
+<li>Deadlines with assignment to selected faculty or all faculty on a course.</li>
+<li>File upload per deadline, with replace and coordinator return.</li>
+<li>Tracking view: per deadline and per faculty status, overdue list.</li>
+<li>Dashboard with four numbers: submission rate, on-time rate, overdue count, faculty at Critical.</li>
+<li>Excel export of submission status.</li>
+<li>Notifications &amp; Reminders: in-app notification center (bell, unread badge count, mark as read, deep-link navigation) and automated email alerts (assignment, return with feedback, upcoming due date, overdue escalation).</li>
+<li>Audit log for coordinator actions.</li>
+</ol>
+<p><strong>Not in MVP</strong> (in priority order)</p>
+<ol>
+<li>Syllabus coverage and class/lab conduct logging, from the prototype.</li>
+<li>Achievements log.</li>
+<li>Critical observations with escalation to Dean-IET.</li>
+<li>PDF reports.</li>
+<li>WhatsApp and SMS channels (email covers the need, the others add vendor and cost).</li>
+<li>Virus scanning of uploads, unless the deployment policy requires it from day one.</li>
+</ol>
+<p>The prototype's &quot;course file, evaluation, marks upload&quot; checklist is not a separate feature. It becomes three deadline types, so it ships with the MVP for free.</p>
+<p><strong>Definition of done for MVP:</strong> one real department runs one real deadline end to end, with no spreadsheet used for tracking it.</p>
+<hr>
+<h2>3. Architecture</h2>
+<h3>3.1 Approach</h3>
+<p>A modular monolith: one Spring Boot deployable, one PostgreSQL database, one React SPA. The load is a department, not a platform, so microservices would add operational cost with no benefit. Module boundaries are enforced in code so the monolith stays clean.</p>
+<h3>3.2 Components</h3>
+<pre><code>Browser (React + TypeScript SPA)
+        |  HTTPS, session cookie
+        v
+Reverse proxy (Nginx or Caddy): TLS, static frontend, /api proxy
+        |
+        v
+Spring Boot application
+   identity | directory | academics | deadlines | submissions
+   tracking | reporting | notifications | audit
+        |                         |
+        v                         v
+   PostgreSQL              FileStorage (interface)
+                            - LocalDiskStorage (dev, single server)
+                            - S3Storage (later, MinIO or S3)
+        
+External: Microsoft Entra ID (OIDC), Microsoft Graph or SMTP (email)
+</code></pre>
+<h3>3.3 Technology stack</h3>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Choice</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Backend</td>
+<td>Java 21, Spring Boot 3, Spring Security, Spring Data JPA</td>
+<td>Your requirement, mature and well documented</td>
+</tr>
+<tr>
+<td>Database</td>
+<td>PostgreSQL 16, Flyway migrations</td>
+<td>Same engine local and production, versioned schema</td>
+</tr>
+<tr>
+<td>Frontend</td>
+<td>React + TypeScript + Vite, TanStack Query, React Router</td>
+<td>Fast build and load, and the prototype's components port over directly. Svelte is lighter but you would rewrite the prototype.</td>
+</tr>
+<tr>
+<td>API contract</td>
+<td>OpenAPI generated from Spring (springdoc), TypeScript client generated from it</td>
+<td>Removes the most common frontend and backend mismatch bugs</td>
+</tr>
+<tr>
+<td>Files</td>
+<td><code>FileStorage</code> interface, local disk implementation first</td>
+<td>Works on a laptop and a single server with a mounted volume. S3 implementation added only when needed.</td>
+</tr>
+<tr>
+<td>Reports</td>
+<td>Apache POI (xlsx)</td>
+<td>Only new dependency the MVP justifies</td>
+</tr>
+<tr>
+<td>Jobs</td>
+<td>Spring <code>@Scheduled</code></td>
+<td>Enough for reminders. Add ShedLock only if you run more than one instance.</td>
+</tr>
+<tr>
+<td>Local dev</td>
+<td>Docker Compose (Postgres, optional MinIO, Mailpit)</td>
+<td>One command to run everything</td>
+</tr>
+<tr>
+<td>Testing</td>
+<td>JUnit 5, Testcontainers (real Postgres), Spring Security Test, Vitest, Playwright</td>
+<td>Tests hit the real database, not H2</td>
+</tr>
+</tbody>
+</table>
+<p>Why not store files in PostgreSQL: it bloats backups and slows queries. Store metadata in the database and bytes on disk or object storage, referenced by an opaque key.</p>
+<h3>3.4 Authentication and authorization</h3>
+<p>Use the backend-for-frontend pattern. Spring Security handles the OIDC login with Entra ID (<code>oauth2Login</code>), keeps the session server-side, and sends the browser an <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code> cookie. The SPA never holds a token. This is simpler and safer than running MSAL in the browser and validating JWTs in the API, and it fits a single-frontend app.</p>
+<p>Rules:</p>
+<ul>
+<li>Single-tenant app registration, tenant ID in configuration, client secret in environment variables or a secret store, never in the repo.</li>
+<li>Validate the <code>tid</code> and <code>oid</code> claims. Match the user by <code>oid</code>, with email used only for first-time linking.</li>
+<li>Restrict access to assigned users. Either enable &quot;Assignment required&quot; on the Entra enterprise application, or reject any login whose email is not in the pre-loaded faculty table. Do the second regardless, since students share the tenant and a tenant check alone does not stop them.</li>
+<li>No self-registration. The coordinator adds faculty, the first login links the Entra <code>oid</code>.</li>
+<li>CSRF protection stays on (cookie-based CSRF token for the SPA).</li>
+<li>Authorization is enforced in the service layer with method security, for example <code>@PreAuthorize(&quot;hasRole('COORDINATOR')&quot;)</code> plus ownership checks. Every faculty-scoped query takes the current user's ID from the security context, never from the request. This closes IDOR by construction: a faculty member requesting another faculty member's submission gets 404, not 403.</li>
+</ul>
+<h3>3.5 Module structure</h3>
+<p>Package by feature, not by layer.</p>
+<pre><code>com.iet.dashboard
+  identity/      login handling, role resolution, current user
+  directory/     faculty, skills
+  academics/     course, course_offering, teaching_assignment
+  deadlines/     deadline, deadline_assignment
+  submissions/   submission, submission_file, storage port
+  tracking/      read models: status per faculty, per deadline, metrics
+  reporting/     Excel/CSV export
+  notifications/ in-app notification inbox &amp; polling API, reminder scheduling, email sender, event listeners
+  audit/         audit log
+  shared/        error handling, pagination, config
+</code></pre>
+<p>Inside each module: <code>web</code> (controller, DTOs), <code>service</code>, <code>domain</code>, <code>repo</code>. Rules that are checked by an ArchUnit test in CI: controllers depend only on services, modules talk through each other's service interfaces, never repositories, and no entity is returned from a controller.</p>
+<h3>3.6 Data model (core tables)</h3>
+<ul>
+<li><code>app_user</code> (id, entra_oid unique nullable, email unique, role, active)</li>
+<li><code>faculty</code> (id, user_id, name, designation, qualifications)</li>
+<li><code>skill</code>, <code>faculty_skill</code></li>
+<li><code>course</code> (id, code, name, type)</li>
+<li><code>course_offering</code> (id, course_id, academic_year, year_of_study, semester, section) with a unique key on those columns</li>
+<li><code>teaching_assignment</code> (id, offering_id, faculty_id, component THEORY or LAB) unique on offering, faculty, component</li>
+<li><code>deadline</code> (id, title, type, due_at, created_by)</li>
+<li><code>deadline_assignment</code> (id, deadline_id, faculty_id, offering_id nullable) unique per deadline and faculty and offering</li>
+<li><code>submission</code> (id, deadline_assignment_id, status, submitted_at, reviewer_comment)</li>
+<li><code>submission_file</code> (id, submission_id, version, storage_key, original_name, content_type, size_bytes, sha256, uploaded_at)</li>
+<li><code>notification</code> (id, user_id, title, message, type, target_url, read_at nullable, created_at) unique id, indexes on (user_id, read_at) and (user_id, created_at DESC)</li>
+<li><code>audit_log</code> (id, actor_id, action, entity, entity_id, at, detail jsonb)</li>
+</ul>
+<p>Decisions that prevent later bugs: timestamps are <code>timestamptz</code> in UTC, deadlines are stored as instants and displayed in Asia/Kolkata, statuses are enums with a database check constraint, foreign keys everywhere, indexes on <code>faculty_id</code>, <code>deadline_id</code>, <code>due_at</code>, and <code>status</code>. Late is computed (<code>submitted_at &gt; due_at</code>), not stored as a separate flag that can disagree.</p>
+<h3>3.7 Data flow: sign-in</h3>
+<ol>
+<li>User opens the app. SPA calls <code>GET /api/me</code>. Response is 401.</li>
+<li>SPA redirects to <code>/oauth2/authorization/entra</code>.</li>
+<li>Entra authenticates the user (university MFA applies) and redirects back with an authorization code.</li>
+<li>Spring exchanges the code for tokens on the server, validates issuer, audience and tenant.</li>
+<li><code>identity</code> looks up <code>app_user</code> by <code>oid</code>, else by email. If none exists or <code>active = false</code>, the login is rejected with a plain &quot;You do not have access. Contact the department coordinator.&quot; page.</li>
+<li>First login stores the <code>oid</code>. A session is created, the cookie is set.</li>
+<li>SPA calls <code>GET /api/me</code> again and receives <code>{id, name, role}</code>. The UI renders by role, but the backend never relies on that.</li>
+</ol>
+<h3>3.8 Data flow: submission upload</h3>
+<ol>
+<li>Faculty opens a deadline they are assigned to. SPA calls <code>GET /api/deadline-assignments/{id}</code> (scoped to the current user).</li>
+<li>SPA sends <code>POST /api/deadline-assignments/{id}/submissions</code> as multipart, with a progress indicator.</li>
+<li>Controller does nothing except pass the stream and the current user to <code>SubmissionService</code>.</li>
+<li><code>SubmissionService.submit</code> (one transaction):
+<ol>
+<li>Load the assignment where <code>faculty_id = current user</code>. Missing means 404.</li>
+<li>Reject if the deadline is closed or the submission is already Accepted.</li>
+<li>Validate size (configured maximum), extension allow-list, and real content type by sniffing the bytes (Apache Tika), not the header.</li>
+<li>Stream to <code>FileStorage.put(...)</code>, computing SHA-256 on the way. The storage key is a generated UUID path. The original file name is stored only as metadata and never used in a path.</li>
+<li>Insert <code>submission_file</code> (next version) and update <code>submission</code> status and <code>submitted_at</code>.</li>
+<li>Write an audit entry and emit an in-app notification to the department coordinator.</li>
+<li>If the database step fails, delete the stored file. A nightly job also removes any storage object with no database row.</li>
+</ol>
+</li>
+<li>Response returns the updated submission DTO. SPA invalidates the relevant queries and shows Submitted or Late.</li>
+<li>Download: <code>GET /api/submission-files/{id}/download</code> checks ownership or coordinator role, then streams with <code>Content-Disposition: attachment</code> and <code>X-Content-Type-Options: nosniff</code>. Files are never served from a public static path.</li>
+</ol>
+<h3>3.9 Data flow: deadline creation and notifications</h3>
+<ol>
+<li>Coordinator submits the deadline form with targeting rules.</li>
+<li><code>DeadlineService</code> resolves targets (all faculty, selected, or by course or semester through <code>teaching_assignment</code>), creates <code>deadline_assignment</code> rows and empty <code>submission</code> rows with status Pending, all in one transaction.</li>
+<li>For each assigned faculty, an in-app <code>notification</code> row is inserted and an asynchronous email notification is queued.</li>
+<li>Notification job runs on schedule (Spring <code>@Scheduled</code>): checks for approaching deadlines (5 days and 1 day prior) and overdue submissions, creates in-app alerts, and dispatches reminder emails. Deduplication records prevent repeating reminders.</li>
+<li>In-app polling: The React SPA queries <code>GET /api/notifications/unread-count</code> every 45 seconds (TanStack Query) to display the notification badge. Clicking the bell queries <code>GET /api/notifications</code>; selecting an item or clicking "Mark as read" fires <code>PATCH /api/notifications/{id}/read</code> and deep-links to the target URL.</li>
+</ol>
+<h3>3.10 File storage across environments</h3>
+<p>The <code>FileStorage</code> interface has four methods: <code>put</code>, <code>open</code>, <code>delete</code>, <code>exists</code>. The base path or bucket comes from configuration. Development uses <code>./data/uploads</code>. Production uses a dedicated directory on a mounted volume, owned by the app's service user, excluded from the web root, and included in the backup job together with the database dump. Because the app depends on the interface, moving to MinIO or S3 later is one new class and a config change. Do not build the S3 version until you need it.</p>
+<h3>3.11 Cross-cutting rules</h3>
+<ul>
+<li>Thin controllers, DTOs in and out, Bean Validation on every request.</li>
+<li>One <code>@RestControllerAdvice</code> maps exceptions to RFC 7807 problem responses. No stack traces or SQL errors reach the client.</li>
+<li>Pagination on every list endpoint (default 20, maximum 100). Dashboard queries use aggregate SQL or projections, not entity loading, to avoid N+1.</li>
+<li>Rate limiting on upload and login endpoints at the proxy.</li>
+<li>Structured logs with a request ID, no personal data or file contents in logs.</li>
+<li>Configuration through environment variables, one profile each for <code>dev</code>, <code>test</code>, <code>prod</code>.</li>
+<li>Frontend: every screen handles loading, empty, error, success and unauthorized states. Shared components for table, form field, status badge, file uploader and confirm dialog, so the prototype's giant single file is split up.</li>
+</ul>
+<h3>3.12 Testing strategy</h3>
+<ul>
+<li>Unit tests for domain rules: late computation, status transitions, threshold classification.</li>
+<li>Integration tests with Testcontainers Postgres for repositories and services.</li>
+<li>API tests with MockMvc for authorization: every endpoint has a test for unauthenticated, wrong role, and another user's resource.</li>
+<li>Upload tests: oversized file, disallowed type, renamed executable, path traversal file name, duplicate resubmission.</li>
+<li>End-to-end with Playwright for two flows: coordinator creates a deadline, faculty uploads and coordinator sees it.</li>
+<li>ArchUnit tests for module boundaries.</li>
+</ul>
+<h3>3.13 Deployment</h3>
+<p>Docker images for backend and frontend, deployed with Docker Compose on the institution's server behind Nginx or Caddy with TLS. Flyway runs migrations at startup. Nightly <code>pg_dump</code> plus file directory backup, with a documented restore that has been tested once before go-live. CI (GitHub Actions) runs build, tests, and dependency scanning on every pull request.</p>
+<hr>
+<h2>4. Other important documents</h2>
+<table>
+<thead>
+<tr>
+<th>Document</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Domain glossary</td>
+<td>Fixes the meaning of offering, allocation, section, deadline, submission, compliance so code, UI and reports use the same words</td>
+</tr>
+<tr>
+<td>API specification (OpenAPI)</td>
+<td>Generated from code, serves as the contract between frontend and backend</td>
+</tr>
+<tr>
+<td>Data model and ERD</td>
+<td>Tables, constraints and the reasoning behind them, updated with each migration</td>
+</tr>
+<tr>
+<td>Architecture Decision Records</td>
+<td>One short file per decision (BFF auth, local disk storage, monolith) so the reasons survive team changes</td>
+</tr>
+<tr>
+<td>Authorization matrix</td>
+<td>Role by endpoint by resource table. The source for the authorization tests</td>
+</tr>
+<tr>
+<td>Threat model</td>
+<td>Upload abuse, IDOR, session theft, tenant confusion, with mitigations. Short, one page</td>
+</tr>
+<tr>
+<td>Entra ID setup guide</td>
+<td>App registration steps, redirect URIs, claims, assignment-required setting, secret rotation</td>
+</tr>
+<tr>
+<td>Environment and configuration guide</td>
+<td>Every environment variable, defaults, and which are secrets</td>
+</tr>
+<tr>
+<td>Deployment and rollback runbook</td>
+<td>Steps to release, migrate and roll back</td>
+</tr>
+<tr>
+<td>Backup and restore runbook</td>
+<td>What is backed up, schedule, and the tested restore procedure</td>
+</tr>
+<tr>
+<td>Test plan and acceptance criteria</td>
+<td>Maps each MVP feature to tests and to the definition of done</td>
+</tr>
+<tr>
+<td>UX flows and wireframes</td>
+<td>Coordinator and faculty screens including empty, error and unauthorized states</td>
+</tr>
+<tr>
+<td>Data retention and privacy policy</td>
+<td>How long submissions are kept, who can see them, deletion process</td>
+</tr>
+<tr>
+<td>Contributing and code standards</td>
+<td>Branching, module rules, review checklist, commit conventions</td>
+</tr>
+<tr>
+<td>Release and changelog</td>
+<td>What shipped in each version for users and the coordinator</td>
+</tr>
+</tbody>
+</table>
+<p>Write first: glossary, authorization matrix, ADRs, Entra setup guide. The rest can follow feature by feature.</p>
+
+</body></html>
