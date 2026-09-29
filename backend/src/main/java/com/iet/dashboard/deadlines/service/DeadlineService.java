@@ -16,5 +16,7 @@ public interface DeadlineService {
 
     List<DeadlineAssignmentDto> getMyDeadlines();
 
+    DeadlineAssignmentDto getAssignmentById(Long id);
+
     DeadlineDto createDeadline(CreateDeadlineRequest request);
 }

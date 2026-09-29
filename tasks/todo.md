@@ -24,12 +24,12 @@
 - [x] Coordinator UI: Deadline creation modal with targeting rules
 - [x] Faculty UI: My Deadlines list (filtered to current user)
 
-## [ ] Slice 4: File Submissions & Versioned Storage Port
-- [ ] Flyway migration `V4__submissions.sql` (`submission`, `submission_file`)
-- [ ] `FileStorage` interface with `LocalDiskStorage` implementation
-- [ ] `SubmissionService.submit`: file stream, MIME verification, SHA-256 hash, version increment
-- [ ] Faculty UI: Upload file, view status (`Pending`, `Submitted`, `Late`, `Returned`, `Accepted`)
-- [ ] Coordinator UI: Review submission, download file, accept or return with comments
+## [x] Slice 4: File Submissions & Versioned Storage Port
+- [x] Flyway migration `V4__submissions.sql` (`submission`, `submission_file`)
+- [x] `FileStorage` interface with `LocalDiskStorage` implementation
+- [x] `SubmissionService.submit`: file stream, MIME verification, SHA-256 hash, version increment
+- [x] Faculty UI: Upload file, view status (`Pending`, `Submitted`, `Late`, `Returned`, `Accepted`)
+- [x] Coordinator UI: Review submission, download file, accept or return with comments
 
 ## [ ] Slice 5: Notifications Center (In-App & Email)
 - [ ] Flyway migration `V5__notifications.sql` (`notification` table)

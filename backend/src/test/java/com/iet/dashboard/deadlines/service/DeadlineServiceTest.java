@@ -137,4 +137,23 @@ class DeadlineServiceTest {
 
         assertThrows(ResourceNotFoundException.class, () -> deadlineService.getDeadlineById(999L));
     }
+
+    @Test
+    void testGetAssignmentById_Success() {
+        Deadline deadline = new Deadline("Course File", "Submit file", DeadlineType.COURSE_FILE,
+                Instant.now().plus(2, ChronoUnit.DAYS), 1L);
+        deadline.setId(100L);
+        DeadlineAssignment da = new DeadlineAssignment(deadline, 1L, 1L);
+        da.setId(55L);
+
+        when(assignmentRepository.findById(55L)).thenReturn(Optional.of(da));
+        FacultyDto faculty = new FacultyDto(1L, 2L, "Dr. Amit", "Assoc Prof", "PhD", "IT", Collections.emptyList());
+        when(facultyService.getFacultyById(1L)).thenReturn(faculty);
+
+        DeadlineAssignmentDto result = deadlineService.getAssignmentById(55L);
+
+        assertNotNull(result);
+        assertEquals(55L, result.id());
+        assertEquals("Dr. Amit", result.facultyName());
+    }
 }

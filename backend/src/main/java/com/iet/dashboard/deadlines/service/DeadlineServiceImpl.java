@@ -90,6 +90,20 @@ public class DeadlineServiceImpl implements DeadlineService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public DeadlineAssignmentDto getAssignmentById(Long id) {
+        DeadlineAssignment assignment = assignmentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Deadline assignment not found with id: " + id));
+        String facultyName;
+        try {
+            facultyName = facultyService.getFacultyById(assignment.getFacultyId()).name();
+        } catch (Exception e) {
+            facultyName = "Faculty #" + assignment.getFacultyId();
+        }
+        return DeadlineAssignmentDto.fromEntity(assignment, facultyName);
+    }
+
+    @Override
     public DeadlineDto createDeadline(CreateDeadlineRequest request) {
         UserDto currentUser = userService.getCurrentUser();
         DeadlineType type = DeadlineType.valueOf(request.type().toUpperCase());
