@@ -228,4 +228,38 @@ class SubmissionServiceTest {
         ReviewRequest request = new ReviewRequest("ACCEPT", "Looks good");
         assertThrows(ForbiddenException.class, () -> submissionService.reviewSubmission(7L, request));
     }
+
+    @Test
+    void testGetSubmissionByAssignmentId_WhenPending() {
+        when(userService.getCurrentUser()).thenReturn(facultyUser);
+        when(deadlineService.getAssignmentById(50L)).thenReturn(futureAssignment);
+        when(facultyService.getFacultyByUserId(2L)).thenReturn(Optional.of(facultyDto));
+        when(submissionRepository.findByDeadlineAssignmentId(50L)).thenReturn(Optional.empty());
+
+        SubmissionDto dto = submissionService.getSubmissionByAssignmentId(50L);
+
+        assertNotNull(dto);
+        assertEquals(50L, dto.deadlineAssignmentId());
+        assertEquals("PENDING", dto.status());
+        assertEquals(0, dto.totalVersions());
+        assertNull(dto.id());
+    }
+
+    @Test
+    void testGetSubmissionByAssignmentId_WhenExists() {
+        when(userService.getCurrentUser()).thenReturn(facultyUser);
+        when(deadlineService.getAssignmentById(50L)).thenReturn(futureAssignment);
+        when(facultyService.getFacultyByUserId(2L)).thenReturn(Optional.of(facultyDto));
+
+        Submission submission = new Submission(50L);
+        submission.setId(99L);
+        submission.setStatus(SubmissionStatus.SUBMITTED);
+        when(submissionRepository.findByDeadlineAssignmentId(50L)).thenReturn(Optional.of(submission));
+
+        SubmissionDto dto = submissionService.getSubmissionByAssignmentId(50L);
+
+        assertNotNull(dto);
+        assertEquals(99L, dto.id());
+        assertEquals("SUBMITTED", dto.status());
+    }
 }

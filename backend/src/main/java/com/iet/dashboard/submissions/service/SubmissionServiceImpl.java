@@ -84,11 +84,10 @@ public class SubmissionServiceImpl implements SubmissionService {
         DeadlineAssignmentDto assignment = deadlineService.getAssignmentById(assignmentId);
         assertUserCanAccessAssignment(assignment);
 
-        Submission submission = submissionRepository.findByDeadlineAssignmentId(assignmentId)
-                .orElseGet(() -> {
-                    Submission s = new Submission(assignmentId);
-                    return submissionRepository.save(s);
-                });
+        Submission submission = submissionRepository.findByDeadlineAssignmentId(assignmentId).orElse(null);
+        if (submission == null) {
+            return SubmissionDto.pending(assignmentId);
+        }
 
         return SubmissionDto.fromEntity(submission);
     }
@@ -262,9 +261,8 @@ public class SubmissionServiceImpl implements SubmissionService {
         List<DeadlineAssignmentDto> assignments = deadlineService.getAssignmentsForDeadline(deadlineId);
         List<SubmissionDto> dtos = new ArrayList<>();
         for (DeadlineAssignmentDto a : assignments) {
-            Submission sub = submissionRepository.findByDeadlineAssignmentId(a.id())
-                    .orElseGet(() -> new Submission(a.id()));
-            dtos.add(SubmissionDto.fromEntity(sub));
+            Submission sub = submissionRepository.findByDeadlineAssignmentId(a.id()).orElse(null);
+            dtos.add(sub != null ? SubmissionDto.fromEntity(sub) : SubmissionDto.pending(a.id()));
         }
         return dtos;
     }

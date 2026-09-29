@@ -41,4 +41,18 @@ public record SubmissionDto(
                 fileDtos
         );
     }
+
+    public static SubmissionDto pending(Long assignmentId) {
+        return new SubmissionDto(
+                null,
+                assignmentId,
+                "PENDING",
+                null,
+                null,
+                null,
+                null,
+                0,
+                Collections.emptyList()
+        );
+    }
 }
