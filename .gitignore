@@ -19,6 +19,7 @@ node_modules/
 dist/
 .vite/
 *.local
+*.tsbuildinfo
 
 # Graphify temporary caches
 graphify-out/.graphify_*

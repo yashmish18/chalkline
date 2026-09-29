@@ -44,7 +44,8 @@
 - [x] Excel report generator using Apache POI: `/api/reports/submissions/export`
 - [x] Audit logging for coordinator actions (`audit_log` table)
 
-## [ ] Slice 7: End-to-End Verification & UI Polish (UI-UX Pro Max)
-- [ ] Apply Swiss Modernism 2.0 aesthetics and refine spacing, cards, typography, and badges
-- [ ] Empty states, loading spinners, and WCAG AA contrast verification
-- [ ] Run full end-to-end integration flow tests
+## [x] Slice 7: End-to-End Verification & UI Polish (UI-UX Pro Max)
+- [x] Apply Swiss Modernism 2.0 aesthetics and refine spacing, cards, typography, and badges
+- [x] Empty states, loading spinners, and WCAG AA contrast verification
+- [x] Run full end-to-end integration flow tests
+
