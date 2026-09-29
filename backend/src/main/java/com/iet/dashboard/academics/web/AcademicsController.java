@@ -1,6 +1,12 @@
 package com.iet.dashboard.academics.web;
 
 import com.iet.dashboard.academics.service.AcademicsService;
+import com.iet.dashboard.academics.service.PacingCalculationService;
+import com.iet.dashboard.directory.service.FacultyService;
+import com.iet.dashboard.directory.web.FacultyDto;
+import com.iet.dashboard.identity.service.UserService;
+import com.iet.dashboard.identity.web.UserDto;
+import com.iet.dashboard.shared.error.ForbiddenException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,9 +20,20 @@ import java.util.List;
 public class AcademicsController {
 
     private final AcademicsService academicsService;
+    private final PacingCalculationService pacingService;
+    private final UserService userService;
+    private final FacultyService facultyService;
 
-    public AcademicsController(AcademicsService academicsService) {
+    public AcademicsController(
+            AcademicsService academicsService,
+            PacingCalculationService pacingService,
+            UserService userService,
+            FacultyService facultyService
+    ) {
         this.academicsService = academicsService;
+        this.pacingService = pacingService;
+        this.userService = userService;
+        this.facultyService = facultyService;
     }
 
     @GetMapping("/courses")
@@ -70,5 +87,40 @@ public class AcademicsController {
     @GetMapping("/courses/{courseId}/syllabus")
     public ResponseEntity<List<SyllabusTopicDto>> getCourseSyllabus(@PathVariable Long courseId) {
         return ResponseEntity.ok(academicsService.getSyllabusForCourse(courseId));
+    }
+
+    @GetMapping("/academics/my-courses")
+    @PreAuthorize("hasAnyRole('FACULTY', 'COORDINATOR')")
+    public ResponseEntity<List<CourseProgressDto>> getMyCourses(
+            @RequestParam(value = "facultyId", required = false) Long queryFacultyId
+    ) {
+        UserDto currentUser = userService.getCurrentUser();
+        Long targetFacultyId;
+        if ("COORDINATOR".equals(currentUser.role()) && queryFacultyId != null) {
+            targetFacultyId = queryFacultyId;
+        } else {
+            targetFacultyId = resolveFacultyId(currentUser);
+        }
+        return ResponseEntity.ok(pacingService.getMyCoursesProgress(targetFacultyId));
+    }
+
+    @GetMapping("/academics/offerings/{offeringId}/progress")
+    @PreAuthorize("hasAnyRole('FACULTY', 'COORDINATOR')")
+    public ResponseEntity<CourseProgressDto> getOfferingProgress(@PathVariable Long offeringId) {
+        UserDto currentUser = userService.getCurrentUser();
+        boolean isCoordinator = "COORDINATOR".equals(currentUser.role());
+        Long facultyId = isCoordinator ? null : resolveFacultyId(currentUser);
+        return ResponseEntity.ok(pacingService.calculateProgressForOffering(offeringId, facultyId, isCoordinator));
+    }
+
+    private Long resolveFacultyId(UserDto currentUser) {
+        return facultyService.getFacultyByUserId(currentUser.id())
+                .map(FacultyDto::id)
+                .orElseGet(() -> {
+                    if ("COORDINATOR".equals(currentUser.role())) {
+                        return 1L;
+                    }
+                    throw new ForbiddenException("Faculty profile not found for user: " + currentUser.email());
+                });
     }
 }

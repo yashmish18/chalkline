@@ -1,107 +1,63 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { CourseProgressDto, SyllabusTopicProgressDto } from '../types/academics';
 import {
   BookOpen,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
-  ListOrdered
+  ListOrdered,
+  AlertCircle,
+  RefreshCw,
+  Activity
 } from 'lucide-react';
 
-interface SyllabusTopic {
-  id: number;
-  unitNumber: number;
-  unitTitle: string;
-  topicName: string;
-  targetWeek: number;
-  lectureOrder: number;
-  isCovered?: boolean;
-}
-
-interface CourseItem {
-  id: number;
-  code: string;
-  name: string;
-  section: string;
-  component: string;
-  credits: number;
-  topics: SyllabusTopic[];
-}
-
 export function MyCoursesView() {
-  const [courses, setCourses] = useState<CourseItem[]>([]);
-  const [activeCourseId, setActiveCourseId] = useState<number>(1);
+  const [courses, setCourses] = useState<CourseProgressDto[]>([]);
+  const [activeOfferingId, setActiveOfferingId] = useState<number | null>(null);
   const [expandedUnit, setExpandedUnit] = useState<number | null>(1);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // In Slice 8, fetch courses or load structured mock data
-    setTimeout(() => {
-      const mockCourse1Topics: SyllabusTopic[] = [
-        { id: 1, unitNumber: 1, unitTitle: 'Unit 1: Fundamentals of Networking', topicName: 'Introduction to Computer Networks & Topologies', targetWeek: 1, lectureOrder: 1, isCovered: true },
-        { id: 2, unitNumber: 1, unitTitle: 'Unit 1: Fundamentals of Networking', topicName: 'OSI 7-Layer Reference Model & Responsibilities', targetWeek: 1, lectureOrder: 2, isCovered: true },
-        { id: 3, unitNumber: 1, unitTitle: 'Unit 1: Fundamentals of Networking', topicName: 'TCP/IP Protocol Suite & Architectural Comparison', targetWeek: 2, lectureOrder: 3, isCovered: true },
-        { id: 4, unitNumber: 2, unitTitle: 'Unit 2: Physical & Data Link Layer', topicName: 'Transmission Media: Guided vs Unguided Media', targetWeek: 3, lectureOrder: 4, isCovered: true },
-        { id: 5, unitNumber: 2, unitTitle: 'Unit 2: Physical & Data Link Layer', topicName: 'Data Link Framing, Flow Control & Stop-and-Wait', targetWeek: 3, lectureOrder: 5, isCovered: true },
-        { id: 6, unitNumber: 2, unitTitle: 'Unit 2: Physical & Data Link Layer', topicName: 'Error Detection: CRC Cyclic Redundancy Check', targetWeek: 4, lectureOrder: 6, isCovered: true },
-        { id: 7, unitNumber: 3, unitTitle: 'Unit 3: Medium Access & Ethernet', topicName: 'MAC Sublayer: Pure & Slotted ALOHA', targetWeek: 5, lectureOrder: 7, isCovered: true },
-        { id: 8, unitNumber: 3, unitTitle: 'Unit 3: Medium Access & Ethernet', topicName: 'CSMA, CSMA/CD and CSMA/CA Protocols', targetWeek: 5, lectureOrder: 8, isCovered: true },
-        { id: 9, unitNumber: 3, unitTitle: 'Unit 3: Medium Access & Ethernet', topicName: 'Standard Ethernet Architecture and Switching', targetWeek: 6, lectureOrder: 9, isCovered: true },
-        { id: 10, unitNumber: 4, unitTitle: 'Unit 4: Network Layer & Routing', topicName: 'IPv4 Addressing, Subnet Masks and CIDR', targetWeek: 7, lectureOrder: 10, isCovered: true },
-        { id: 11, unitNumber: 4, unitTitle: 'Unit 4: Network Layer & Routing', topicName: 'Distance Vector Routing Algorithm', targetWeek: 8, lectureOrder: 11, isCovered: true },
-        { id: 12, unitNumber: 4, unitTitle: 'Unit 4: Network Layer & Routing', topicName: 'Link State Routing Algorithm (Dijkstra)', targetWeek: 9, lectureOrder: 12, isCovered: true },
-        { id: 13, unitNumber: 5, unitTitle: 'Unit 5: Transport & Application Layer', topicName: 'TCP Connection Management & 3-Way Handshake', targetWeek: 10, lectureOrder: 13, isCovered: true },
-        { id: 14, unitNumber: 5, unitTitle: 'Unit 5: Transport & Application Layer', topicName: 'TCP Congestion Control: AIMD & Slow Start', targetWeek: 11, lectureOrder: 14, isCovered: false },
-        { id: 15, unitNumber: 5, unitTitle: 'Unit 5: Transport & Application Layer', topicName: 'Application Protocols: DNS, HTTP/2 and SMTP', targetWeek: 12, lectureOrder: 15, isCovered: false },
-      ];
-
-      const mockCourse2Topics: SyllabusTopic[] = [
-        { id: 16, unitNumber: 1, unitTitle: 'Unit 1: Database Architecture & ER Model', topicName: '3-Schema Architecture & Data Independence', targetWeek: 1, lectureOrder: 1, isCovered: true },
-        { id: 17, unitNumber: 1, unitTitle: 'Unit 1: Database Architecture & ER Model', topicName: 'ER Modeling: Entities & Relationships', targetWeek: 1, lectureOrder: 2, isCovered: true },
-        { id: 18, unitNumber: 2, unitTitle: 'Unit 2: Relational Model & SQL', topicName: 'Relational Algebra Operations', targetWeek: 3, lectureOrder: 3, isCovered: true },
-        { id: 19, unitNumber: 2, unitTitle: 'Unit 2: Relational Model & SQL', topicName: 'SQL DDL, DML and Subqueries', targetWeek: 3, lectureOrder: 4, isCovered: true },
-        { id: 20, unitNumber: 3, unitTitle: 'Unit 3: Normalization', topicName: '1NF, 2NF and 3NF Normalization', targetWeek: 5, lectureOrder: 5, isCovered: true },
-        { id: 21, unitNumber: 4, unitTitle: 'Unit 4: Transactions', topicName: 'ACID Properties & Serializability', targetWeek: 7, lectureOrder: 6, isCovered: true },
-        { id: 22, unitNumber: 4, unitTitle: 'Unit 4: Transactions', topicName: 'Two-Phase Locking (2PL)', targetWeek: 8, lectureOrder: 7, isCovered: false },
-        { id: 23, unitNumber: 5, unitTitle: 'Unit 5: Indexing', topicName: 'B-Tree and B+ Tree Indexing Structures', targetWeek: 10, lectureOrder: 8, isCovered: false },
-      ];
-
-      setCourses([
-        {
-          id: 1,
-          code: 'CS501',
-          name: 'Computer Networks',
-          section: 'Section A',
-          component: 'THEORY',
-          credits: 4,
-          topics: mockCourse1Topics,
-        },
-        {
-          id: 2,
-          code: 'CS502',
-          name: 'Database Management Systems',
-          section: 'Section A',
-          component: 'THEORY',
-          credits: 4,
-          topics: mockCourse2Topics,
-        },
-      ]);
+  const fetchMyCourses = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/academics/my-courses', {
+        credentials: 'include',
+        headers: { 'Accept': 'application/json' }
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to load courses (${res.status})`);
+      }
+      const data: CourseProgressDto[] = await res.json();
+      setCourses(data);
+      if (data.length > 0) {
+        setActiveOfferingId((prev) => (prev && data.some((c) => c.offeringId === prev) ? prev : data[0].offeringId));
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to fetch course syllabus progress';
+      setError(msg);
+    } finally {
       setLoading(false);
-    }, 200);
+    }
   }, []);
 
-  const activeCourse = courses.find((c) => c.id === activeCourseId) || courses[0];
-  const totalTopics = activeCourse?.topics.length || 0;
-  const coveredTopics = activeCourse?.topics.filter((t) => t.isCovered).length || 0;
-  const coveragePct = totalTopics > 0 ? Math.round((coveredTopics / totalTopics) * 100) : 0;
+  useEffect(() => {
+    fetchMyCourses();
+  }, [fetchMyCourses]);
 
-  // Group topics by unit
-  const unitsMap = new Map<number, { title: string; topics: SyllabusTopic[] }>();
-  activeCourse?.topics.forEach((t) => {
-    if (!unitsMap.has(t.unitNumber)) {
-      unitsMap.set(t.unitNumber, { title: t.unitTitle, topics: [] });
-    }
-    unitsMap.get(t.unitNumber)!.topics.push(t);
-  });
+  const activeCourse = courses.find((c) => c.offeringId === activeOfferingId) || courses[0];
+
+  // Group topics by unit for the active course
+  const unitsMap = new Map<number, { title: string; topics: SyllabusTopicProgressDto[] }>();
+  if (activeCourse && activeCourse.topics) {
+    activeCourse.topics.forEach((t) => {
+      if (!unitsMap.has(t.unitNumber)) {
+        unitsMap.set(t.unitNumber, { title: t.unitTitle, topics: [] });
+      }
+      unitsMap.get(t.unitNumber)!.topics.push(t);
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -110,86 +66,167 @@ export function MyCoursesView() {
         <div>
           <div className="flex items-center gap-2 text-xs font-bold text-primary tracking-wide uppercase font-sans">
             <BookOpen className="w-4 h-4" />
-            My Courses &amp; Syllabus Coverage
+            Syllabus as Data — Course Coverage Engine
           </div>
           <h1 className="font-serif text-2xl font-bold text-slate-900 mt-1">
-            {activeCourse ? `${activeCourse.code} — ${activeCourse.name}` : 'My Allocated Courses'}
+            {activeCourse ? `${activeCourse.courseCode} — ${activeCourse.courseName}` : 'My Allocated Courses'}
           </h1>
           <p className="text-xs text-slate-600 mt-1">
-            Track planned vs covered topics unit-by-unit. Coverage is automatically derived from your daily class logs.
+            Track planned vs covered topics unit-by-unit. Coverage % and conduct pacing are derived automatically from session logs.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={fetchMyCourses}
+            className="p-2 border border-border rounded-md hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-colors mr-1"
+            title="Refresh courses"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-primary' : ''}`} />
+          </button>
+
           {courses.map((c) => (
             <button
-              key={c.id}
+              key={c.offeringId}
               type="button"
-              onClick={() => setActiveCourseId(c.id)}
+              onClick={() => {
+                setActiveOfferingId(c.offeringId);
+                setExpandedUnit(1);
+              }}
               className={`px-3.5 py-2 rounded-md text-xs font-bold transition-all ${
-                activeCourseId === c.id
+                activeOfferingId === c.offeringId
                   ? 'bg-primary text-white shadow-xs'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
-              {c.code} ({c.section})
+              {c.courseCode} ({c.section})
             </button>
           ))}
         </div>
       </div>
 
-      {loading ? (
+      {error && (
+        <div className="bg-rose-50 border border-rose-200 text-rose-900 px-4 py-3 rounded-lg text-xs font-medium flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button
+            type="button"
+            onClick={fetchMyCourses}
+            className="font-bold underline text-rose-800 hover:text-rose-950 ml-4"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {loading && courses.length === 0 ? (
+        <div className="p-8 text-center bg-white rounded-lg border border-border text-xs text-slate-500 animate-pulse">
+          Loading assigned courses and syllabus data...
+        </div>
+      ) : courses.length === 0 ? (
         <div className="p-8 text-center bg-white rounded-lg border border-border text-xs text-slate-500">
-          Loading course syllabus data...
+          No courses assigned to your faculty profile in the active term.
         </div>
       ) : activeCourse ? (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Progress Summary Card (1 col) */}
           <div className="space-y-4">
             <div className="bg-white rounded-lg border border-border p-5 shadow-xs space-y-4">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Course Health</span>
-              
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Syllabus Health</span>
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    activeCourse.pacingStatus === 'ON_TRACK'
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                      : activeCourse.pacingStatus === 'AHEAD'
+                      ? 'bg-blue-50 text-blue-800 border-blue-200'
+                      : 'bg-amber-50 text-amber-800 border-amber-200'
+                  }`}
+                >
+                  {activeCourse.pacingLabel}
+                </span>
+              </div>
+
               <div className="text-center py-2">
-                <div className="font-serif text-4xl font-bold text-slate-900">{coveragePct}%</div>
+                <div className="font-serif text-4xl font-bold text-slate-900">
+                  {activeCourse.coveragePercentage}%
+                </div>
                 <div className="text-xs text-slate-500 mt-1">Syllabus Covered</div>
               </div>
 
               <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-primary rounded-full transition-all"
-                  style={{ width: `${coveragePct}%` }}
+                  className={`h-full rounded-full transition-all ${
+                    activeCourse.coveragePercentage < 60 ? 'bg-amber-500' : 'bg-primary'
+                  }`}
+                  style={{ width: `${activeCourse.coveragePercentage}%` }}
                 ></div>
               </div>
 
               <div className="border-t border-border pt-3 space-y-2 text-xs">
                 <div className="flex justify-between text-slate-600">
-                  <span>Covered Topics:</span>
-                  <span className="font-bold text-slate-900">{coveredTopics} / {totalTopics}</span>
+                  <span>Topics Covered:</span>
+                  <span className="font-bold text-slate-900">
+                    {activeCourse.coveredTopics} / {activeCourse.totalTopics}
+                  </span>
                 </div>
                 <div className="flex justify-between text-slate-600">
-                  <span>Current Pace:</span>
-                  <span className="font-bold text-emerald-700">On Track (Week 11)</span>
+                  <span>Expected by Wk {activeCourse.currentWeek}:</span>
+                  <span className="font-bold text-slate-900">
+                    {activeCourse.expectedTopicsByCurrentWeek} topics
+                  </span>
                 </div>
                 <div className="flex justify-between text-slate-600">
-                  <span>Credit Weight:</span>
-                  <span className="font-bold text-slate-900">{activeCourse.credits} Credits ({activeCourse.component})</span>
+                  <span>Conduct Rate:</span>
+                  <span className="font-bold text-slate-900">
+                    {activeCourse.conductRatePercentage}% ({activeCourse.heldSessions}/{activeCourse.totalSessions} held)
+                  </span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Term &amp; Weight:</span>
+                  <span className="font-bold text-slate-900">
+                    {activeCourse.credits} Cr ({activeCourse.component})
+                  </span>
                 </div>
               </div>
+            </div>
+
+            {/* Quick Metrics Tile */}
+            <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 space-y-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                <Activity className="w-4 h-4 text-primary" />
+                <span>Pacing Assessment</span>
+              </div>
+              <p className="text-[11px] text-slate-600 leading-relaxed">
+                {activeCourse.pacingStatus === 'BEHIND'
+                  ? `Course pacing is lagging behind the syllabus master by ${Math.abs(activeCourse.topicDelta)} topic(s). Extra tutorial or remedial session recommended.`
+                  : activeCourse.pacingStatus === 'AHEAD'
+                  ? `Course is progressing ahead of schedule by ${activeCourse.topicDelta} topic(s). Good opportunity for deep-dive lab exercises.`
+                  : `Course is tracking precisely on schedule for Week ${activeCourse.currentWeek}.`}
+              </p>
             </div>
           </div>
 
           {/* Unit-by-Unit Syllabus Topics (3 cols) */}
           <div className="lg:col-span-3 space-y-3">
-            <h2 className="text-sm font-bold font-serif text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <ListOrdered className="w-4 h-4 text-primary" />
-              Syllabus Units &amp; Topic Master
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold font-serif text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <ListOrdered className="w-4 h-4 text-primary" />
+                Syllabus Units &amp; Topic Master
+              </h2>
+              <span className="text-xs text-slate-500 font-medium">
+                {unitsMap.size} units configured
+              </span>
+            </div>
 
             {Array.from(unitsMap.entries()).map(([unitNum, unitData]) => {
               const isExpanded = expandedUnit === unitNum;
               const unitTopicsCount = unitData.topics.length;
               const unitCoveredCount = unitData.topics.filter((t) => t.isCovered).length;
-              const isFullyCovered = unitCoveredCount === unitTopicsCount;
+              const isFullyCovered = unitTopicsCount > 0 && unitCoveredCount === unitTopicsCount;
 
               return (
                 <div key={unitNum} className="bg-white rounded-lg border border-border overflow-hidden shadow-xs">
@@ -222,7 +259,11 @@ export function MyCoursesView() {
                           Unit Completed
                         </span>
                       )}
-                      {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+                      {isExpanded ? (
+                        <ChevronDown className="w-4 h-4 text-slate-400" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4 text-slate-400" />
+                      )}
                     </div>
                   </button>
 
@@ -244,7 +285,7 @@ export function MyCoursesView() {
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-3 text-slate-500 text-[11px]">
+                          <div className="flex items-center gap-3 text-slate-500 text-[11px] shrink-0">
                             <span>Target: Week {topic.targetWeek}</span>
                             <span
                               className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${

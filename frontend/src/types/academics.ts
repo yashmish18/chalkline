@@ -66,3 +66,37 @@ export interface TeachingSessionDto {
   topicsCovered: SyllabusTopicDto[];
   createdAt: string;
 }
+
+export interface SyllabusTopicProgressDto {
+  id: number;
+  courseId: number;
+  unitNumber: number;
+  unitTitle: string;
+  topicName: string;
+  targetWeek: number;
+  lectureOrder: number;
+  isCovered: boolean;
+}
+
+export interface CourseProgressDto {
+  offeringId: number;
+  courseId: number;
+  courseCode: string;
+  courseName: string;
+  section: string;
+  component: string;
+  credits: number;
+  termName: string;
+  currentWeek: number;
+  totalTopics: number;
+  coveredTopics: number;
+  coveragePercentage: number;
+  expectedTopicsByCurrentWeek: number;
+  topicDelta: number;
+  pacingStatus: 'ON_TRACK' | 'AHEAD' | 'BEHIND';
+  pacingLabel: string;
+  totalSessions: number;
+  heldSessions: number;
+  conductRatePercentage: number;
+  topics: SyllabusTopicProgressDto[];
+}
