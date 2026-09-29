@@ -50,6 +50,12 @@ class TrackingServiceTest {
     @Mock
     private UserService userService;
 
+    @Mock
+    private com.iet.dashboard.academics.service.AcademicsService academicsService;
+
+    @Mock
+    private com.iet.dashboard.academics.service.PacingCalculationService pacingService;
+
     @InjectMocks
     private TrackingServiceImpl trackingService;
 
@@ -141,5 +147,63 @@ class TrackingServiceTest {
         }
 
         verify(auditLogRepository).save(any());
+    }
+
+    @Test
+    void testGetOverviewSummary() {
+        com.iet.dashboard.academics.web.CourseDto course = new com.iet.dashboard.academics.web.CourseDto(1L, "CS501", "Networks", "IT", 4);
+        com.iet.dashboard.academics.web.CourseOfferingDto offering = new com.iet.dashboard.academics.web.CourseOfferingDto(
+                1L, course, "2026-2027", 3, 5, "A", 1L, "Odd 2026-27"
+        );
+        when(academicsService.getAllOfferings(null)).thenReturn(List.of(offering));
+
+        com.iet.dashboard.academics.web.TeachingAssignmentDto assignment = new com.iet.dashboard.academics.web.TeachingAssignmentDto(
+                100L, offering, 2L, "Dr. Amit", "THEORY"
+        );
+        when(academicsService.getAllTeachingAssignments()).thenReturn(List.of(assignment));
+
+        com.iet.dashboard.academics.web.CourseProgressDto progress = new com.iet.dashboard.academics.web.CourseProgressDto(
+                1L, 1L, "CS501", "Networks", "Sec A", "THEORY", 4, "Odd 2026-27", 11,
+                15, 10, 67, 14, -4, "BEHIND", "Behind by 4 topics",
+                10L, 10L, 100, Collections.emptyList()
+        );
+        when(pacingService.calculateProgressForOffering(1L, null, true)).thenReturn(progress);
+        when(deadlineService.getAllDeadlines()).thenReturn(Collections.emptyList());
+
+        com.iet.dashboard.tracking.web.OverviewSummaryDto summary = trackingService.getOverviewSummary();
+
+        assertNotNull(summary);
+        assertEquals(1, summary.worstFirstCoverage().size());
+        assertEquals("CS501", summary.worstFirstCoverage().get(0).courseCode());
+        assertEquals(67, summary.kpis().averageCoveragePercentage());
+        assertEquals(1, summary.kpis().coursesBehindPacing());
+        assertEquals(1, summary.needsAttention().size());
+        assertEquals("COVERAGE_BEHIND", summary.needsAttention().get(0).type());
+    }
+
+    @Test
+    void testGetComplianceMatrix() {
+        com.iet.dashboard.academics.web.CourseDto course = new com.iet.dashboard.academics.web.CourseDto(1L, "CS501", "Networks", "IT", 4);
+        com.iet.dashboard.academics.web.CourseOfferingDto offering = new com.iet.dashboard.academics.web.CourseOfferingDto(
+                1L, course, "2026-2027", 3, 5, "A", 1L, "Odd 2026-27"
+        );
+        when(academicsService.getAllOfferings(null)).thenReturn(List.of(offering));
+        when(academicsService.getAllTeachingAssignments()).thenReturn(Collections.emptyList());
+
+        com.iet.dashboard.academics.web.CourseProgressDto progress = new com.iet.dashboard.academics.web.CourseProgressDto(
+                1L, 1L, "CS501", "Networks", "Sec A", "THEORY", 4, "Odd 2026-27", 11,
+                15, 12, 80, 14, -2, "BEHIND", "Behind by 2 topics",
+                10L, 10L, 100, Collections.emptyList()
+        );
+        when(pacingService.calculateProgressForOffering(1L, null, true)).thenReturn(progress);
+        when(deadlineService.getAllDeadlines()).thenReturn(Collections.emptyList());
+
+        com.iet.dashboard.tracking.web.ComplianceMatrixDto matrix = trackingService.getComplianceMatrix();
+
+        assertNotNull(matrix);
+        assertEquals(4, matrix.checkpoints().size());
+        assertEquals(1, matrix.rows().size());
+        assertEquals("CS501", matrix.rows().get(0).courseCode());
+        assertEquals("DONE", matrix.rows().get(0).cells().get(0).status()); // 80% coverage >= 60%
     }
 }

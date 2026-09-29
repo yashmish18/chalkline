@@ -113,7 +113,9 @@ class FullWorkflowIntegrationTest {
                 deadlineService,
                 facultyService,
                 submissionService,
-                userService
+                userService,
+                mock(com.iet.dashboard.academics.service.AcademicsService.class),
+                mock(com.iet.dashboard.academics.service.PacingCalculationService.class)
         );
     }
 

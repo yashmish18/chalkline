@@ -37,6 +37,16 @@ public class TrackingController {
         return ResponseEntity.ok(trackingService.getFacultyComplianceSummary());
     }
 
+    @GetMapping("/tracking/overview-summary")
+    public ResponseEntity<OverviewSummaryDto> getOverviewSummary() {
+        return ResponseEntity.ok(trackingService.getOverviewSummary());
+    }
+
+    @GetMapping("/tracking/compliance-matrix")
+    public ResponseEntity<ComplianceMatrixDto> getComplianceMatrix() {
+        return ResponseEntity.ok(trackingService.getComplianceMatrix());
+    }
+
     @GetMapping("/tracking/audit-logs")
     public ResponseEntity<List<AuditLogDto>> getAuditLogs(@RequestParam(defaultValue = "20") int limit) {
         return ResponseEntity.ok(trackingService.getRecentAuditLogs(limit));

@@ -49,4 +49,14 @@ public class NotificationController {
                 "triggeredReminders", count
         ));
     }
+
+    @PostMapping("/remind-faculty")
+    @PreAuthorize("hasRole('COORDINATOR')")
+    public ResponseEntity<Map<String, String>> remindFaculty(@jakarta.validation.Valid @RequestBody DirectReminderRequest request) {
+        notificationService.sendDirectReminder(request.facultyId(), request.title(), request.message());
+        return ResponseEntity.ok(Map.of(
+                "status", "success",
+                "message", "Direct reminder successfully dispatched"
+        ));
+    }
 }

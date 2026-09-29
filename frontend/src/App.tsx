@@ -7,6 +7,7 @@ import { FacultyDirectoryView } from './views/FacultyDirectoryView';
 import { TeachingAllocationsView } from './views/TeachingAllocationsView';
 import { DeadlinesView } from './views/DeadlinesView';
 import { TrackingDashboardView } from './views/TrackingDashboardView';
+import { CoordinatorOverviewView } from './views/CoordinatorOverviewView';
 import { TodayView } from './views/TodayView';
 import { MyCoursesView } from './views/MyCoursesView';
 
@@ -111,7 +112,7 @@ function MainAppShell() {
 
         {/* View Content */}
         <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-8">
-          {activeTab === 'overview' && isCoordinator && <TrackingDashboardView />}
+          {activeTab === 'overview' && isCoordinator && <CoordinatorOverviewView />}
           {activeTab === 'compliance' && isCoordinator && <TrackingDashboardView />}
           {activeTab === 'audit' && isCoordinator && <TrackingDashboardView />}
           {activeTab === 'academics' && <TeachingAllocationsView />}

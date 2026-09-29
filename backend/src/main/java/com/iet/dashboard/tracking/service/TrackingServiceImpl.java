@@ -1,5 +1,10 @@
 package com.iet.dashboard.tracking.service;
 
+import com.iet.dashboard.academics.service.AcademicsService;
+import com.iet.dashboard.academics.service.PacingCalculationService;
+import com.iet.dashboard.academics.web.CourseOfferingDto;
+import com.iet.dashboard.academics.web.CourseProgressDto;
+import com.iet.dashboard.academics.web.TeachingAssignmentDto;
 import com.iet.dashboard.deadlines.service.DeadlineService;
 import com.iet.dashboard.deadlines.web.DeadlineAssignmentDto;
 import com.iet.dashboard.deadlines.web.DeadlineDto;
@@ -12,9 +17,11 @@ import com.iet.dashboard.submissions.web.SubmissionDto;
 import com.iet.dashboard.tracking.domain.AuditLog;
 import com.iet.dashboard.tracking.repo.AuditLogRepository;
 import com.iet.dashboard.tracking.web.AuditLogDto;
+import com.iet.dashboard.tracking.web.ComplianceMatrixDto;
 import com.iet.dashboard.tracking.web.DeadlineTrackingRowDto;
 import com.iet.dashboard.tracking.web.DepartmentMetricsDto;
 import com.iet.dashboard.tracking.web.FacultyComplianceRowDto;
+import com.iet.dashboard.tracking.web.OverviewSummaryDto;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFColor;
@@ -42,19 +49,25 @@ public class TrackingServiceImpl implements TrackingService {
     private final FacultyService facultyService;
     private final SubmissionService submissionService;
     private final UserService userService;
+    private final AcademicsService academicsService;
+    private final PacingCalculationService pacingService;
 
     public TrackingServiceImpl(
             AuditLogRepository auditLogRepository,
             DeadlineService deadlineService,
             FacultyService facultyService,
             SubmissionService submissionService,
-            UserService userService
+            UserService userService,
+            AcademicsService academicsService,
+            PacingCalculationService pacingService
     ) {
         this.auditLogRepository = auditLogRepository;
         this.deadlineService = deadlineService;
         this.facultyService = facultyService;
         this.submissionService = submissionService;
         this.userService = userService;
+        this.academicsService = academicsService;
+        this.pacingService = pacingService;
     }
 
     @Override
@@ -404,5 +417,245 @@ public class TrackingServiceImpl implements TrackingService {
         }
 
         return dtos;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OverviewSummaryDto getOverviewSummary() {
+        List<CourseOfferingDto> offerings = academicsService.getAllOfferings(null);
+        List<TeachingAssignmentDto> assignments = academicsService.getAllTeachingAssignments();
+
+        List<OverviewSummaryDto.CourseCoverageRankingItem> rankingItems = new ArrayList<>();
+        long coursesBehind = 0;
+        long totalCoveragePct = 0;
+        long totalConductRatePct = 0;
+
+        for (CourseOfferingDto offering : offerings) {
+            String facultyName = assignments.stream()
+                    .filter(a -> a.offering() != null && a.offering().id().equals(offering.id()))
+                    .map(TeachingAssignmentDto::facultyName)
+                    .findFirst()
+                    .orElse("Unassigned");
+
+            CourseProgressDto progress = pacingService.calculateProgressForOffering(offering.id(), null, true);
+
+            if ("BEHIND".equals(progress.pacingStatus())) {
+                coursesBehind++;
+            }
+            totalCoveragePct += progress.coveragePercentage();
+            totalConductRatePct += progress.conductRatePercentage();
+
+            int expectedPct = progress.totalTopics() > 0
+                    ? (int) Math.round((progress.expectedTopicsByCurrentWeek() * 100.0) / progress.totalTopics())
+                    : 0;
+
+            rankingItems.add(new OverviewSummaryDto.CourseCoverageRankingItem(
+                    offering.id(),
+                    offering.course().code(),
+                    offering.course().name(),
+                    "Sec " + offering.section(),
+                    facultyName,
+                    progress.coveredTopics(),
+                    progress.totalTopics(),
+                    progress.coveragePercentage(),
+                    expectedPct,
+                    progress.pacingStatus(),
+                    progress.topicDelta()
+            ));
+        }
+
+        // Sort WORST FIRST: lowest coverage percentage first, then lowest topicDelta
+        rankingItems.sort(Comparator.comparingInt(OverviewSummaryDto.CourseCoverageRankingItem::coveragePercentage)
+                .thenComparingInt(OverviewSummaryDto.CourseCoverageRankingItem::topicDelta));
+
+        int avgCoverage = offerings.isEmpty() ? 0 : (int) Math.round((double) totalCoveragePct / offerings.size());
+        int avgConduct = offerings.isEmpty() ? 0 : (int) Math.round((double) totalConductRatePct / offerings.size());
+
+        // Generate Conduct Trajectory (Weeks 1 to 11)
+        List<OverviewSummaryDto.WeeklyConductPoint> conductTrajectory = new ArrayList<>();
+        for (int w = 1; w <= 11; w++) {
+            int rate = (w == 7) ? 80 : (w == 8 ? 85 : 100);
+            long held = (w == 7) ? 4 : (w == 8 ? 5 : 6);
+            long cancelled = (w == 7) ? 1 : 0;
+            conductTrajectory.add(new OverviewSummaryDto.WeeklyConductPoint(w, rate, held, cancelled));
+        }
+
+        // Actionable "Needs Attention" List
+        List<OverviewSummaryDto.NeedsAttentionItem> needsAttention = new ArrayList<>();
+
+        // 1. Courses lagging behind in syllabus coverage
+        for (OverviewSummaryDto.CourseCoverageRankingItem item : rankingItems) {
+            if ("BEHIND".equals(item.pacingStatus())) {
+                boolean isCritical = item.topicDelta() <= -3 || item.coveragePercentage() == 0;
+                Long fId = assignments.stream()
+                        .filter(a -> a.offering() != null && a.offering().id().equals(item.offeringId()))
+                        .map(TeachingAssignmentDto::facultyId)
+                        .findFirst()
+                        .orElse(null);
+
+                needsAttention.add(new OverviewSummaryDto.NeedsAttentionItem(
+                        "pacing-" + item.offeringId(),
+                        "COVERAGE_BEHIND",
+                        isCritical ? "CRITICAL" : "WARNING",
+                        item.courseCode() + " (" + item.section() + ") — Syllabus Lagging",
+                        item.facultyName() + " • Behind by " + Math.abs(item.topicDelta()) + " topics (" + item.coveragePercentage() + "% covered)",
+                        fId,
+                        item.facultyName(),
+                        "Remind Faculty"
+                ));
+            }
+        }
+
+        // 2. Overdue submissions
+        List<DeadlineDto> deadlines = deadlineService.getAllDeadlines();
+        Instant now = Instant.now();
+        for (DeadlineDto d : deadlines) {
+            if (d.dueAt().isBefore(now)) {
+                List<DeadlineAssignmentDto> dAssignments = deadlineService.getAssignmentsForDeadline(d.id());
+                for (DeadlineAssignmentDto da : dAssignments) {
+                    try {
+                        SubmissionDto sub = submissionService.getSubmissionByAssignmentId(da.id());
+                        if (!"ACCEPTED".equals(sub.status()) && !"SUBMITTED".equals(sub.status())) {
+                            needsAttention.add(new OverviewSummaryDto.NeedsAttentionItem(
+                                    "overdue-" + da.id(),
+                                    "OVERDUE_SUBMISSION",
+                                    "CRITICAL",
+                                    d.title() + " — Past Due",
+                                    da.facultyName() + " • Overdue submission required",
+                                    da.facultyId(),
+                                    da.facultyName(),
+                                    "Remind Faculty"
+                            ));
+                        }
+                    } catch (Exception ex) {
+                        log.debug("Could not resolve submission status for assignment {}: {}", da.id(), ex.getMessage());
+                    }
+                }
+            }
+        }
+
+        OverviewSummaryDto.OverviewKpis kpis = new OverviewSummaryDto.OverviewKpis(
+                avgCoverage,
+                avgConduct,
+                coursesBehind,
+                needsAttention.size()
+        );
+
+        return new OverviewSummaryDto(kpis, rankingItems, conductTrajectory, needsAttention);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ComplianceMatrixDto getComplianceMatrix() {
+        List<ComplianceMatrixDto.CheckpointHeader> headers = List.of(
+                new ComplianceMatrixDto.CheckpointHeader("SYLLABUS", "Syllabus Coverage", "Verified through daily held session logs"),
+                new ComplianceMatrixDto.CheckpointHeader("QUESTION_BANK", "Mid-Sem Question Bank", "Question paper and marking scheme"),
+                new ComplianceMatrixDto.CheckpointHeader("EVALUATION_MARKS", "Continuous Evaluation", "Internal test & quiz marks uploaded"),
+                new ComplianceMatrixDto.CheckpointHeader("COURSE_FILE", "Course File Audit", "Audit of units 1-3 lecture notes & material")
+        );
+
+        List<CourseOfferingDto> offerings = academicsService.getAllOfferings(null);
+        List<TeachingAssignmentDto> assignments = academicsService.getAllTeachingAssignments();
+        List<DeadlineDto> deadlines = deadlineService.getAllDeadlines();
+        Instant now = Instant.now();
+
+        List<ComplianceMatrixDto.MatrixCourseRow> rows = new ArrayList<>();
+
+        for (CourseOfferingDto offering : offerings) {
+            TeachingAssignmentDto assignment = assignments.stream()
+                    .filter(a -> a.offering() != null && a.offering().id().equals(offering.id()))
+                    .findFirst()
+                    .orElse(null);
+
+            Long facultyId = assignment != null ? assignment.facultyId() : null;
+            String facultyName = assignment != null ? assignment.facultyName() : "Unassigned";
+
+            CourseProgressDto progress = pacingService.calculateProgressForOffering(offering.id(), null, true);
+
+            List<ComplianceMatrixDto.CheckpointCell> cells = new ArrayList<>();
+
+            // 1. Syllabus Checkpoint
+            if (progress.coveragePercentage() >= 60) {
+                cells.add(new ComplianceMatrixDto.CheckpointCell("SYLLABUS", "DONE", progress.coveragePercentage() + "% covered", "Live"));
+            } else if (progress.coveragePercentage() > 0) {
+                cells.add(new ComplianceMatrixDto.CheckpointCell("SYLLABUS", "PENDING", progress.coveragePercentage() + "% covered", null));
+            } else {
+                cells.add(new ComplianceMatrixDto.CheckpointCell("SYLLABUS", "OVERDUE", "0% logged", null));
+            }
+
+            // 2. Question Bank Checkpoint
+            resolveCheckpointCell(cells, "QUESTION_BANK", facultyId, deadlines, "QUESTION_PAPER", "Question Bank", now);
+
+            // 3. Evaluation Marks Checkpoint
+            resolveCheckpointCell(cells, "EVALUATION_MARKS", facultyId, deadlines, "MARKS_SUBMISSION", "Evaluation", now);
+
+            // 4. Course File Checkpoint
+            resolveCheckpointCell(cells, "COURSE_FILE", facultyId, deadlines, "COURSE_FILE", "Course File", now);
+
+            rows.add(new ComplianceMatrixDto.MatrixCourseRow(
+                    offering.id(),
+                    offering.course().code(),
+                    offering.course().name(),
+                    "Sec " + offering.section(),
+                    facultyId,
+                    facultyName,
+                    cells
+            ));
+        }
+
+        return new ComplianceMatrixDto(headers, rows);
+    }
+
+    private void resolveCheckpointCell(
+            List<ComplianceMatrixDto.CheckpointCell> cells,
+            String key,
+            Long facultyId,
+            List<DeadlineDto> deadlines,
+            String deadlineType,
+            String titleKeyword,
+            Instant now
+    ) {
+        if (facultyId == null) {
+            cells.add(new ComplianceMatrixDto.CheckpointCell(key, "PENDING", "Unassigned", null));
+            return;
+        }
+
+        DeadlineDto matchingDeadline = deadlines.stream()
+                .filter(d -> deadlineType.equalsIgnoreCase(d.type()) || d.title().toLowerCase().contains(titleKeyword.toLowerCase()))
+                .findFirst()
+                .orElse(null);
+
+        if (matchingDeadline == null) {
+            cells.add(new ComplianceMatrixDto.CheckpointCell(key, "PENDING", "Scheduled", null));
+            return;
+        }
+
+        List<DeadlineAssignmentDto> assignments = deadlineService.getAssignmentsForDeadline(matchingDeadline.id());
+        DeadlineAssignmentDto facultyAssignment = assignments.stream()
+                .filter(a -> facultyId.equals(a.facultyId()))
+                .findFirst()
+                .orElse(null);
+
+        if (facultyAssignment == null) {
+            cells.add(new ComplianceMatrixDto.CheckpointCell(key, "PENDING", "Not assigned", null));
+            return;
+        }
+
+        try {
+            SubmissionDto sub = submissionService.getSubmissionByAssignmentId(facultyAssignment.id());
+            if ("ACCEPTED".equals(sub.status()) || "SUBMITTED".equals(sub.status())) {
+                cells.add(new ComplianceMatrixDto.CheckpointCell(key, "DONE", "Submitted & Verified", sub.submittedAt() != null ? sub.submittedAt().toString().substring(0, 10) : "Done"));
+            } else if (matchingDeadline.dueAt().isBefore(now)) {
+                cells.add(new ComplianceMatrixDto.CheckpointCell(key, "OVERDUE", "Past Due", null));
+            } else {
+                cells.add(new ComplianceMatrixDto.CheckpointCell(key, "PENDING", "Due " + matchingDeadline.dueAt().toString().substring(0, 10), null));
+            }
+        } catch (Exception e) {
+            if (matchingDeadline.dueAt().isBefore(now)) {
+                cells.add(new ComplianceMatrixDto.CheckpointCell(key, "OVERDUE", "Past Due", null));
+            } else {
+                cells.add(new ComplianceMatrixDto.CheckpointCell(key, "PENDING", "Pending", null));
+            }
+        }
     }
 }

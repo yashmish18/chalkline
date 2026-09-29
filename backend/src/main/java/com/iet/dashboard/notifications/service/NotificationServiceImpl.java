@@ -154,4 +154,19 @@ public class NotificationServiceImpl implements NotificationService {
         log.info("Finished automated reminder scan. Total alerts triggered: {}", triggeredCount);
         return triggeredCount;
     }
+
+    @Override
+    public void sendDirectReminder(Long facultyId, String title, String message) {
+        FacultyDto faculty = facultyService.getFacultyById(facultyId);
+        if (faculty != null && faculty.userId() != null) {
+            sendNotification(
+                    faculty.userId(),
+                    title,
+                    message,
+                    NotificationType.GENERAL,
+                    "/today",
+                    true
+            );
+        }
+    }
 }
