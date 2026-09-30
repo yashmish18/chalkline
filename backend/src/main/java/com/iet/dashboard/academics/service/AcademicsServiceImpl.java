@@ -28,6 +28,7 @@ public class AcademicsServiceImpl implements AcademicsService {
     private final FacultyService facultyService;
     private final com.iet.dashboard.academics.repo.AcademicTermRepository termRepository;
     private final com.iet.dashboard.academics.repo.SyllabusTopicRepository syllabusRepository;
+    private final com.iet.dashboard.academics.repo.TimetableSlotRepository timetableSlotRepository;
 
     public AcademicsServiceImpl(
             CourseRepository courseRepository,
@@ -35,7 +36,8 @@ public class AcademicsServiceImpl implements AcademicsService {
             TeachingAssignmentRepository assignmentRepository,
             FacultyService facultyService,
             com.iet.dashboard.academics.repo.AcademicTermRepository termRepository,
-            com.iet.dashboard.academics.repo.SyllabusTopicRepository syllabusRepository
+            com.iet.dashboard.academics.repo.SyllabusTopicRepository syllabusRepository,
+            com.iet.dashboard.academics.repo.TimetableSlotRepository timetableSlotRepository
     ) {
         this.courseRepository = courseRepository;
         this.offeringRepository = offeringRepository;
@@ -43,6 +45,7 @@ public class AcademicsServiceImpl implements AcademicsService {
         this.facultyService = facultyService;
         this.termRepository = termRepository;
         this.syllabusRepository = syllabusRepository;
+        this.timetableSlotRepository = timetableSlotRepository;
     }
 
     @Override
@@ -107,8 +110,11 @@ public class AcademicsServiceImpl implements AcademicsService {
         FacultyDto faculty = facultyService.getFacultyById(request.facultyId());
 
         CourseComponent component = CourseComponent.valueOf(request.component().toUpperCase());
+        String subSection = (request.subSection() != null && !request.subSection().isBlank())
+                ? request.subSection().trim()
+                : "ALL";
 
-        TeachingAssignment assignment = new TeachingAssignment(offering, faculty.id(), component);
+        TeachingAssignment assignment = new TeachingAssignment(offering, faculty.id(), component, subSection);
         TeachingAssignment saved = assignmentRepository.save(assignment);
 
         return TeachingAssignmentDto.fromEntity(saved, faculty.name());
@@ -176,5 +182,16 @@ public class AcademicsServiceImpl implements AcademicsService {
             throw new com.iet.dashboard.shared.error.ForbiddenException(
                     "You do not have access to course offering #" + offeringId + " (not assigned to you)");
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TimetableSlotDto> getTimetableForFaculty(Long facultyId) {
+        if (facultyId == null) {
+            return List.of();
+        }
+        return timetableSlotRepository.findByFacultyIdWithDetails(facultyId).stream()
+                .map(TimetableSlotDto::fromEntity)
+                .collect(Collectors.toList());
     }
 }

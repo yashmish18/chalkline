@@ -98,4 +98,27 @@ public class FacultyServiceImpl implements FacultyService {
         Faculty updated = facultyRepository.save(faculty);
         return FacultyDto.fromEntity(updated);
     }
+
+    @Override
+    public FacultyDto updateFacultySkillsByNames(Long facultyId, List<String> skillNames) {
+        Faculty faculty = facultyRepository.findByIdWithSkills(facultyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Faculty not found with id: " + facultyId));
+
+        Set<Skill> resolvedSkills = new HashSet<>();
+        if (skillNames != null) {
+            for (String rawName : skillNames) {
+                if (rawName == null || rawName.trim().isBlank()) {
+                    continue;
+                }
+                String trimmed = rawName.trim();
+                Skill skill = skillRepository.findByNameIgnoreCase(trimmed)
+                        .orElseGet(() -> skillRepository.save(new Skill(trimmed, "Technical")));
+                resolvedSkills.add(skill);
+            }
+        }
+
+        faculty.setSkills(resolvedSkills);
+        Faculty updated = facultyRepository.save(faculty);
+        return FacultyDto.fromEntity(updated);
+    }
 }

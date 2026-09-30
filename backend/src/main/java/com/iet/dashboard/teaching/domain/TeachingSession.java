@@ -34,6 +34,18 @@ public class TeachingSession {
     @Column(name = "status", nullable = false, length = 50)
     private SessionStatus status = SessionStatus.HELD;
 
+    @Column(name = "unit_number")
+    private Integer unitNumber;
+
+    @Column(name = "custom_topic_name", length = 500)
+    private String customTopicName;
+
+    @Column(name = "sub_section", nullable = false, length = 50)
+    private String subSection = "ALL";
+
+    @Column(name = "lectures_taken", nullable = false)
+    private int lecturesTaken = 1;
+
     @Column(name = "note", columnDefinition = "TEXT")
     private String note;
 
@@ -63,11 +75,31 @@ public class TeachingSession {
             String note,
             String reasonNotHeld
     ) {
+        this(offering, facultyId, sessionDate, sessionType, status, null, null, "ALL", 1, note, reasonNotHeld);
+    }
+
+    public TeachingSession(
+            CourseOffering offering,
+            Long facultyId,
+            LocalDate sessionDate,
+            String sessionType,
+            SessionStatus status,
+            Integer unitNumber,
+            String customTopicName,
+            String subSection,
+            int lecturesTaken,
+            String note,
+            String reasonNotHeld
+    ) {
         this.offering = offering;
         this.facultyId = facultyId;
         this.sessionDate = sessionDate;
         this.sessionType = sessionType != null ? sessionType : "LECTURE";
         this.status = status != null ? status : SessionStatus.HELD;
+        this.unitNumber = unitNumber;
+        this.customTopicName = customTopicName;
+        this.subSection = subSection != null ? subSection : "ALL";
+        this.lecturesTaken = lecturesTaken > 0 ? lecturesTaken : 1;
         this.note = note;
         this.reasonNotHeld = reasonNotHeld;
         this.createdAt = Instant.now();
@@ -155,5 +187,37 @@ public class TeachingSession {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Integer getUnitNumber() {
+        return unitNumber;
+    }
+
+    public void setUnitNumber(Integer unitNumber) {
+        this.unitNumber = unitNumber;
+    }
+
+    public String getCustomTopicName() {
+        return customTopicName;
+    }
+
+    public void setCustomTopicName(String customTopicName) {
+        this.customTopicName = customTopicName;
+    }
+
+    public String getSubSection() {
+        return subSection;
+    }
+
+    public void setSubSection(String subSection) {
+        this.subSection = subSection;
+    }
+
+    public int getLecturesTaken() {
+        return lecturesTaken;
+    }
+
+    public void setLecturesTaken(int lecturesTaken) {
+        this.lecturesTaken = lecturesTaken;
     }
 }

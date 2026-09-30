@@ -47,7 +47,7 @@ public class PacingCalculationServiceImpl implements PacingCalculationService {
                 continue;
             }
             CourseProgressDto baseProgress = calculateProgressForOffering(assignment.offering().id(), facultyId, false);
-            // Enrich with exact assignment component (THEORY or LAB)
+            // Enrich with exact assignment component (THEORY or LAB) and subSection
             result.add(new CourseProgressDto(
                     baseProgress.offeringId(),
                     baseProgress.courseId(),
@@ -68,7 +68,10 @@ public class PacingCalculationServiceImpl implements PacingCalculationService {
                     baseProgress.totalSessions(),
                     baseProgress.heldSessions(),
                     baseProgress.conductRatePercentage(),
-                    baseProgress.topics()
+                    baseProgress.topics(),
+                    baseProgress.ltp(),
+                    assignment.subSection() != null ? assignment.subSection() : "ALL",
+                    baseProgress.courseDescription()
             ));
         }
 
@@ -150,7 +153,10 @@ public class PacingCalculationServiceImpl implements PacingCalculationService {
                 totalSessions,
                 heldSessions,
                 conductRatePercentage,
-                topicProgressList
+                topicProgressList,
+                offering.course().ltp() != null ? offering.course().ltp() : "3-0-0",
+                "ALL",
+                offering.course().description()
         );
     }
 }

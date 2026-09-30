@@ -1,15 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { TodayClassDto } from '../types/academics';
+import { TodayClassDto, SyllabusTopicDto } from '../types/academics';
+import { CourseDescriptionModal } from '../components/CourseDescriptionModal';
 import {
   CalendarCheck,
   CheckCircle2,
   Clock,
   AlertCircle,
   Sparkles,
+  ChevronLeft,
   ChevronRight,
   PlusCircle,
-  RefreshCw
+  RefreshCw,
+  BookOpen,
+  MapPin,
+  Calendar
 } from 'lucide-react';
 
 export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }) {
@@ -17,24 +22,38 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
   const [classes, setClasses] = useState<TodayClassDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const todayStr = new Date().toISOString().split('T')[0];
 
+  // Modal states
   const [selectedClass, setSelectedClass] = useState<TodayClassDto | null>(null);
   const [sessionStatus, setSessionStatus] = useState<'HELD' | 'CANCELLED' | 'SWAPPED'>('HELD');
+  const [selectedComponent, setSelectedComponent] = useState<string>('LECTURE');
+  const [selectedSubSection, setSelectedSubSection] = useState<string>('ALL');
+  const [selectedUnit, setSelectedUnit] = useState<number>(1);
+  const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
+  const [customTopic, setCustomTopic] = useState<string>('');
+  const [lecturesTaken, setLecturesTaken] = useState<number>(1);
   const [reasonNotHeld, setReasonNotHeld] = useState('Institutional Holiday / Event');
   const [note, setNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const fetchTodayClasses = useCallback(async () => {
+  // Description drawer modal
+  const [courseForDescription, setCourseForDescription] = useState<TodayClassDto | null>(null);
+
+  // Date picker state (defaults to today)
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+
+  const fetchClassesForDate = useCallback(async (dateStr: string) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/teaching-sessions/today', {
+      const res = await fetch(`/api/teaching-sessions/today?date=${dateStr}`, {
         credentials: 'include',
         headers: { 'Accept': 'application/json' }
       });
       if (!res.ok) {
-        throw new Error(`Failed to load today's classes (${res.status})`);
+        throw new Error(`Failed to load classes for ${dateStr} (${res.status})`);
       }
       const data: TodayClassDto[] = await res.json();
       setClasses(data);
@@ -46,15 +65,57 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
     }
   }, []);
 
+  const fetchTodayClasses = useCallback(() => {
+    fetchClassesForDate(selectedDate);
+  }, [fetchClassesForDate, selectedDate]);
+
   useEffect(() => {
-    fetchTodayClasses();
-  }, [fetchTodayClasses]);
+    fetchClassesForDate(selectedDate);
+  }, [fetchClassesForDate, selectedDate]);
 
   const handleQuickLog = (cls: TodayClassDto) => {
     setSelectedClass(cls);
     setSessionStatus('HELD');
+    setSelectedComponent(cls.component || 'LECTURE');
+    setSelectedSubSection(cls.subSection || 'ALL');
+    setSelectedUnit(cls.currentUnitNumber || 1);
+    setSelectedTopicId(cls.nextTopicId);
+    setCustomTopic(cls.nextTopic || '');
+    setLecturesTaken(cls.component === 'PRACTICAL' || cls.component === 'LAB' ? 2 : 1);
     setReasonNotHeld('Institutional Holiday / Event');
     setNote('');
+  };
+
+  // When selectedUnit changes in the modal, adjust topic dropdown and custom topic
+  const handleUnitChange = (unitNum: number) => {
+    setSelectedUnit(unitNum);
+    if (!selectedClass || !selectedClass.availableUnits) return;
+    const unitObj = selectedClass.availableUnits.find((u) => u.unitNumber === unitNum);
+    if (unitObj && unitObj.topics.length > 0) {
+      setSelectedTopicId(unitObj.topics[0].id);
+      setCustomTopic(unitObj.topics[0].topicName);
+    } else {
+      setSelectedTopicId(null);
+      setCustomTopic(`Unit ${unitNum} Comprehensive Discussion`);
+    }
+  };
+
+  const handleTopicDropdownSelect = (topicIdStr: string) => {
+    if (!topicIdStr) {
+      setSelectedTopicId(null);
+      return;
+    }
+    const id = parseInt(topicIdStr, 10);
+    setSelectedTopicId(id);
+    if (selectedClass?.availableUnits) {
+      for (const u of selectedClass.availableUnits) {
+        const found = u.topics.find((t) => t.id === id);
+        if (found) {
+          setCustomTopic(found.topicName);
+          break;
+        }
+      }
+    }
   };
 
   const handleSaveLog = async (e: React.FormEvent) => {
@@ -65,10 +126,14 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
     try {
       const payload = {
         offeringId: selectedClass.offeringId,
-        sessionDate: new Date().toISOString().split('T')[0],
-        sessionType: selectedClass.component || 'LECTURE',
+        sessionDate: selectedDate,
+        sessionType: selectedComponent,
         status: sessionStatus,
-        topicIds: sessionStatus === 'HELD' && selectedClass.nextTopicId ? [selectedClass.nextTopicId] : [],
+        unitNumber: selectedUnit,
+        topicIds: sessionStatus === 'HELD' && selectedTopicId ? [selectedTopicId] : [],
+        customTopicName: customTopic.trim() || undefined,
+        subSection: selectedSubSection,
+        lecturesTaken: lecturesTaken,
         note: note.trim() || undefined,
         reasonNotHeld: sessionStatus !== 'HELD' ? reasonNotHeld : undefined
       };
@@ -100,6 +165,12 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
     }
   };
 
+  const getTopicsForCurrentModalUnit = (): SyllabusTopicDto[] => {
+    if (!selectedClass || !selectedClass.availableUnits) return [];
+    const unitObj = selectedClass.availableUnits.find((u) => u.unitNumber === selectedUnit);
+    return unitObj ? unitObj.topics : [];
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Banner */}
@@ -113,7 +184,7 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
             {user?.name ? `Hello, ${user.name}` : 'Welcome, Faculty Member'}
           </h1>
           <p className="text-xs text-slate-600 mt-1">
-            Log today's held or cancelled sessions in under 20 seconds. Syllabus coverage and conduct pacing are derived automatically.
+            Log today&rsquo;s held or cancelled sessions in under 20 seconds. Syllabus coverage, LTP contact hours, and conduct pacing are derived automatically.
           </p>
         </div>
 
@@ -126,9 +197,124 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-primary' : ''}`} />
           </button>
+          {onNavigate && (
+            <button
+              type="button"
+              onClick={() => onNavigate('timetable')}
+              className="px-3 py-1.5 rounded-md border border-primary text-primary hover:bg-primary/5 text-xs font-bold flex items-center gap-1.5 transition-colors"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              Weekly Timetable
+            </button>
+          )}
           <div className="px-3.5 py-1.5 rounded-md bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700">
             Term: <span className="text-primary font-bold">Odd 2026-27</span>
           </div>
+        </div>
+      </div>
+
+      {/* Linear Precision Date Selector Bar */}
+      <div className="bg-white rounded-lg border border-border p-3.5 shadow-xs flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-1 bg-slate-50 border border-border px-1.5 py-1 rounded-md">
+            <button
+              type="button"
+              onClick={() => {
+                const parts = selectedDate.split('-');
+                const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                d.setDate(d.getDate() - 1);
+                const yr = d.getFullYear();
+                const mo = String(d.getMonth() + 1).padStart(2, '0');
+                const dy = String(d.getDate()).padStart(2, '0');
+                setSelectedDate(`${yr}-${mo}-${dy}`);
+              }}
+              className="p-1 rounded text-slate-500 hover:text-slate-800 hover:bg-white transition-colors"
+              title="Previous day"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => e.target.value && setSelectedDate(e.target.value)}
+              className="px-2 py-0.5 text-xs font-semibold text-slate-800 bg-transparent border-0 outline-hidden cursor-pointer"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const parts = selectedDate.split('-');
+                const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                d.setDate(d.getDate() + 1);
+                const yr = d.getFullYear();
+                const mo = String(d.getMonth() + 1).padStart(2, '0');
+                const dy = String(d.getDate()).padStart(2, '0');
+                setSelectedDate(`${yr}-${mo}-${dy}`);
+              }}
+              className="p-1 rounded text-slate-500 hover:text-slate-800 hover:bg-white transition-colors"
+              title="Next day"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Quick-action pill buttons */}
+          <div className="flex items-center gap-1.5 text-xs">
+            <button
+              type="button"
+              onClick={() => setSelectedDate(todayStr)}
+              className={`px-3 py-1.5 rounded-md font-semibold text-xs transition-colors ${
+                selectedDate === todayStr
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const d = new Date();
+                d.setDate(d.getDate() - 1);
+                const yr = d.getFullYear();
+                const mo = String(d.getMonth() + 1).padStart(2, '0');
+                const dy = String(d.getDate()).padStart(2, '0');
+                setSelectedDate(`${yr}-${mo}-${dy}`);
+              }}
+              className={`px-3 py-1.5 rounded-md font-semibold text-xs transition-colors ${
+                selectedDate !== todayStr && new Date(`${selectedDate}T00:00:00`).getTime() === new Date(`${new Date(Date.now() - 86400000).toISOString().split('T')[0]}T00:00:00`).getTime()
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              Yesterday
+            </button>
+          </div>
+        </div>
+
+        {/* Dynamic formatted day-of-week and sync status indicator */}
+        <div className="flex items-center gap-2 text-xs">
+          <span className="font-semibold text-slate-700">
+            {new Date(`${selectedDate}T00:00:00`).toLocaleDateString('en-US', {
+              weekday: 'long',
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric'
+            })}
+          </span>
+          {selectedDate === todayStr ? (
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              Live Timetable
+            </span>
+          ) : selectedDate < todayStr ? (
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+              Historical Log
+            </span>
+          ) : (
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+              Future Schedule
+            </span>
+          )}
         </div>
       </div>
 
@@ -162,7 +348,7 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold font-serif text-slate-900 uppercase tracking-wider flex items-center gap-2">
               <Clock className="w-4 h-4 text-primary" />
-              Classes Scheduled For Today
+              Classes Scheduled For {selectedDate === todayStr ? 'Today' : new Date(`${selectedDate}T00:00:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
             </h2>
             <span className="text-xs text-slate-500 font-medium">
               {classes.filter((c) => c.isLogged).length} of {classes.length} logged
@@ -171,14 +357,14 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
 
           {loading && classes.length === 0 ? (
             <div className="p-8 text-center bg-white rounded-lg border border-border text-xs text-slate-500 animate-pulse">
-              Loading today's teaching timetable...
+              Loading timetable for {selectedDate === todayStr ? 'today' : selectedDate}...
             </div>
           ) : classes.length === 0 ? (
             <div className="p-8 text-center bg-white rounded-lg border border-border text-xs text-slate-500">
               No teaching allocations found for your account in the active term.
             </div>
           ) : (
-            <div className="space-y-3.5">
+            <div className="space-y-4">
               {classes.map((cls) => {
                 const progressPct = cls.totalPlanned > 0
                   ? Math.round((cls.completedSoFar / cls.totalPlanned) * 100)
@@ -194,27 +380,54 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
                     }`}
                   >
                     <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="flex items-center gap-2">
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-primary text-white">
                             {cls.courseCode}
                           </span>
                           <span className="text-xs font-semibold text-slate-700">{cls.section}</span>
+                          {cls.subSection && cls.subSection !== 'ALL' && (
+                            <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200">
+                              Batch {cls.subSection}
+                            </span>
+                          )}
                           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 uppercase">
                             {cls.component}
                           </span>
+                          {cls.ltp && (
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
+                              LTP: {cls.ltp}
+                            </span>
+                          )}
                         </div>
+
                         <h3 className="font-serif text-lg font-bold text-slate-900 mt-1">{cls.courseName}</h3>
-                        <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
-                          <Clock className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{cls.timeSlot}</span>
+
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-1">
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{cls.timeSlot}</span>
+                          </div>
+                          {cls.room && (
+                            <div className="flex items-center gap-1.5">
+                              <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                              <span>{cls.room}</span>
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setCourseForDescription(cls)}
+                            className="text-primary hover:underline font-medium flex items-center gap-1"
+                          >
+                            <BookOpen className="w-3 h-3" /> Course Details
+                          </button>
                         </div>
                       </div>
 
                       {cls.isLogged ? (
                         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-100 text-emerald-800 text-xs font-bold shrink-0">
                           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                          Logged for Today
+                          Logged for {selectedDate === todayStr ? 'Today' : selectedDate}
                         </div>
                       ) : (
                         <button
@@ -228,16 +441,18 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
                       )}
                     </div>
 
-                    {/* Pre-selected Next Syllabus Topic */}
+                    {/* Pre-selected / Running Syllabus Topic Banner */}
                     <div className="mt-4 p-3 bg-slate-50 border border-slate-200/80 rounded-md">
-                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                        Next Uncovered Syllabus Topic (Auto Selected)
+                      <div className="flex items-center justify-between">
+                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                          Current Running Topic &bull; Unit {cls.currentUnitNumber || 1}
+                        </div>
+                        <span className="text-[10px] font-semibold text-slate-500">{cls.unitTitle}</span>
                       </div>
-                      <div className="text-xs font-semibold text-slate-900 mt-0.5 flex items-start gap-1.5">
-                        <span className="text-primary font-bold">›</span>
+                      <div className="text-xs font-semibold text-slate-900 mt-1 flex items-start gap-1.5">
+                        <span className="text-primary font-bold">&rsaquo;</span>
                         <span>{cls.nextTopic}</span>
                       </div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">{cls.unitTitle}</div>
                     </div>
 
                     {/* Syllabus Pacing Bar */}
@@ -263,7 +478,7 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
           <div className="bg-white rounded-lg border border-border p-5 shadow-xs space-y-4">
             <h3 className="font-serif text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-amber-500" />
-              This Week's Target Pacing
+              This Week&rsquo;s Target Pacing
             </h3>
 
             <div className="space-y-3">
@@ -275,7 +490,10 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
                 return (
                   <div key={cls.offeringId} className="p-3 rounded-md bg-slate-50 border border-slate-200">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-slate-900">{cls.courseCode} ({cls.section})</span>
+                      <span className="font-bold text-slate-900">
+                        {cls.courseCode} ({cls.section}
+                        {cls.subSection && cls.subSection !== 'ALL' ? ` · ${cls.subSection}` : ''})
+                      </span>
                       <span
                         className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
                           isBehind
@@ -332,27 +550,39 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
         </div>
       </div>
 
-      {/* 20-Second Quick Log Modal */}
+      {/* Course Description Slide-Over Modal */}
+      {courseForDescription && (
+        <CourseDescriptionModal
+          course={courseForDescription}
+          onClose={() => setCourseForDescription(null)}
+        />
+      )}
+
+      {/* Unlocked, Highly-Usable Quick Session Log Modal */}
       {selectedClass && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-2xs">
-          <div className="bg-white rounded-lg border border-border shadow-xl max-w-lg w-full p-6 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-2xs animate-in fade-in">
+          <div className="bg-white rounded-lg border border-border shadow-2xl max-w-lg w-full p-6 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-border">
               <div>
                 <span className="text-xs font-bold text-primary uppercase tracking-wider">Quick Session Log</span>
                 <h3 className="font-serif text-lg font-bold text-slate-900 mt-0.5">
-                  {selectedClass.courseCode} — {selectedClass.courseName}
+                  {selectedClass.courseCode} &mdash; {selectedClass.courseName}
                 </h3>
+                <div className="text-[11px] text-slate-500">
+                  {selectedClass.section} &bull; {selectedClass.timeSlot} &bull; Date: <span className="font-semibold text-slate-700">{selectedDate}</span>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedClass(null)}
-                className="text-slate-400 hover:text-slate-700 text-sm font-bold"
+                className="text-slate-400 hover:text-slate-700 text-sm font-bold p-1 rounded-md"
               >
-                ✕
+                &times;
               </button>
             </div>
 
             <form onSubmit={handleSaveLog} className="space-y-4 mt-4 text-xs">
+              {/* 1. Session Status */}
               <div>
                 <label className="block font-bold text-slate-700 mb-1.5">Session Status</label>
                 <div className="grid grid-cols-3 gap-2">
@@ -374,13 +604,149 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
               </div>
 
               {sessionStatus === 'HELD' && (
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-md">
-                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                    Topic Covered (Pre-selected)
+                <>
+                  {/* 2. LTP Component & Sub-section Selector */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1 flex items-center justify-between">
+                        <span>LTP Component</span>
+                        <span className="text-[10px] text-slate-400 font-normal">1-click override</span>
+                      </label>
+                      <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 rounded-md border border-slate-200">
+                        {[
+                          { id: 'LECTURE', label: 'Lecture (L)', defaultHours: 1 },
+                          { id: 'TUTORIAL', label: 'Tutorial (T)', defaultHours: 1 },
+                          { id: 'PRACTICAL', label: 'Practical (P)', defaultHours: 2 }
+                        ].map((comp) => (
+                          <button
+                            key={comp.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedComponent(comp.id);
+                              setLecturesTaken(comp.defaultHours);
+                            }}
+                            className={`py-1.5 px-2 rounded text-[11px] font-bold transition-all text-center ${
+                              selectedComponent === comp.id
+                                ? 'bg-primary text-white shadow-xs'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                            }`}
+                          >
+                            {comp.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1 flex items-center justify-between">
+                        <span>Section / Lab Batch</span>
+                        <span className="text-[10px] text-slate-400 font-normal">Grouped hierarchy</span>
+                      </label>
+                      <select
+                        value={selectedSubSection}
+                        onChange={(e) => setSelectedSubSection(e.target.value)}
+                        className="w-full px-3 py-2 border border-border rounded-md text-xs bg-white focus:ring-1 focus:ring-primary focus:border-primary outline-hidden font-medium"
+                      >
+                        <optgroup label={`Section ${selectedClass.section} — Whole Class`}>
+                          <option value="ALL">Section {selectedClass.section} (Entire Division / Theory)</option>
+                        </optgroup>
+                        <optgroup label={`Section ${selectedClass.section} — Lab / Tutorial Batches`}>
+                          <option value={`${selectedClass.section}1`}>Section {selectedClass.section} — Batch {selectedClass.section}1 (Lab/Tutorial)</option>
+                          <option value={`${selectedClass.section}2`}>Section {selectedClass.section} — Batch {selectedClass.section}2 (Lab/Tutorial)</option>
+                          <option value={`${selectedClass.section}3`}>Section {selectedClass.section} — Batch {selectedClass.section}3 (Lab/Tutorial)</option>
+                        </optgroup>
+                        <optgroup label="Other Standard Batches">
+                          <option value="A1">Batch A1 (Roll 1-30)</option>
+                          <option value="A2">Batch A2 (Roll 31-60)</option>
+                          <option value="B1">Batch B1 (Roll 1-30)</option>
+                          <option value="B2">Batch B2 (Roll 31-60)</option>
+                        </optgroup>
+                      </select>
+                    </div>
                   </div>
-                  <div className="font-bold text-slate-900 mt-1">{selectedClass.nextTopic}</div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">{selectedClass.unitTitle}</div>
-                </div>
+
+                  {/* 3. Academic Unit Running Dropdown */}
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1 flex items-center justify-between">
+                      <span>Academic Unit Running</span>
+                      <span className="text-[10px] text-primary font-normal">
+                        Select unit currently taught
+                      </span>
+                    </label>
+                    <select
+                      value={selectedUnit}
+                      onChange={(e) => handleUnitChange(parseInt(e.target.value, 10))}
+                      className="w-full px-3 py-2 border border-border rounded-md text-xs bg-white font-medium focus:ring-1 focus:ring-primary focus:border-primary outline-hidden"
+                    >
+                      {selectedClass.availableUnits && selectedClass.availableUnits.length > 0 ? (
+                        selectedClass.availableUnits.map((u) => (
+                          <option key={u.unitNumber} value={u.unitNumber}>
+                            {u.unitTitle} ({u.topics.length} topics)
+                          </option>
+                        ))
+                      ) : (
+                        [1, 2, 3, 4, 5].map((num) => (
+                          <option key={num} value={num}>
+                            Unit {num}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+
+                  {/* 4. Topic Selection from Syllabus */}
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      Select Topic from Unit {selectedUnit} Syllabus
+                    </label>
+                    <select
+                      value={selectedTopicId ? String(selectedTopicId) : ''}
+                      onChange={(e) => handleTopicDropdownSelect(e.target.value)}
+                      className="w-full px-3 py-2 border border-border rounded-md text-xs bg-white focus:ring-1 focus:ring-primary focus:border-primary outline-hidden"
+                    >
+                      <option value="">-- Choose from Unit {selectedUnit} Topics --</option>
+                      {getTopicsForCurrentModalUnit().map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.topicName} (Week {t.targetWeek})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 5. Flexible Editable / Custom Topic Input */}
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1 flex items-center justify-between">
+                      <span>Specific Topic / Lab Taught (Editable)</span>
+                      <span className="text-[10px] text-slate-400 font-normal">
+                        Free text or edit above selection
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. TCP Congestion Control: AIMD, Slow Start & Fast Recovery"
+                      value={customTopic}
+                      onChange={(e) => setCustomTopic(e.target.value)}
+                      className="w-full px-3 py-2 border border-border rounded-md text-xs focus:ring-1 focus:ring-primary focus:border-primary outline-hidden font-medium"
+                    />
+                  </div>
+
+                  {/* 6. Lectures Taken / Duration */}
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      Lectures / Contact Hours Conducted
+                    </label>
+                    <select
+                      value={lecturesTaken}
+                      onChange={(e) => setLecturesTaken(parseInt(e.target.value, 10))}
+                      className="w-full px-3 py-2 border border-border rounded-md text-xs bg-white focus:ring-1 focus:ring-primary focus:border-primary outline-hidden"
+                    >
+                      <option value={1}>1 Lecture (1 Contact Hour)</option>
+                      <option value={2}>2 Lectures (2-Hour Lab / Block Period)</option>
+                      <option value={3}>3 Lectures (Intensive Workshop)</option>
+                    </select>
+                  </div>
+                </>
               )}
 
               {sessionStatus !== 'HELD' && (
@@ -401,17 +767,21 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
                 </div>
               )}
 
+              {/* Teaching Note / Homework */}
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Teaching Note (Optional)</label>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Teaching Notes &amp; Observations (Optional)
+                </label>
                 <input
                   type="text"
-                  placeholder="e.g. Distributed assignment set #3 and discussed practice problems"
+                  placeholder="e.g. Distributed assignment set #3 and discussed Wireshark packet traces"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   className="w-full px-3 py-2 border border-border rounded-md text-xs focus:ring-1 focus:ring-primary focus:border-primary outline-hidden"
                 />
               </div>
 
+              {/* Action Buttons */}
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
                 <button
                   type="button"

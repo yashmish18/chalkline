@@ -15,6 +15,7 @@ export function TeachingAllocationsView() {
   const [selectedOfferingId, setSelectedOfferingId] = useState<number | ''>('');
   const [selectedFacultyId, setSelectedFacultyId] = useState<number | ''>('');
   const [component, setComponent] = useState<'THEORY' | 'LAB'>('THEORY');
+  const [subSection, setSubSection] = useState<'ALL' | 'A1' | 'A2'>('ALL');
 
   const { data: offerings = [] } = useQuery<CourseOfferingDto[]>({
     queryKey: ['offerings', selectedSemester],
@@ -45,7 +46,7 @@ export function TeachingAllocationsView() {
   });
 
   const createAssignmentMutation = useMutation({
-    mutationFn: async (payload: { offeringId: number; facultyId: number; component: string }) => {
+    mutationFn: async (payload: { offeringId: number; facultyId: number; component: string; subSection?: string }) => {
       const res = await fetch('/api/teaching-assignments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -62,6 +63,7 @@ export function TeachingAllocationsView() {
       setIsAssignModalOpen(false);
       setSelectedOfferingId('');
       setSelectedFacultyId('');
+      setSubSection('ALL');
     },
   });
 
@@ -73,6 +75,7 @@ export function TeachingAllocationsView() {
       offeringId: Number(selectedOfferingId),
       facultyId: Number(selectedFacultyId),
       component,
+      subSection,
     });
   };
 
@@ -160,8 +163,9 @@ export function TeachingAllocationsView() {
                 <tr>
                   <th className="px-5 py-3">Course Code</th>
                   <th className="px-5 py-3">Course Title</th>
+                  <th className="px-5 py-3">LTP Format</th>
                   <th className="px-5 py-3">Academic Term</th>
-                  <th className="px-5 py-3">Section</th>
+                  <th className="px-5 py-3">Section &amp; Batch</th>
                   <th className="px-5 py-3">Component</th>
                   <th className="px-5 py-3">Assigned Faculty</th>
                 </tr>
@@ -187,11 +191,19 @@ export function TeachingAllocationsView() {
                           </span>
                         )}
                       </td>
+                      <td className="px-5 py-3.5 font-mono text-xs text-slate-700">
+                        {a.offering.course.ltp || '3-0-0'}
+                      </td>
                       <td className="px-5 py-3.5 text-xs text-slate-600">
                         {a.offering.academicYear} · Sem {a.offering.semester} (Yr {a.offering.yearOfStudy})
                       </td>
                       <td className="px-5 py-3.5 text-xs text-slate-700">
-                        Sec {a.offering.section}
+                        <span>Sec {a.offering.section}</span>
+                        {a.subSection && a.subSection !== 'ALL' && (
+                          <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            Batch {a.subSection}
+                          </span>
+                        )}
                       </td>
                       <td className="px-5 py-3.5">
                         <span
@@ -295,6 +307,30 @@ export function TeachingAllocationsView() {
                   </button>
                 </div>
               </div>
+
+              {component === 'LAB' && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Lab Batch / Sub-Section
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['ALL', 'A1', 'A2'] as const).map((b) => (
+                      <button
+                        key={b}
+                        type="button"
+                        onClick={() => setSubSection(b)}
+                        className={`py-1.5 px-3 text-xs font-semibold rounded-md border text-center transition-all ${
+                          subSection === b
+                            ? 'bg-primary text-white border-primary shadow-xs'
+                            : 'bg-slate-50 text-slate-700 border-border hover:bg-slate-100'
+                        }`}
+                      >
+                        {b === 'ALL' ? 'Full Section' : `Batch ${b}`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {createAssignmentMutation.isError && (
                 <div className="text-xs text-rose-600 bg-rose-50 p-2.5 rounded border border-rose-200">

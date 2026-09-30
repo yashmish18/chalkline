@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard,
   CalendarCheck,
+  CalendarDays,
   BookOpen,
   Calendar,
   Users,
@@ -44,6 +45,7 @@ export function Sidebar({
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'faculty', label: 'Faculty Directory', icon: Users },
     { id: 'academics', label: 'Academics & Matrix', icon: BookOpen },
+    { id: 'timetable', label: 'Master Timetable', icon: CalendarDays },
     { id: 'compliance', label: 'Compliance Tracking', icon: CheckSquare },
     { id: 'deadlines', label: 'Deadlines & Cycles', icon: Calendar },
     { id: 'audit', label: 'Audit Logs', icon: ShieldCheck },
@@ -51,6 +53,7 @@ export function Sidebar({
 
   const facultyItems: NavItem[] = [
     { id: 'today', label: 'Today (Log Class)', icon: CalendarCheck },
+    { id: 'timetable', label: 'Weekly Timetable', icon: CalendarDays },
     { id: 'my-courses', label: 'My Courses & Syllabus', icon: BookOpen },
     {
       id: 'deadlines',

@@ -20,4 +20,6 @@ public interface FacultyService {
     FacultyDto createFaculty(CreateFacultyRequest request);
 
     FacultyDto updateFacultySkills(Long facultyId, List<Long> skillIds);
+
+    FacultyDto updateFacultySkillsByNames(Long facultyId, List<String> skillNames);
 }

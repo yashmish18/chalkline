@@ -107,4 +107,27 @@ class FacultyServiceTest {
         assertEquals(5L, result.id());
         assertEquals("Dr. New", result.name());
     }
+
+    @Test
+    void testUpdateFacultySkillsByNames_NormalizesAndCreatesMissing() {
+        Faculty faculty = new Faculty(2L, "Dr. Amit", "Assoc Prof", "PhD", "IT");
+        faculty.setId(1L);
+
+        when(facultyRepository.findByIdWithSkills(1L)).thenReturn(Optional.of(faculty));
+
+        Skill existingSkill = new Skill("Machine Learning", "AI");
+        when(skillRepository.findByNameIgnoreCase("Machine Learning")).thenReturn(Optional.of(existingSkill));
+
+        Skill newSkill = new Skill("Rust Programming", "Technical");
+        when(skillRepository.findByNameIgnoreCase("Rust Programming")).thenReturn(Optional.empty());
+        when(skillRepository.save(any(Skill.class))).thenReturn(newSkill);
+
+        when(facultyRepository.save(any(Faculty.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        FacultyDto result = facultyService.updateFacultySkillsByNames(1L, List.of(" Machine Learning ", "Rust Programming"));
+
+        assertNotNull(result);
+        assertEquals(2, result.skills().size());
+        verify(skillRepository).save(any(Skill.class));
+    }
 }

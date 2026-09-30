@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { CourseProgressDto, SyllabusTopicProgressDto } from '../types/academics';
+import { CourseProgressDto, SyllabusTopicProgressDto, TodayClassDto } from '../types/academics';
 import {
   BookOpen,
   CheckCircle2,
@@ -8,8 +8,10 @@ import {
   ListOrdered,
   AlertCircle,
   RefreshCw,
-  Activity
+  Activity,
+  Info
 } from 'lucide-react';
+import { CourseDescriptionModal } from '../components/CourseDescriptionModal';
 
 export function MyCoursesView() {
   const [courses, setCourses] = useState<CourseProgressDto[]>([]);
@@ -17,6 +19,7 @@ export function MyCoursesView() {
   const [expandedUnit, setExpandedUnit] = useState<number | null>(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showOverviewModal, setShowOverviewModal] = useState(false);
 
   const fetchMyCourses = useCallback(async () => {
     setLoading(true);
@@ -59,6 +62,41 @@ export function MyCoursesView() {
     });
   }
 
+  const courseForModal: TodayClassDto | null = activeCourse
+    ? {
+        offeringId: activeCourse.offeringId,
+        courseCode: activeCourse.courseCode,
+        courseName: activeCourse.courseName,
+        courseDescription: activeCourse.courseDescription,
+        ltp: activeCourse.ltp || '3-0-0',
+        section: activeCourse.section,
+        subSection: activeCourse.subSection,
+        component: activeCourse.component,
+        timeSlot: 'Regular Schedule',
+        currentUnitNumber: expandedUnit || 1,
+        nextTopicId: null,
+        nextTopic: '',
+        unitTitle: '',
+        targetWeek: activeCourse.currentWeek,
+        totalPlanned: activeCourse.totalTopics,
+        completedSoFar: activeCourse.coveredTopics,
+        isLogged: false,
+        availableUnits: Array.from(unitsMap.entries()).map(([uNum, uData]) => ({
+          unitNumber: uNum,
+          unitTitle: uData.title,
+          topics: uData.topics.map((t) => ({
+            id: t.id,
+            courseId: t.courseId,
+            unitNumber: t.unitNumber,
+            unitTitle: t.unitTitle,
+            topicName: t.topicName,
+            targetWeek: t.targetWeek,
+            lectureOrder: t.lectureOrder,
+          })),
+        })),
+      }
+    : null;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -74,6 +112,30 @@ export function MyCoursesView() {
           <p className="text-xs text-slate-600 mt-1">
             Track planned vs covered topics unit-by-unit. Coverage % and conduct pacing are derived automatically from session logs.
           </p>
+
+          {activeCourse && (
+            <div className="flex flex-wrap items-center gap-2 mt-3">
+              <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-bold bg-slate-100 text-slate-800 border border-slate-200">
+                LTP: {activeCourse.ltp || '3-0-0'}
+              </span>
+              <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
+                {activeCourse.component}
+              </span>
+              {activeCourse.subSection && activeCourse.subSection !== 'ALL' && (
+                <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-200">
+                  Lab Batch {activeCourse.subSection}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowOverviewModal(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded text-xs font-bold text-primary hover:bg-primary/10 border border-primary/20 transition-colors"
+              >
+                <Info className="w-3.5 h-3.5" />
+                Course Overview &amp; Objectives
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -191,6 +253,20 @@ export function MyCoursesView() {
                     {activeCourse.credits} Cr ({activeCourse.component})
                   </span>
                 </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>LTP Format:</span>
+                  <span className="font-mono font-bold text-slate-900">
+                    {activeCourse.ltp || '3-0-0'}
+                  </span>
+                </div>
+                {activeCourse.subSection && activeCourse.subSection !== 'ALL' && (
+                  <div className="flex justify-between text-slate-600">
+                    <span>Assigned Batch:</span>
+                    <span className="font-bold text-indigo-700">
+                      Batch {activeCourse.subSection}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -307,6 +383,14 @@ export function MyCoursesView() {
           </div>
         </div>
       ) : null}
+
+      {/* Course Overview & LTP Breakdown Modal */}
+      {showOverviewModal && courseForModal && (
+        <CourseDescriptionModal
+          course={courseForModal}
+          onClose={() => setShowOverviewModal(false)}
+        />
+      )}
     </div>
   );
 }

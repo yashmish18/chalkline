@@ -132,16 +132,17 @@ class TeachingSessionServiceTest {
 
     @Test
     void testGetTodayClassesForFaculty_CalculatesNextTopicCorrectly() {
-        CourseDto courseDto = new CourseDto(1L, "CS501", "Computer Networks", "IT", 4);
+        CourseDto courseDto = new CourseDto(1L, "CS501", "Computer Networks", "THEORY", 4, "3-0-2", 3, 0, 2, "Computer Networks desc");
         CourseOfferingDto offeringDto = new CourseOfferingDto(
                 1L, courseDto, "2026-2027", 3, 5, "A", 1L, "Odd 2026-27"
         );
         TeachingAssignmentDto assignment = new TeachingAssignmentDto(
-                10L, offeringDto, 2L, "Dr. Amit Verma", "THEORY"
+                10L, offeringDto, 2L, "Dr. Amit Verma", "THEORY", "A1"
         );
 
         when(academicsService.getTeachingAssignmentsForFaculty(2L)).thenReturn(List.of(assignment));
         when(sessionRepository.findByFacultyIdAndSessionDate(eq(2L), any(LocalDate.class))).thenReturn(Collections.emptyList());
+        when(academicsService.getTimetableForFaculty(2L)).thenReturn(Collections.emptyList());
 
         // Topics: #1, #2, #3
         SyllabusTopicDto topic1 = new SyllabusTopicDto(1L, 1L, 1, "Unit 1", "Intro", 1, 1);
@@ -158,12 +159,18 @@ class TeachingSessionServiceTest {
         TodayClassDto todayClass = classes.get(0);
         assertEquals("CS501", todayClass.courseCode());
         assertEquals("Sec A", todayClass.section());
+        assertEquals("A1", todayClass.subSection());
+        assertEquals("3-0-2", todayClass.ltp());
+        assertEquals("Computer Networks desc", todayClass.courseDescription());
         assertEquals(3, todayClass.totalPlanned());
         assertEquals(1, todayClass.completedSoFar());
         assertFalse(todayClass.isLogged());
         // Pre-selected next topic should be topic 2 (OSI Model)
         assertEquals(2L, todayClass.nextTopicId());
         assertEquals("OSI Model", todayClass.nextTopic());
+        assertEquals(2, todayClass.availableUnits().size());
+        assertEquals("Unit 1", todayClass.availableUnits().get(0).unitTitle());
+        assertEquals(2, todayClass.availableUnits().get(0).topics().size());
     }
 
     @Test

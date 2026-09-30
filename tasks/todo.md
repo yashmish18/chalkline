@@ -55,25 +55,45 @@
 - [x] Academics API: Term management, Course catalog with syllabus topics, and IDOR protection
 - [x] Frontend: Persistent collapsible `Sidebar.tsx` with role switching (Coordinator vs Faculty) and active term indicator
 
-## [ ] Slice 9: Faculty Daily Session Logging & "Today" Screen
-- [ ] Flyway migration `V8__teaching_sessions.sql`: `teaching_session` and `session_topic_log`
-- [ ] Domain & Service: `TeachingSessionService` with strict ownership check (`faculty_id == currentUser.facultyId`)
-- [ ] Session API: `POST /api/teaching-sessions`, `GET /api/teaching-sessions/today`
-- [ ] Frontend: Faculty `TodayView.tsx` with 20-second quick-log form pre-selecting next uncovered topic
+## [x] Slice 9: Faculty Daily Session Logging & "Today" Screen
+- [x] Flyway migration `V8__teaching_sessions.sql`: `teaching_session` and `session_topic_log`
+- [x] Domain & Service: `TeachingSessionService` with strict ownership check (`faculty_id == currentUser.facultyId`)
+- [x] Session API: `POST /api/teaching-sessions`, `GET /api/teaching-sessions/today`
+- [x] Frontend: Faculty `TodayView.tsx` with 20-second quick-log form pre-selecting next uncovered topic
 
-## [ ] Slice 10: Syllabus as Data, Progress Pacing & "My Courses" View
-- [ ] Pacing calculation engine: Dynamic computation of coverage %, conduct rate %, and ahead/behind topic delta
-- [ ] Faculty API: `GET /api/academics/my-courses` with per-offering syllabus progress
-- [ ] Frontend: `MyCoursesView.tsx` with unit-by-unit syllabus breakdown, topic checkmarks, and pacing indicator
+## [x] Slice 10: Syllabus as Data, Progress Pacing & "My Courses" View
+- [x] Pacing calculation engine: Dynamic computation of coverage %, conduct rate %, and ahead/behind topic delta
+- [x] Faculty API: `GET /api/academics/my-courses` with per-offering syllabus progress
+- [x] Frontend: `MyCoursesView.tsx` with unit-by-unit syllabus breakdown, topic checkmarks, and pacing indicator
 
-## [ ] Slice 11: Sparse Coordinator Overview Dashboard & Compliance Matrix
-- [ ] Query projections: Worst-first coverage ranking, weekly conduct trajectory, and milestone compliance matrix
-- [ ] Web API: `/api/tracking/overview-summary` and `/api/tracking/compliance-matrix`
-- [ ] Frontend: Sparse `CoordinatorOverviewView.tsx` with 4 KPI numbers, Worst-First Bar Chart, Conduct Line Chart, Compliance Matrix, and actionable Needs-Attention list with 1-click reminders
+## [x] Slice 11: Sparse Coordinator Overview Dashboard & Compliance Matrix
+- [x] Query projections: Worst-first coverage ranking, weekly conduct trajectory, and milestone compliance matrix
+- [x] Web API: `/api/tracking/overview-summary` and `/api/tracking/compliance-matrix`
+- [x] Frontend: Sparse `CoordinatorOverviewView.tsx` with 4 KPI numbers, Worst-First Bar Chart, Conduct Line Chart, Compliance Matrix, and actionable Needs-Attention list with 1-click reminders
 
-## [ ] Slice 12: Skills Tag Input & Final E2E Verification
-- [ ] Backend: Normalized `skill` table with case-insensitive unique lookup and dynamic insertion
-- [ ] Frontend: `TagInput.tsx` chip component with autosuggest
-- [ ] Integration tests: Complete daily log -> coverage calculation -> coordinator review flow
-- [ ] Floor guard check: Zero suppressions, stubs, secret leaks, or weakened tests
+## [x] Slice 12: Skills Tag Input & Dynamic Persistence
+- [x] Backend: Normalized `skill` table with case-insensitive unique lookup and dynamic insertion (`PUT /api/faculty/{id}/skills-by-name`)
+- [x] Frontend: `TagInput.tsx` chip component with keyboard navigation, autosuggest dropdown, and chip deletion
+- [x] Faculty directory integration: Dynamic skill addition with backend synchronization
 
+## [x] Slice 13: LTP Contact Hours, Sub-sections/Batches & Master Timetable (Industry-Grade Swiss Modernism 2.0 UI)
+- [x] Flyway migration `V9__ltp_subsections_and_timetable.sql`: `course.ltp`, `lecture_hours`, `tutorial_hours`, `practical_hours`, `course.description`, `sub_section` (`ALL`, `A1`, `A2`), and `timetable_slot` table
+- [x] Backend domain, repositories, DTOs & endpoints: `GET /api/academics/timetable`, unit-grouped topics (`UnitOptionDto`), variable duration & sub-section session logging
+- [x] Unlocked Session Logging: Faculty can select active academic unit (1–5), syllabus topic, or write/edit custom topic name and notes
+- [x] Master Timetable Schedule: 5-day grid (Mon–Fri) with L/T/P colored badges, room allocations, and sub-sections in `TimetableView.tsx`
+- [x] Course Overview Modal: `CourseDescriptionModal.tsx` showing LTP breakdown, weekly contact hours, course description, and unit syllabus pacing
+- [x] App-wide UI Polish: Full Swiss Modernism 2.0 overhaul across Sidebar, Today, Timetable, My Courses, Allocations, Directory, Overview, Deadlines, and Submissions
+
+## [x] Slice 14: PDF & DOC/DOCX Document Upload & Repository (Timetable, Academic Calendar & Course Syllabus)
+- [x] Flyway migration `V10__academic_documents.sql`: `academic_document` table with categories `MASTER_TIMETABLE`, `ACADEMIC_CALENDAR`, `COURSE_SYLLABUS`
+- [x] Backend domain & security: `AcademicDocumentService` with real Apache Tika MIME sniffing (PDF, Word DOC, DOCX), opaque UUID storage keys, and 25MB limits
+- [x] Web endpoints: `POST /api/academic-documents/upload` (`COORDINATOR`), `GET /api/academic-documents/latest`, `GET /api/academic-documents/{id}/download` (in-browser inline preview / download)
+- [x] Frontend UI: `UploadAcademicDocumentModal.tsx` drag-and-drop file uploader, integrated into `TimetableView.tsx` (Timetable & Calendar) and `CourseDescriptionModal.tsx` (Course Syllabus & Scheme)
+- [x] Automated Tests: 73/73 Maven unit & integration tests passing, vitest tests passing, 0 type errors, and floor-guard certified
+## [x] Slice 15: Linear / Raycast UI Redesign & High-Precision Date-Driven Timetable Logging
+- [x] Adopt Linear / Raycast design tokens: `#5E6AD2` purple accent, hairline borders, elevated surfaces, and updated `DESIGN.md` specification
+- [x] Date Picker Toolbar: High-precision `<input type="date">` with previous/next day chevron navigation, `Today` and `Yesterday` 1-click pills, live day-of-week formatting, and timetable sync badges (`Live Timetable`, `Historical Log`, `Future Schedule`)
+- [x] Dynamic Session Logging: `GET /api/teaching-sessions/today?date=YYYY-MM-DD` syncs schedule cards dynamically to selected date; session logs submit exact `sessionDate: selectedDate`
+- [x] 1-Click Segmented LTP Pills: `[Lecture (L)]` (1 contact hour), `[Tutorial (T)]` (1 contact hour), `[Practical (P)]` (2 contact hours) for instant timetable override
+- [x] Grouped Section & Lab Batch Selector: Structured `<optgroup>` hierarchy (`Section A (Entire Division / Theory)` vs `Section A — Batch A1/A2 (Lab/Tutorial)`)
+- [x] Full Verification: 73/73 Maven backend tests, vitest frontend tests, TypeScript typecheck, and quality floor guard passed

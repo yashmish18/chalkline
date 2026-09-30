@@ -49,4 +49,13 @@ public class FacultyController {
         FacultyDto updated = facultyService.updateFacultySkills(id, request.skillIds());
         return ResponseEntity.ok(updated);
     }
+
+    @PutMapping("/faculty/{id}/skills-by-name")
+    public ResponseEntity<FacultyDto> updateSkillsByName(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateFacultySkillsByNameRequest request
+    ) {
+        FacultyDto updated = facultyService.updateFacultySkillsByNames(id, request.skills());
+        return ResponseEntity.ok(updated);
+    }
 }

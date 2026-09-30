@@ -113,6 +113,21 @@ public class AcademicsController {
         return ResponseEntity.ok(pacingService.calculateProgressForOffering(offeringId, facultyId, isCoordinator));
     }
 
+    @GetMapping("/academics/timetable")
+    @PreAuthorize("hasAnyRole('FACULTY', 'COORDINATOR')")
+    public ResponseEntity<List<TimetableSlotDto>> getTimetable(
+            @RequestParam(value = "facultyId", required = false) Long queryFacultyId
+    ) {
+        UserDto currentUser = userService.getCurrentUser();
+        Long targetFacultyId;
+        if ("COORDINATOR".equals(currentUser.role()) && queryFacultyId != null) {
+            targetFacultyId = queryFacultyId;
+        } else {
+            targetFacultyId = resolveFacultyId(currentUser);
+        }
+        return ResponseEntity.ok(academicsService.getTimetableForFaculty(targetFacultyId));
+    }
+
     private Long resolveFacultyId(UserDto currentUser) {
         return facultyService.getFacultyByUserId(currentUser.id())
                 .map(FacultyDto::id)

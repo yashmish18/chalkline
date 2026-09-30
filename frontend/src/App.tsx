@@ -10,6 +10,7 @@ import { TrackingDashboardView } from './views/TrackingDashboardView';
 import { CoordinatorOverviewView } from './views/CoordinatorOverviewView';
 import { TodayView } from './views/TodayView';
 import { MyCoursesView } from './views/MyCoursesView';
+import { TimetableView } from './views/TimetableView';
 
 function MainAppShell() {
   const { user } = useAuth();
@@ -61,6 +62,8 @@ function MainAppShell() {
         return 'Department Overview & Compliance Analytics';
       case 'today':
         return "Today's Academic Session Log";
+      case 'timetable':
+        return isCoordinator ? 'Department Master Timetable & Class Schedule' : 'My Weekly Class Schedule & Timetable';
       case 'my-courses':
         return 'My Allocated Courses & Syllabus Pacing';
       case 'deadlines':
@@ -119,6 +122,7 @@ function MainAppShell() {
           {activeTab === 'faculty' && <FacultyDirectoryView />}
           {activeTab === 'deadlines' && <DeadlinesView />}
           {activeTab === 'today' && <TodayView onNavigate={(t) => setActiveTab(t)} />}
+          {activeTab === 'timetable' && <TimetableView />}
           {activeTab === 'my-courses' && <MyCoursesView />}
         </main>
       </div>

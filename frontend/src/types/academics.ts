@@ -4,6 +4,11 @@ export interface CourseDto {
   name: string;
   type: string;
   credits?: number;
+  ltp?: string;
+  lectureHours?: number;
+  tutorialHours?: number;
+  practicalHours?: number;
+  description?: string;
 }
 
 export interface CourseOfferingDto {
@@ -22,7 +27,8 @@ export interface TeachingAssignmentDto {
   offering: CourseOfferingDto;
   facultyId: number;
   facultyName: string;
-  component: 'THEORY' | 'LAB';
+  component: 'THEORY' | 'LAB' | 'LECTURE' | 'PRACTICAL' | 'TUTORIAL';
+  subSection?: string;
 }
 
 export interface SyllabusTopicDto {
@@ -35,13 +41,41 @@ export interface SyllabusTopicDto {
   lectureOrder: number;
 }
 
+export interface UnitOptionDto {
+  unitNumber: number;
+  unitTitle: string;
+  topics: SyllabusTopicDto[];
+}
+
+export interface TimetableSlotDto {
+  id: number;
+  offeringId: number;
+  courseCode: string;
+  courseName: string;
+  courseDescription: string;
+  ltp: string;
+  section: string;
+  subSection: string;
+  component: string;
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+  room: string;
+  facultyId: number;
+}
+
 export interface TodayClassDto {
   offeringId: number;
   courseCode: string;
   courseName: string;
+  courseDescription?: string;
+  ltp?: string;
   section: string;
+  subSection?: string;
   component: string;
   timeSlot: string;
+  room?: string;
+  currentUnitNumber?: number;
   nextTopicId: number | null;
   nextTopic: string;
   unitTitle: string;
@@ -49,6 +83,7 @@ export interface TodayClassDto {
   totalPlanned: number;
   completedSoFar: number;
   isLogged: boolean;
+  availableUnits?: UnitOptionDto[];
 }
 
 export interface TeachingSessionDto {
@@ -57,10 +92,14 @@ export interface TeachingSessionDto {
   courseCode: string;
   courseName: string;
   section: string;
+  subSection?: string;
   facultyId: number;
   sessionDate: string;
   sessionType: string;
   status: 'HELD' | 'CANCELLED' | 'SWAPPED';
+  unitNumber?: number;
+  customTopicName?: string;
+  lecturesTaken?: number;
   note?: string;
   reasonNotHeld?: string;
   topicsCovered: SyllabusTopicDto[];
@@ -99,4 +138,7 @@ export interface CourseProgressDto {
   heldSessions: number;
   conductRatePercentage: number;
   topics: SyllabusTopicProgressDto[];
+  ltp?: string;
+  subSection?: string;
+  courseDescription?: string;
 }

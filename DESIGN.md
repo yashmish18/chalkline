@@ -1,8 +1,8 @@
 # Design System: Faculty Dashboard (IET)
 
-**Design Language:** Swiss Modernism 2.0 / Institutional Precision  
+**Design Language:** Linear / Raycast High-Precision Academic Workspace  
 **Audience:** Academic Department Coordinators & Faculty Members  
-**Principles:** Legible, rational, authoritative, zero visual fluff, high data density with generous breathing room.
+**Principles:** Precision craftsmanship, negative letter-spacing, hairline dividers, micro-status tags, 1-click segmented overrides, and keyboard-friendly fast interaction.
 
 ---
 
@@ -11,9 +11,9 @@
 ### 1.1 Brand & Neutral Hierarchy
 ```css
 :root {
-  /* Brand Primaries */
-  --color-primary: #1E3A5F;            /* Deep Institutional Navy */
-  --color-primary-hover: #162C48;
+  --color-primary: #5E6AD2;            /* Linear Signature Purple */
+  --color-primary-hover: #4F5AC2;
+  --color-primary-light: #EEF0FF;
   --color-primary-foreground: #FFFFFF;
 
   --color-secondary: #2563EB;          /* Active Interaction Blue */
@@ -27,18 +27,25 @@
   /* Surfaces & Backgrounds */
   --color-background: #F8FAFC;         /* Crisp Canvas */
   --color-surface: #FFFFFF;            /* Cards, Tables, Modals */
-  --color-surface-hover: #F1F5F9;
-  --color-surface-active: #E2E8F0;
+  --color-surface-hover: #F8F9FA;
+  --color-surface-active: #F1F3F5;
+
+  /* Linear Dark Palettes */
+  --color-linear-bg: #0F1011;
+  --color-linear-surface: #141516;
+  --color-linear-panel: #18191A;
+  --color-linear-hairline: #23252A;
+  --color-linear-ink: #F7F8F8;
 
   /* Typography Colors */
   --color-foreground: #0F172A;         /* Primary Headings & Data */
   --color-foreground-muted: #475569;   /* Labels, Secondary Data */
   --color-foreground-subtle: #94A3B8;  /* Timestamps, Placeholders */
 
-  /* Borders & Dividers */
-  --color-border: #E2E8F0;
-  --color-border-subtle: #F1F5F9;
-  --color-border-strong: #CBD5E1;
+  /* Hairline Borders & Dividers */
+  --color-border: #E5E7EB;            /* 1px Hairline Grey */
+  --color-border-subtle: #F3F4F6;
+  --color-border-strong: #D1D5DB;
 
   /* Status Colors */
   --status-on-track-bg: #DCFCE7;
@@ -53,9 +60,9 @@
   --status-critical-text: #991B1B;
   --status-critical-border: #FCA5A5;
 
-  --status-info-bg: #E0F2FE;
-  --status-info-text: #075985;
-  --status-info-border: #7DD3FC;
+  --status-info-bg: #EEF2FF;
+  --status-info-text: #3730A3;
+  --status-info-border: #C7D2FE;
 }
 ```
 
@@ -121,11 +128,36 @@
 * Zebra striping optional; hover highlight on rows (`hover:bg-slate-50/70`).
 * Explicit empty states with clear calls to action (no bare empty rectangles).
 
+### 4.5 High-Precision Date Selector Bar
+* Floating/sticky toolbar card (`bg-white border border-border shadow-xs`).
+* Compact previous/next day chevron buttons framing native date picker.
+* 1-click quick action pills: `Today` (resets to today's date), `Yesterday` (1-day rollback for late logging).
+* Dynamic day-of-week indicator with status badges: `Live Timetable` (pulsing green dot), `Historical Log` (amber), `Future Schedule` (indigo).
+
+### 4.6 1-Click Segmented Override Pills (LTP)
+* 3-segment segmented control container (`bg-slate-100 border border-slate-200 p-1 rounded-md`).
+* Segments: `[Lecture (L)]` (1 hr), `[Tutorial (T)]` (1 hr), `[Practical (P)]` (2 hrs).
+* Active pill: `bg-primary text-white shadow-xs`; inactive: subtle hover.
+* 1-click timetable override: auto-adjusts duration / contact hours conducted.
+
+### 4.7 Grouped Hierarchy Section & Lab Batch Selector
+* Native `<optgroup>` grouped dropdown inside modals:
+  * Division level: `Section A — Entire Class (Full Lecture)`
+  * Sub-section batches: `Section A — Batch A1 (Lab/Tutorial)`, `Section A — Batch A2 (Lab/Tutorial)`
+  * Cross-division labs: `Batch B1`, `Batch B2`
+* Eliminates ambiguous free text while preserving section-specific lab logging.
+
+### 4.8 Official Institutional Documents (PDF/DOC) Storage & Downloads
+* Drag-and-drop file upload modal supporting `.pdf`, `.doc`, `.docx` up to 25MB.
+* Real MIME type byte sniffing via Apache Tika on the backend before storage.
+* Categorized badges: `MASTER_TIMETABLE`, `ACADEMIC_CALENDAR`, `COURSE_SYLLABUS`.
+* 1-click official document download chips with file type badge and uploader metadata.
+
 ---
 
 ## 5. Accessibility & Interaction Standards
 
 * **Contrast:** Minimum 4.5:1 for body copy; 3:1 for large headers and interface boundaries.
-* **Keyboard Navigation:** Clear focus visible ring: `ring-2 ring-offset-2 ring-[#1E3A5F]`.
+* **Keyboard Navigation:** Clear focus visible ring: `ring-2 ring-offset-2 ring-[#5E6AD2]`.
 * **Touch Targets:** Minimum 40x40px clickable hit areas for buttons and icons.
 * **Icons:** Standardized SVG icons (Lucide React), strictly no emoji as functional icons.

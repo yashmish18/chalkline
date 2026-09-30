@@ -8,29 +8,42 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#1E3A5F',
-          hover: '#162C48',
+          DEFAULT: '#5E6AD2',
+          hover: '#4F5AC2',
+          light: '#EEF0FF',
           foreground: '#FFFFFF',
         },
         secondary: {
-          DEFAULT: '#2563EB',
-          hover: '#1D4ED8',
+          DEFAULT: '#475569',
+          hover: '#334155',
           foreground: '#FFFFFF',
         },
         accent: {
-          DEFAULT: '#B45309',
+          DEFAULT: '#F59E0B',
           subtle: '#FEF3C7',
           foreground: '#FFFFFF',
         },
+        linear: {
+          bg: '#0F1011',
+          surface: '#141516',
+          panel: '#18191A',
+          hairline: '#23252A',
+          hairlineStrong: '#34343A',
+          ink: '#F7F8F8',
+          inkMuted: '#D0D6E0',
+          inkSubtle: '#8A8F98',
+          purple: '#5E6AD2',
+          purpleHover: '#828FFF',
+        },
         surface: {
           DEFAULT: '#FFFFFF',
-          hover: '#F1F5F9',
-          active: '#E2E8F0',
+          hover: '#F8F9FA',
+          active: '#F1F3F5',
         },
         border: {
-          DEFAULT: '#E2E8F0',
-          subtle: '#F1F5F9',
-          strong: '#CBD5E1',
+          DEFAULT: '#E5E7EB',
+          subtle: '#F3F4F6',
+          strong: '#D1D5DB',
         },
         status: {
           ontrack: {
@@ -49,14 +62,14 @@ export default {
             border: '#FCA5A5',
           },
           info: {
-            bg: '#E0F2FE',
-            text: '#075985',
-            border: '#7DD3FC',
+            bg: '#EEF2FF',
+            text: '#3730A3',
+            border: '#C7D2FE',
           },
         },
       },
       fontFamily: {
-        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
         serif: ['EB Garamond', 'Georgia', 'serif'],
         mono: ['JetBrains Mono', 'SF Mono', 'ui-monospace', 'monospace'],
       },

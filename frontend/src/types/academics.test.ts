@@ -22,4 +22,16 @@ describe('Academics Types & Pacing calculations', () => {
     const percentage = Math.round((sampleClass.completedSoFar / sampleClass.totalPlanned) * 100);
     expect(percentage).toBe(67);
   });
+
+  it('validates academic document categories and MIME extensions', () => {
+    const isAllowedDocument = (filename: string) => {
+      const ext = filename.split('.').pop()?.toLowerCase();
+      return ext === 'pdf' || ext === 'doc' || ext === 'docx';
+    };
+
+    expect(isAllowedDocument('timetable_odd_2026.pdf')).toBe(true);
+    expect(isAllowedDocument('academic_calendar.docx')).toBe(true);
+    expect(isAllowedDocument('cs501_syllabus.doc')).toBe(true);
+    expect(isAllowedDocument('script.exe')).toBe(false);
+  });
 });

@@ -37,4 +37,6 @@ public interface AcademicsService {
     boolean isFacultyAssignedToOffering(Long facultyId, Long offeringId);
 
     void assertFacultyAssignedToOffering(Long facultyId, Long offeringId);
+
+    List<com.iet.dashboard.academics.web.TimetableSlotDto> getTimetableForFaculty(Long facultyId);
 }

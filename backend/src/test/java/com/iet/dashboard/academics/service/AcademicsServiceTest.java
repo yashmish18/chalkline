@@ -48,6 +48,9 @@ class AcademicsServiceTest {
     @Mock
     private com.iet.dashboard.academics.repo.SyllabusTopicRepository syllabusRepository;
 
+    @Mock
+    private com.iet.dashboard.academics.repo.TimetableSlotRepository timetableSlotRepository;
+
     @InjectMocks
     private AcademicsServiceImpl academicsService;
 
@@ -142,5 +145,27 @@ class AcademicsServiceTest {
         // Faculty #99 is NOT assigned -> throws ForbiddenException
         assertThrows(com.iet.dashboard.shared.error.ForbiddenException.class,
                 () -> academicsService.assertFacultyAssignedToOffering(99L, 1L));
+    }
+
+    @Test
+    void testGetTimetableForFaculty() {
+        Course course = new Course("CS501", "Networks", "THEORY", 4, "3-0-2", 3, 0, 2, "Networking course");
+        CourseOffering offering = new CourseOffering(course, "2026-2027", 3, 5, "A");
+        offering.setId(1L);
+
+        com.iet.dashboard.academics.domain.TimetableSlot slot = new com.iet.dashboard.academics.domain.TimetableSlot(
+                offering, 2L, "MONDAY", java.time.LocalTime.of(10, 0), java.time.LocalTime.of(11, 0),
+                "Room 304", "LECTURE", "ALL"
+        );
+        slot.setId(10L);
+
+        when(timetableSlotRepository.findByFacultyIdWithDetails(2L)).thenReturn(List.of(slot));
+
+        List<com.iet.dashboard.academics.web.TimetableSlotDto> result = academicsService.getTimetableForFaculty(2L);
+        assertEquals(1, result.size());
+        assertEquals("CS501", result.get(0).courseCode());
+        assertEquals("3-0-2", result.get(0).ltp());
+        assertEquals("MONDAY", result.get(0).dayOfWeek());
+        assertEquals("Room 304", result.get(0).room());
     }
 }
