@@ -214,4 +214,15 @@ public class TeachingSessionServiceImpl implements TeachingSessionService {
     public Set<Long> getCoveredTopicIdsForOffering(Long offeringId) {
         return sessionRepository.findCoveredTopicIdsForOffering(offeringId);
     }
+
+    @Override
+    public void deleteSession(Long sessionId, Long currentFacultyId, boolean isCoordinator) {
+        TeachingSession session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Teaching session not found: " + sessionId));
+        if (!isCoordinator && !session.getFacultyId().equals(currentFacultyId)) {
+            throw new com.iet.dashboard.shared.error.ForbiddenException(
+                    "You cannot delete a session recorded by another faculty member");
+        }
+        sessionRepository.delete(session);
+    }
 }

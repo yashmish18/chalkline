@@ -106,7 +106,7 @@ export function MyCoursesView() {
             <BookOpen className="w-4 h-4" />
             Syllabus as Data — Course Coverage Engine
           </div>
-          <h1 className="font-serif text-2xl font-bold text-slate-900 mt-1">
+          <h1 className="font-sans text-2xl font-bold text-slate-900 mt-1">
             {activeCourse ? `${activeCourse.courseCode} — ${activeCourse.courseName}` : 'My Allocated Courses'}
           </h1>
           <p className="text-xs text-slate-600 mt-1">
@@ -213,7 +213,7 @@ export function MyCoursesView() {
               </div>
 
               <div className="text-center py-2">
-                <div className="font-serif text-4xl font-bold text-slate-900">
+                <div className="font-sans text-4xl font-bold text-slate-900">
                   {activeCourse.coveragePercentage}%
                 </div>
                 <div className="text-xs text-slate-500 mt-1">Syllabus Covered</div>
@@ -289,7 +289,7 @@ export function MyCoursesView() {
           {/* Unit-by-Unit Syllabus Topics (3 cols) */}
           <div className="lg:col-span-3 space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold font-serif text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <h2 className="text-sm font-bold font-sans text-slate-900 uppercase tracking-wider flex items-center gap-2">
                 <ListOrdered className="w-4 h-4 text-primary" />
                 Syllabus Units &amp; Topic Master
               </h2>

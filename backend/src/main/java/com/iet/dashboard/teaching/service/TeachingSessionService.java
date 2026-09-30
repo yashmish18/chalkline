@@ -17,4 +17,6 @@ public interface TeachingSessionService {
     List<TeachingSessionDto> getSessionsForOffering(Long offeringId, Long currentFacultyId, boolean isCoordinator);
 
     Set<Long> getCoveredTopicIdsForOffering(Long offeringId);
+
+    void deleteSession(Long sessionId, Long currentFacultyId, boolean isCoordinator);
 }

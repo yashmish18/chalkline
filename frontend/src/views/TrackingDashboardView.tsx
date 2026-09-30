@@ -95,7 +95,7 @@ export function TrackingDashboardView() {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="font-serif text-2xl font-bold text-slate-900 tracking-tight">
+          <h2 className="font-sans text-2xl font-bold text-slate-900 tracking-tight">
             Compliance Tracking &amp; Submissions Audit
           </h2>
           <p className="text-sm text-slate-600 mt-0.5">
@@ -151,7 +151,7 @@ export function TrackingDashboardView() {
             <span className="text-xs font-semibold uppercase tracking-wider">Submission Rate</span>
             <TrendingUp className="w-4 h-4 text-primary" />
           </div>
-          <div className="text-2xl font-bold font-serif text-slate-900 mt-2">
+          <div className="text-2xl font-bold font-sans text-slate-900 mt-2">
             {isMetricsLoading ? '—' : `${metrics?.submissionRate ?? 0}%`}
           </div>
           <p className="text-xs text-slate-500 mt-1">
@@ -171,7 +171,7 @@ export function TrackingDashboardView() {
             <span className="text-xs font-semibold uppercase tracking-wider">On-Time Rate</span>
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
           </div>
-          <div className="text-2xl font-bold font-serif text-slate-900 mt-2">
+          <div className="text-2xl font-bold font-sans text-slate-900 mt-2">
             {isMetricsLoading ? '—' : `${metrics?.onTimeRate ?? 0}%`}
           </div>
           <p className="text-xs text-slate-500 mt-1">
@@ -191,7 +191,7 @@ export function TrackingDashboardView() {
             <span className="text-xs font-semibold uppercase tracking-wider">Overdue Slots</span>
             <Clock className="w-4 h-4 text-rose-500" />
           </div>
-          <div className="text-2xl font-bold font-serif text-slate-900 mt-2">
+          <div className="text-2xl font-bold font-sans text-slate-900 mt-2">
             {isMetricsLoading ? '—' : metrics?.overdueCount ?? 0}
           </div>
           <p className="text-xs text-slate-500 mt-1">Pending slots past due date</p>
@@ -214,7 +214,7 @@ export function TrackingDashboardView() {
             <span className="text-xs font-semibold uppercase tracking-wider">Critical Roster</span>
             <ShieldAlert className="w-4 h-4 text-amber-500" />
           </div>
-          <div className="text-2xl font-bold font-serif text-slate-900 mt-2">
+          <div className="text-2xl font-bold font-sans text-slate-900 mt-2">
             {isMetricsLoading ? '—' : metrics?.criticalFacultyCount ?? 0}
           </div>
           <p className="text-xs text-slate-500 mt-1">

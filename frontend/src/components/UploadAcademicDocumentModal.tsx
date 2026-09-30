@@ -121,7 +121,7 @@ export function UploadAcademicDocumentModal({
               </span>
               <span className="text-xs font-semibold text-slate-600">PDF / DOC / DOCX</span>
             </div>
-            <h2 className="font-serif text-xl font-bold text-slate-900 mt-1">Upload {getCategoryLabel(category)}</h2>
+            <h2 className="font-sans text-xl font-bold text-slate-900 mt-1">Upload {getCategoryLabel(category)}</h2>
           </div>
           <button
             type="button"

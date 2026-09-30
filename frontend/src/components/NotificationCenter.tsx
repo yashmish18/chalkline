@@ -145,7 +145,7 @@ export function NotificationCenter({ onNavigate }: NotificationCenterProps) {
           {/* Header */}
           <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-slate-50/80">
             <div className="flex items-center gap-2">
-              <span className="font-serif text-sm font-bold text-slate-900">Notifications</span>
+              <span className="font-sans text-sm font-bold text-slate-900">Notifications</span>
               {unreadCount > 0 && (
                 <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                   {unreadCount} new

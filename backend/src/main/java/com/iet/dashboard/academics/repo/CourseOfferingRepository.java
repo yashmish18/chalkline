@@ -16,4 +16,6 @@ public interface CourseOfferingRepository extends JpaRepository<CourseOffering, 
 
     @Query("SELECT o FROM CourseOffering o JOIN FETCH o.course WHERE o.semester = :semester ORDER BY o.course.code, o.section")
     List<CourseOffering> findBySemester(@Param("semester") int semester);
+
+    java.util.Optional<CourseOffering> findFirstByCourseIdAndSection(Long courseId, String section);
 }

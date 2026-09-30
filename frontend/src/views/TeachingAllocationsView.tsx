@@ -3,13 +3,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CourseOfferingDto, TeachingAssignmentDto } from '../types/academics';
 import { FacultyDto } from '../types/directory';
 import { useAuth } from '../context/AuthContext';
-import { BookOpen, Plus, User, Layers, X, Calendar } from 'lucide-react';
+import { BookOpen, Plus, User, Layers, X, Calendar, FileSpreadsheet, Trash2 } from 'lucide-react';
+import { ImportFacultyModal } from '../components/ImportFacultyModal';
 
 export function TeachingAllocationsView() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selectedSemester, setSelectedSemester] = useState<number | ''>('');
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Form state
   const [selectedOfferingId, setSelectedOfferingId] = useState<number | ''>('');
@@ -67,6 +69,29 @@ export function TeachingAllocationsView() {
     },
   });
 
+  const deleteAssignmentMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/teaching-assignments/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.detail || 'Failed to delete assignment');
+      }
+      return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teaching-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['offerings'] });
+    },
+  });
+
+  const handleDeleteAssignment = (id: number, courseName: string, facultyName: string) => {
+    if (window.confirm(`Are you sure you want to remove the allocation of "${courseName}" to ${facultyName}?`)) {
+      deleteAssignmentMutation.mutate(id);
+    }
+  };
+
   const handleCreateAssignment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedOfferingId || !selectedFacultyId) return;
@@ -90,20 +115,30 @@ export function TeachingAllocationsView() {
       {/* Header & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="font-serif text-2xl font-bold text-slate-900 tracking-tight">Teaching Allocations</h2>
+          <h2 className="font-sans text-2xl font-bold text-slate-900 tracking-tight">Teaching Allocations</h2>
           <p className="text-sm text-slate-600 mt-0.5">
             Course allocation matrix: faculty mapped to courses, academic year, semester, section, and component.
           </p>
         </div>
         {isCoordinator && (
-          <button
-            type="button"
-            onClick={() => setIsAssignModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary-hover shadow-xs transition-colors self-start sm:self-auto"
-          >
-            <Plus className="w-4 h-4" />
-            Assign Teaching Course
-          </button>
+          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setIsImportModalOpen(true)}
+              className="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-border text-slate-700 text-sm font-medium rounded-md hover:bg-slate-50 shadow-xs transition-colors"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+              Import CSV / Excel
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsAssignModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary-hover shadow-xs transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Assign Teaching Course
+            </button>
+          </div>
         )}
       </div>
 
@@ -153,7 +188,7 @@ export function TeachingAllocationsView() {
         ) : filteredAssignments.length === 0 ? (
           <div className="p-12 text-center">
             <BookOpen className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-            <h3 className="font-serif text-base font-bold text-slate-800">No Allocations Found</h3>
+            <h3 className="font-sans text-base font-bold text-slate-800">No Allocations Found</h3>
             <p className="text-xs text-slate-500 mt-1">No course allocations recorded for the selected filter.</p>
           </div>
         ) : (
@@ -168,6 +203,7 @@ export function TeachingAllocationsView() {
                   <th className="px-5 py-3">Section &amp; Batch</th>
                   <th className="px-5 py-3">Component</th>
                   <th className="px-5 py-3">Assigned Faculty</th>
+                  {isCoordinator && <th className="px-5 py-3 text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border text-sm">
@@ -222,6 +258,18 @@ export function TeachingAllocationsView() {
                         </div>
                         {a.facultyName}
                       </td>
+                      {isCoordinator && (
+                        <td className="px-5 py-3.5 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteAssignment(a.id, a.offering.course.name, a.facultyName)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
+                            title="Delete allocation"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
@@ -242,7 +290,7 @@ export function TeachingAllocationsView() {
             >
               <X className="w-4 h-4" />
             </button>
-            <h3 className="font-serif text-xl font-bold text-slate-900 mb-1">Assign Course to Faculty</h3>
+            <h3 className="font-sans text-xl font-bold text-slate-900 mb-1">Assign Course to Faculty</h3>
             <p className="text-xs text-slate-500 mb-5">Map a faculty member to a specific course section and component.</p>
 
             <form onSubmit={handleCreateAssignment} className="space-y-4">
@@ -357,6 +405,18 @@ export function TeachingAllocationsView() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Bulk Faculty & Course Allocations Import Modal */}
+      {isImportModalOpen && (
+        <ImportFacultyModal
+          onClose={() => setIsImportModalOpen(false)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['teaching-assignments'] });
+            queryClient.invalidateQueries({ queryKey: ['offerings'] });
+            queryClient.invalidateQueries({ queryKey: ['faculty'] });
+          }}
+        />
       )}
     </div>
   );

@@ -14,9 +14,14 @@ import java.util.List;
 public class FacultyController {
 
     private final FacultyService facultyService;
+    private final com.iet.dashboard.directory.service.FacultyImportService facultyImportService;
 
-    public FacultyController(FacultyService facultyService) {
+    public FacultyController(
+            FacultyService facultyService,
+            com.iet.dashboard.directory.service.FacultyImportService facultyImportService
+    ) {
         this.facultyService = facultyService;
+        this.facultyImportService = facultyImportService;
     }
 
     @GetMapping("/faculty")
@@ -57,5 +62,30 @@ public class FacultyController {
     ) {
         FacultyDto updated = facultyService.updateFacultySkillsByNames(id, request.skills());
         return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/faculty/{id}")
+    @PreAuthorize("hasRole('COORDINATOR')")
+    public ResponseEntity<Void> deleteFaculty(@PathVariable Long id) {
+        facultyService.deleteFaculty(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/faculty/import")
+    @PreAuthorize("hasRole('COORDINATOR')")
+    public ResponseEntity<ImportResultDto> importFaculty(
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file
+    ) {
+        return ResponseEntity.ok(facultyImportService.importFacultyAndAllocations(file));
+    }
+
+    @GetMapping("/faculty/import-template")
+    @PreAuthorize("hasRole('COORDINATOR')")
+    public ResponseEntity<byte[]> getImportTemplate() {
+        byte[] csv = facultyImportService.generateTemplateCsv();
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"faculty_allocations_template.csv\"")
+                .contentType(org.springframework.http.MediaType.parseMediaType("text/csv"))
+                .body(csv);
     }
 }

@@ -4,7 +4,7 @@ import { DeadlineDto, DeadlineAssignmentDto } from '../types/deadlines';
 import { FacultyDto } from '../types/directory';
 import { CourseOfferingDto } from '../types/academics';
 import { useAuth } from '../context/AuthContext';
-import { Clock, Plus, AlertCircle, CheckCircle, Calendar, X, ChevronDown, ChevronRight, FileText } from 'lucide-react';
+import { Clock, Plus, AlertCircle, CheckCircle, Calendar, X, ChevronDown, ChevronRight, FileText, Trash2 } from 'lucide-react';
 import { SubmissionModal } from '../components/SubmissionModal';
 
 export function DeadlinesView() {
@@ -112,6 +112,28 @@ export function DeadlinesView() {
     },
   });
 
+  const deleteDeadlineMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/deadlines/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Failed to delete deadline');
+      }
+      return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deadlines'] });
+    },
+  });
+
+  const handleDeleteDeadline = (id: number, deadlineTitle: string) => {
+    if (window.confirm(`Are you sure you want to delete deadline "${deadlineTitle}"? This will remove all associated submission slots.`)) {
+      deleteDeadlineMutation.mutate(id);
+    }
+  };
+
   const handleCreateDeadline = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !dueAt) return;
@@ -154,7 +176,7 @@ export function DeadlinesView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="font-serif text-2xl font-bold text-slate-900 tracking-tight">
+          <h2 className="font-sans text-2xl font-bold text-slate-900 tracking-tight">
             {isCoordinator ? 'Department Deadlines' : 'My Assigned Deadlines'}
           </h2>
           <p className="text-sm text-slate-600 mt-0.5">
@@ -183,7 +205,7 @@ export function DeadlinesView() {
           ) : departmentDeadlines.length === 0 ? (
             <div className="p-12 text-center">
               <Clock className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-              <h3 className="font-serif text-base font-bold text-slate-800">No Deadlines Created</h3>
+              <h3 className="font-sans text-base font-bold text-slate-800">No Deadlines Created</h3>
               <p className="text-xs text-slate-500 mt-1">Create the first department deadline to generate submission slots.</p>
             </div>
           ) : (
@@ -245,10 +267,21 @@ export function DeadlinesView() {
                                 </span>
                               )}
                             </div>
-                            <div className="w-32 shrink-0 text-right">
-                              <span className="text-xs text-primary font-medium group-hover:underline">
-                                {isExpanded ? 'Hide Faculty' : 'Inspect Roster'}
+                            <div className="w-32 shrink-0 flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                              <span
+                                onClick={() => setExpandedDeadlineId(isExpanded ? null : d.id)}
+                                className="text-xs text-primary font-medium hover:underline cursor-pointer"
+                              >
+                                {isExpanded ? 'Hide' : 'Inspect'}
                               </span>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteDeadline(d.id, d.title)}
+                                className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
+                                title="Delete deadline"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
                           </div>
 
@@ -328,7 +361,7 @@ export function DeadlinesView() {
           ) : myDeadlines.length === 0 ? (
             <div className="bg-white rounded-lg border border-border p-12 text-center">
               <CheckCircle className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
-              <h3 className="font-serif text-base font-bold text-slate-800">All Clear!</h3>
+              <h3 className="font-sans text-base font-bold text-slate-800">All Clear!</h3>
               <p className="text-xs text-slate-500 mt-1">You have no active deadlines pending at this time.</p>
             </div>
           ) : (
@@ -346,7 +379,7 @@ export function DeadlinesView() {
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                           {assignment.type.replace('_', ' ')}
                         </span>
-                        <h3 className="font-serif text-lg font-bold text-slate-900 mt-0.5">{assignment.title}</h3>
+                        <h3 className="font-sans text-lg font-bold text-slate-900 mt-0.5">{assignment.title}</h3>
                       </div>
                       {assignment.isOverdue ? (
                         <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 shrink-0 flex items-center gap-1">
@@ -397,7 +430,7 @@ export function DeadlinesView() {
             >
               <X className="w-4 h-4" />
             </button>
-            <h3 className="font-serif text-xl font-bold text-slate-900 mb-1">Create Department Deadline</h3>
+            <h3 className="font-sans text-xl font-bold text-slate-900 mb-1">Create Department Deadline</h3>
             <p className="text-xs text-slate-500 mb-5">
               Set due date and target faculty or course offerings. Creating generates submission slots automatically.
             </p>

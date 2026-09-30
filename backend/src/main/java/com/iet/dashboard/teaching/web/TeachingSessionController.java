@@ -62,6 +62,16 @@ public class TeachingSessionController {
         return ResponseEntity.ok(teachingSessionService.getSessionsForOffering(offeringId, facultyId, isCoordinator));
     }
 
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('FACULTY', 'COORDINATOR')")
+    public ResponseEntity<Void> deleteSession(@PathVariable Long id) {
+        UserDto currentUser = userService.getCurrentUser();
+        boolean isCoordinator = "COORDINATOR".equals(currentUser.role());
+        Long facultyId = resolveFacultyId(currentUser);
+        teachingSessionService.deleteSession(id, facultyId, isCoordinator);
+        return ResponseEntity.noContent().build();
+    }
+
     private Long resolveFacultyId(UserDto currentUser) {
         return facultyService.getFacultyByUserId(currentUser.id())
                 .map(FacultyDto::id)

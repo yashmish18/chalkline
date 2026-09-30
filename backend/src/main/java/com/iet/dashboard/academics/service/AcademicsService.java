@@ -39,4 +39,8 @@ public interface AcademicsService {
     void assertFacultyAssignedToOffering(Long facultyId, Long offeringId);
 
     List<com.iet.dashboard.academics.web.TimetableSlotDto> getTimetableForFaculty(Long facultyId);
+
+    void deleteTeachingAssignment(Long assignmentId);
+
+    void deleteCourse(Long courseId);
 }

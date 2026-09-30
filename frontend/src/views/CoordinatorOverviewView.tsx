@@ -175,10 +175,10 @@ export function CoordinatorOverviewView() {
         <div>
           <div className="flex items-center gap-2 text-xs font-bold text-primary tracking-wide uppercase font-sans">
             <BarChart3 className="w-4 h-4" />
-            Coordinator Decision Dashboard — Institutional Overview
+            Academic Operations — Overview
           </div>
-          <h1 className="font-serif text-2xl font-bold text-slate-900 mt-1">
-            Department Academic Command Center
+          <h1 className="font-sans text-2xl font-bold text-slate-900 mt-1">
+            Overview Dashboard
           </h1>
           <p className="text-xs text-slate-600 mt-1">
             Read-and-review surface derived dynamically from faculty daily class logs. Zero typed numbers.
@@ -195,7 +195,7 @@ export function CoordinatorOverviewView() {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-primary' : ''}`} />
           </button>
           <div className="px-3.5 py-1.5 rounded-md bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700">
-            Active Term: <span className="text-primary font-bold">Odd 2026-27</span>
+            Active Term: <span className="text-primary font-bold">Semester 1 (2026-27)</span>
           </div>
         </div>
       </div>
@@ -236,7 +236,7 @@ export function CoordinatorOverviewView() {
             <span className="text-xs font-semibold uppercase tracking-wider">Avg Syllabus Coverage</span>
             <TrendingUp className="w-4 h-4 text-primary" />
           </div>
-          <div className="text-2xl font-bold font-serif text-slate-900 mt-2">
+          <div className="text-2xl font-bold font-sans text-slate-900 mt-2">
             {loading ? '—' : `${summary?.kpis.averageCoveragePercentage ?? 0}%`}
           </div>
           <p className="text-xs text-slate-500 mt-1">Derived from verified class topics</p>
@@ -254,7 +254,7 @@ export function CoordinatorOverviewView() {
             <span className="text-xs font-semibold uppercase tracking-wider">Avg Conduct Rate</span>
             <Clock className="w-4 h-4 text-emerald-600" />
           </div>
-          <div className="text-2xl font-bold font-serif text-slate-900 mt-2">
+          <div className="text-2xl font-bold font-sans text-slate-900 mt-2">
             {loading ? '—' : `${summary?.kpis.averageConductRatePercentage ?? 0}%`}
           </div>
           <p className="text-xs text-slate-500 mt-1">Held vs scheduled teaching sessions</p>
@@ -272,7 +272,7 @@ export function CoordinatorOverviewView() {
             <span className="text-xs font-semibold uppercase tracking-wider">Courses Lagging Behind</span>
             <AlertTriangle className="w-4 h-4 text-amber-500" />
           </div>
-          <div className="text-2xl font-bold font-serif text-slate-900 mt-2">
+          <div className="text-2xl font-bold font-sans text-slate-900 mt-2">
             {loading ? '—' : summary?.kpis.coursesBehindPacing ?? 0}
           </div>
           <p className="text-xs text-slate-500 mt-1">Below target weekly topic pacing</p>
@@ -295,7 +295,7 @@ export function CoordinatorOverviewView() {
             <span className="text-xs font-semibold uppercase tracking-wider">Actionable Anomalies</span>
             <ShieldAlert className="w-4 h-4 text-rose-500" />
           </div>
-          <div className="text-2xl font-bold font-serif text-slate-900 mt-2">
+          <div className="text-2xl font-bold font-sans text-slate-900 mt-2">
             {loading ? '—' : summary?.kpis.needsAttentionCount ?? 0}
           </div>
           <p className="text-xs text-slate-500 mt-1">Pending items in Needs Attention</p>
@@ -320,7 +320,7 @@ export function CoordinatorOverviewView() {
           <div className="flex items-center justify-between pb-3 border-b border-border">
             <div className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-primary" />
-              <h2 className="font-serif text-sm font-bold text-slate-900 uppercase tracking-wider">
+              <h2 className="font-sans text-sm font-bold text-slate-900 uppercase tracking-wider">
                 Syllabus Coverage (Worst First)
               </h2>
             </div>
@@ -380,7 +380,7 @@ export function CoordinatorOverviewView() {
           <div className="flex items-center justify-between pb-3 border-b border-border">
             <div className="flex items-center gap-2">
               <LineChartIcon className="w-4 h-4 text-primary" />
-              <h2 className="font-serif text-sm font-bold text-slate-900 uppercase tracking-wider">
+              <h2 className="font-sans text-sm font-bold text-slate-900 uppercase tracking-wider">
                 Weekly Conduct Rate Trajectory
               </h2>
             </div>
@@ -411,8 +411,8 @@ export function CoordinatorOverviewView() {
           <div className="p-5 border-b border-border flex items-center justify-between">
             <div className="flex items-center gap-2">
               <TableIcon className="w-4 h-4 text-primary" />
-              <h2 className="font-serif text-sm font-bold text-slate-900 uppercase tracking-wider">
-                Academic Checkpoints Compliance Matrix
+              <h2 className="font-sans text-sm font-bold text-slate-900 uppercase tracking-wider">
+                Compliance Matrix
               </h2>
             </div>
             <span className="text-xs text-slate-500">4 Core Milestones</span>
@@ -488,7 +488,7 @@ export function CoordinatorOverviewView() {
           <div className="flex items-center justify-between pb-3 border-b border-border">
             <div className="flex items-center gap-2">
               <BellRing className="w-4 h-4 text-amber-500" />
-              <h2 className="font-serif text-sm font-bold text-slate-900 uppercase tracking-wider">
+              <h2 className="font-sans text-sm font-bold text-slate-900 uppercase tracking-wider">
                 Needs Attention
               </h2>
             </div>

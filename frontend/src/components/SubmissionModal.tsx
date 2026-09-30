@@ -170,7 +170,7 @@ export function SubmissionModal({ assignment, onClose }: SubmissionModalProps) {
               Due: <strong>{formatDate(assignment.dueAt)}</strong>
             </span>
           </div>
-          <h2 className="font-serif text-xl font-bold text-slate-900 mt-1">{assignment.title}</h2>
+          <h2 className="font-sans text-xl font-bold text-slate-900 mt-1">{assignment.title}</h2>
           {assignment.description && (
             <p className="text-xs text-slate-600 mt-1">{assignment.description}</p>
           )}

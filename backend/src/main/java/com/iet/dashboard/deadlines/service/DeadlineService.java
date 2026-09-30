@@ -19,4 +19,6 @@ public interface DeadlineService {
     DeadlineAssignmentDto getAssignmentById(Long id);
 
     DeadlineDto createDeadline(CreateDeadlineRequest request);
+
+    void deleteDeadline(Long id);
 }

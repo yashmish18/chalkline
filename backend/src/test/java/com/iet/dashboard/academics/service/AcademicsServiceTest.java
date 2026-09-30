@@ -168,4 +168,18 @@ class AcademicsServiceTest {
         assertEquals("MONDAY", result.get(0).dayOfWeek());
         assertEquals("Room 304", result.get(0).room());
     }
+
+    @Test
+    void testDeleteTeachingAssignment_Success() {
+        when(assignmentRepository.existsById(50L)).thenReturn(true);
+        academicsService.deleteTeachingAssignment(50L);
+        verify(assignmentRepository).deleteById(50L);
+    }
+
+    @Test
+    void testDeleteCourse_Success() {
+        when(courseRepository.existsById(10L)).thenReturn(true);
+        academicsService.deleteCourse(10L);
+        verify(courseRepository).deleteById(10L);
+    }
 }

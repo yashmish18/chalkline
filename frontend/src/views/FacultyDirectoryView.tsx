@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FacultyDto, SkillDto } from '../types/directory';
 import { useAuth } from '../context/AuthContext';
 import { TagInput } from '../components/TagInput';
-import { Search, Plus, GraduationCap, Building2, Tag, X, Edit3, Check } from 'lucide-react';
+import { Search, Plus, GraduationCap, Building2, Tag, X, Edit3, Check, FileSpreadsheet, Trash2 } from 'lucide-react';
+import { ImportFacultyModal } from '../components/ImportFacultyModal';
 
 export function FacultyDirectoryView() {
   const { user } = useAuth();
@@ -11,6 +12,7 @@ export function FacultyDirectoryView() {
   const [selectedSkill, setSelectedSkill] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Form state
   const [name, setName] = useState('');
@@ -111,6 +113,29 @@ export function FacultyDirectoryView() {
     }
   });
 
+  const deleteFacultyMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/faculty/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.detail || 'Failed to delete faculty member');
+      }
+      return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['faculty'] });
+      queryClient.invalidateQueries({ queryKey: ['skills'] });
+    },
+  });
+
+  const handleDeleteFaculty = (id: number, facultyName: string) => {
+    if (window.confirm(`Are you sure you want to delete ${facultyName}? This will remove their profile and teaching allocations.`)) {
+      deleteFacultyMutation.mutate(id);
+    }
+  };
+
   const filteredFaculty = facultyList.filter((f) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
@@ -151,20 +176,30 @@ export function FacultyDirectoryView() {
       {/* Header & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="font-serif text-2xl font-bold text-slate-900 tracking-tight">Faculty Directory</h2>
+          <h2 className="font-sans text-2xl font-bold text-slate-900 tracking-tight">Faculty Directory</h2>
           <p className="text-sm text-slate-600 mt-0.5">
             Academic qualifications, structured expertise tags, and department profiles.
           </p>
         </div>
         {isCoordinator && (
-          <button
-            type="button"
-            onClick={() => setIsAddModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary-hover shadow-xs transition-colors self-start sm:self-auto"
-          >
-            <Plus className="w-4 h-4" />
-            Add Faculty
-          </button>
+          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setIsImportModalOpen(true)}
+              className="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-border text-slate-700 text-sm font-medium rounded-md hover:bg-slate-50 shadow-xs transition-colors"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+              Import CSV / Excel
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary-hover shadow-xs transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Add Faculty
+            </button>
+          </div>
         )}
       </div>
 
@@ -239,7 +274,7 @@ export function FacultyDirectoryView() {
       ) : filteredFaculty.length === 0 ? (
         <div className="bg-white rounded-lg border border-border p-12 text-center">
           <GraduationCap className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="font-serif text-lg font-bold text-slate-800">No Faculty Found</h3>
+          <h3 className="font-sans text-lg font-bold text-slate-800">No Faculty Found</h3>
           <p className="text-sm text-slate-500 max-w-sm mx-auto mt-1">
             {selectedSkill
               ? `No faculty members currently match the skill "${selectedSkill}".`
@@ -267,11 +302,23 @@ export function FacultyDirectoryView() {
                 <div>
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <h3 className="font-serif text-lg font-bold text-slate-900 leading-snug">{f.name}</h3>
+                      <h3 className="font-sans text-lg font-bold text-slate-900 leading-snug">{f.name}</h3>
                       <p className="text-xs font-semibold text-primary mt-0.5">{f.designation}</p>
                     </div>
-                    <div className="h-9 w-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-700 shrink-0">
-                      {f.name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                    <div className="flex items-center gap-2">
+                      {isCoordinator && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteFaculty(f.id, f.name)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
+                          title="Delete faculty profile"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                      <div className="h-9 w-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-700 shrink-0">
+                        {f.name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                      </div>
                     </div>
                   </div>
 
@@ -368,7 +415,7 @@ export function FacultyDirectoryView() {
             >
               <X className="w-4 h-4" />
             </button>
-            <h3 className="font-serif text-xl font-bold text-slate-900 mb-1">Add Faculty Member</h3>
+            <h3 className="font-sans text-xl font-bold text-slate-900 mb-1">Add Faculty Member</h3>
             <p className="text-xs text-slate-500 mb-5">Create a faculty profile with normalized skill tags.</p>
 
             <form onSubmit={handleCreateFaculty} className="space-y-4">
@@ -470,6 +517,17 @@ export function FacultyDirectoryView() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Bulk Faculty & Course Allocations Import Modal */}
+      {isImportModalOpen && (
+        <ImportFacultyModal
+          onClose={() => setIsImportModalOpen(false)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['faculty'] });
+            queryClient.invalidateQueries({ queryKey: ['skills'] });
+          }}
+        />
       )}
     </div>
   );

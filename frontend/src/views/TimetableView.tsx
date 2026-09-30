@@ -97,8 +97,8 @@ export function TimetableView() {
             <Calendar className="w-4 h-4" />
             Academic Operations — Faculty Teaching Timetable
           </div>
-          <h1 className="font-serif text-2xl font-bold text-slate-900 mt-1">
-            Weekly Master Timetable (Odd 2026-27)
+          <h1 className="font-sans text-2xl font-bold text-slate-900 mt-1">
+            Weekly Teaching Timetable (Semester 1, 2026-27)
           </h1>
           <p className="text-xs text-slate-600 mt-1">
             Institutional schedule mapping weekly Lecture, Tutorial, and Practical (LTP) allocations with room assignments.
@@ -233,7 +233,7 @@ export function TimetableView() {
                 {/* Day Header */}
                 <div className="px-5 py-3 bg-slate-50 border-b border-border flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="font-serif text-sm font-bold text-slate-900 tracking-wider">
+                    <span className="font-sans text-sm font-bold text-slate-900 tracking-wider">
                       {day}
                     </span>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200 text-slate-700">
@@ -276,7 +276,7 @@ export function TimetableView() {
                             </span>
                           </div>
 
-                          <h3 className="font-serif text-base font-bold text-slate-900">
+                          <h3 className="font-sans text-base font-bold text-slate-900">
                             {slot.courseName}
                           </h3>
 

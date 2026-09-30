@@ -14,12 +14,12 @@ export function Navbar({ onNavigate }: NavbarProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Left: Brand / Institution */}
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-md bg-primary flex items-center justify-center text-white font-serif font-bold text-xl shadow-inner">
+          <div className="h-10 w-10 rounded-md bg-primary flex items-center justify-center text-white font-sans font-bold text-xl shadow-inner">
             IET
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-serif text-lg font-bold text-slate-900 tracking-tight">Faculty Dashboard</span>
+              <span className="font-sans text-lg font-bold text-slate-900 tracking-tight">Faculty Dashboard</span>
               <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                 Department Portal
               </span>

@@ -35,36 +35,51 @@ export function Sidebar({
   onSelectTab,
   isCollapsed,
   onToggleCollapse,
-  activeTermName = 'Odd 2026-27',
+  activeTermName = 'Semester 1 (2026-27)',
   unreadNotificationsCount = 0,
 }: SidebarProps) {
   const { user } = useAuth();
   const isCoordinator = user?.role === 'COORDINATOR';
 
-  const coordinatorItems: NavItem[] = [
-    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-    { id: 'faculty', label: 'Faculty Directory', icon: Users },
-    { id: 'academics', label: 'Academics & Matrix', icon: BookOpen },
-    { id: 'timetable', label: 'Master Timetable', icon: CalendarDays },
-    { id: 'compliance', label: 'Compliance Tracking', icon: CheckSquare },
-    { id: 'deadlines', label: 'Deadlines & Cycles', icon: Calendar },
-    { id: 'audit', label: 'Audit Logs', icon: ShieldCheck },
-  ];
-
-  const facultyItems: NavItem[] = [
-    { id: 'today', label: 'Today (Log Class)', icon: CalendarCheck },
-    { id: 'timetable', label: 'Weekly Timetable', icon: CalendarDays },
-    { id: 'my-courses', label: 'My Courses & Syllabus', icon: BookOpen },
+  const teachingItems: NavItem[] = [
+    { id: 'today', label: "Today's Classes", icon: CalendarCheck },
+    { id: 'timetable', label: 'Timetable', icon: CalendarDays },
+    { id: 'my-courses', label: 'My Courses', icon: BookOpen },
     {
       id: 'deadlines',
-      label: 'Deadlines & Submissions',
+      label: 'Deadlines',
       icon: Calendar,
       badgeCount: unreadNotificationsCount > 0 ? unreadNotificationsCount : undefined,
     },
-    { id: 'faculty', label: 'Faculty Directory', icon: Users },
   ];
 
-  const items = isCoordinator ? coordinatorItems : facultyItems;
+  const adminItems: NavItem[] = [
+    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'academics', label: 'Course Allocations', icon: BookOpen },
+    { id: 'faculty', label: 'Faculty Directory', icon: Users },
+    { id: 'compliance', label: 'Compliance Tracking', icon: CheckSquare },
+    { id: 'audit', label: 'Audit Logs', icon: ShieldCheck },
+  ];
+
+  interface NavGroup {
+    title: string;
+    items: NavItem[];
+  }
+
+  const navGroups: NavGroup[] = isCoordinator
+    ? [
+        { title: 'My Teaching', items: teachingItems },
+        { title: 'Administration', items: adminItems },
+      ]
+    : [
+        {
+          title: 'Faculty Portal',
+          items: [
+            ...teachingItems,
+            { id: 'faculty', label: 'Faculty Directory', icon: Users },
+          ],
+        },
+      ];
 
   return (
     <aside
@@ -77,7 +92,7 @@ export function Sidebar({
         <div className="h-16 px-4 border-b border-border flex items-center justify-between">
           {!isCollapsed && (
             <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-8 h-8 rounded-md bg-primary text-white flex items-center justify-center font-serif font-bold text-sm shrink-0 shadow-xs">
+              <div className="w-8 h-8 rounded-md bg-primary text-white flex items-center justify-center font-sans font-bold text-sm shrink-0 shadow-xs">
                 IET
               </div>
               <div className="truncate">
@@ -93,7 +108,7 @@ export function Sidebar({
           )}
 
           {isCollapsed && (
-            <div className="w-8 h-8 mx-auto rounded-md bg-primary text-white flex items-center justify-center font-serif font-bold text-xs">
+            <div className="w-8 h-8 mx-auto rounded-md bg-primary text-white flex items-center justify-center font-sans font-bold text-xs">
               IET
             </div>
           )}
@@ -109,42 +124,51 @@ export function Sidebar({
         </div>
 
         {/* Navigation Items */}
-        <div className="p-3 space-y-1">
-          <div className="px-2 py-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-            {!isCollapsed && (isCoordinator ? 'Coordinator Suite' : 'Faculty Workspace')}
-          </div>
+        <div className="p-3 space-y-4">
+          {navGroups.map((group, groupIdx) => (
+            <div key={group.title} className="space-y-1">
+              {!isCollapsed && (
+                <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  {group.title}
+                </div>
+              )}
+              {isCollapsed && groupIdx > 0 && (
+                <div className="my-2 border-t border-slate-200" />
+              )}
 
-          {items.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentTab === item.id;
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = currentTab === item.id;
 
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => onSelectTab(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-xs font-medium transition-all ${
-                  isActive
-                    ? 'bg-primary text-white shadow-xs font-semibold'
-                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
-                } ${isCollapsed ? 'justify-center px-0' : ''}`}
-                title={isCollapsed ? item.label : undefined}
-              >
-                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-500'}`} />
-                {!isCollapsed && <span className="truncate">{item.label}</span>}
-
-                {!isCollapsed && item.badgeCount !== undefined && (
-                  <span
-                    className={`ml-auto px-1.5 py-0.5 text-[10px] font-bold rounded-full ${
-                      isActive ? 'bg-amber-400 text-slate-950' : 'bg-amber-100 text-amber-800'
-                    }`}
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => onSelectTab(item.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-xs font-medium transition-all ${
+                      isActive
+                        ? 'bg-primary text-white shadow-xs font-semibold'
+                        : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
+                    } ${isCollapsed ? 'justify-center px-0' : ''}`}
+                    title={isCollapsed ? item.label : undefined}
                   >
-                    {item.badgeCount}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-500'}`} />
+                    {!isCollapsed && <span className="truncate">{item.label}</span>}
+
+                    {!isCollapsed && item.badgeCount !== undefined && (
+                      <span
+                        className={`ml-auto px-1.5 py-0.5 text-[10px] font-bold rounded-full ${
+                          isActive ? 'bg-amber-400 text-slate-950' : 'bg-amber-100 text-amber-800'
+                        }`}
+                      >
+                        {item.badgeCount}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </div>
       </div>
 

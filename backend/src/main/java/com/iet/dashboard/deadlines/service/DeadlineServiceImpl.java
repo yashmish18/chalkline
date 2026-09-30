@@ -182,4 +182,12 @@ public class DeadlineServiceImpl implements DeadlineService {
 
         return DeadlineDto.fromEntity(savedDeadline, assignmentsToCreate.size());
     }
+
+    @Override
+    public void deleteDeadline(Long id) {
+        if (!deadlineRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Deadline not found: " + id);
+        }
+        deadlineRepository.deleteById(id);
+    }
 }

@@ -121,4 +121,12 @@ public class FacultyServiceImpl implements FacultyService {
         Faculty updated = facultyRepository.save(faculty);
         return FacultyDto.fromEntity(updated);
     }
+
+    @Override
+    public void deleteFaculty(Long id) {
+        if (!facultyRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Faculty member not found: " + id);
+        }
+        facultyRepository.deleteById(id);
+    }
 }

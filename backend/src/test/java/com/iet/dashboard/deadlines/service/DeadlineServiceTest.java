@@ -159,4 +159,11 @@ class DeadlineServiceTest {
         assertEquals(55L, result.id());
         assertEquals("Dr. Amit", result.facultyName());
     }
+
+    @Test
+    void testDeleteDeadline_Success() {
+        when(deadlineRepository.existsById(15L)).thenReturn(true);
+        deadlineService.deleteDeadline(15L);
+        verify(deadlineRepository).deleteById(15L);
+    }
 }

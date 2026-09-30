@@ -47,6 +47,13 @@ public class AcademicsController {
         return ResponseEntity.status(HttpStatus.CREATED).body(academicsService.createCourse(request));
     }
 
+    @DeleteMapping("/courses/{id}")
+    @PreAuthorize("hasRole('COORDINATOR')")
+    public ResponseEntity<Void> deleteCourse(@PathVariable Long id) {
+        academicsService.deleteCourse(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/offerings")
     public ResponseEntity<List<CourseOfferingDto>> getOfferings(@RequestParam(required = false) Integer semester) {
         return ResponseEntity.ok(academicsService.getAllOfferings(semester));
@@ -66,6 +73,13 @@ public class AcademicsController {
     @PreAuthorize("hasRole('COORDINATOR')")
     public ResponseEntity<TeachingAssignmentDto> createAssignment(@Valid @RequestBody CreateTeachingAssignmentRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(academicsService.createTeachingAssignment(request));
+    }
+
+    @DeleteMapping("/teaching-assignments/{id}")
+    @PreAuthorize("hasRole('COORDINATOR')")
+    public ResponseEntity<Void> deleteAssignment(@PathVariable Long id) {
+        academicsService.deleteTeachingAssignment(id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/terms")

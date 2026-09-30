@@ -130,4 +130,11 @@ class FacultyServiceTest {
         assertEquals(2, result.skills().size());
         verify(skillRepository).save(any(Skill.class));
     }
+
+    @Test
+    void testDeleteFaculty_Success() {
+        when(facultyRepository.existsById(10L)).thenReturn(true);
+        facultyService.deleteFaculty(10L);
+        verify(facultyRepository).deleteById(10L);
+    }
 }

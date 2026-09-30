@@ -64,7 +64,7 @@ export function CourseDescriptionModal({ course, onClose }: CourseDescriptionMod
                 </span>
               )}
             </div>
-            <h2 className="font-serif text-xl font-bold text-slate-900 mt-1">{course.courseName}</h2>
+            <h2 className="font-sans text-xl font-bold text-slate-900 mt-1">{course.courseName}</h2>
           </div>
           <button
             type="button"
@@ -101,7 +101,7 @@ export function CourseDescriptionModal({ course, onClose }: CourseDescriptionMod
           {/* Course Description */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-serif text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+              <h3 className="font-sans text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
                 <BookOpen className="w-4 h-4 text-primary" />
                 Course Description &amp; Objectives
               </h3>
@@ -154,7 +154,7 @@ export function CourseDescriptionModal({ course, onClose }: CourseDescriptionMod
           {/* Unit Syllabus Outline */}
           {course.availableUnits && course.availableUnits.length > 0 && (
             <div>
-              <h3 className="font-serif text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5 mb-3">
+              <h3 className="font-sans text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5 mb-3">
                 <Layers className="w-4 h-4 text-primary" />
                 Syllabus Unit Structure & Pacing
               </h3>

@@ -22,4 +22,6 @@ public interface FacultyService {
     FacultyDto updateFacultySkills(Long facultyId, List<Long> skillIds);
 
     FacultyDto updateFacultySkillsByNames(Long facultyId, List<String> skillNames);
+
+    void deleteFaculty(Long id);
 }

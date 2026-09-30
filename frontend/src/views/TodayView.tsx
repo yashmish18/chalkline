@@ -14,7 +14,8 @@ import {
   RefreshCw,
   BookOpen,
   MapPin,
-  Calendar
+  Calendar,
+  Trash2
 } from 'lucide-react';
 
 export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }) {
@@ -165,6 +166,37 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
     }
   };
 
+  const handleDeleteLog = async (cls: TodayClassDto) => {
+    if (!window.confirm(`Are you sure you want to remove the session log for ${cls.courseCode} on ${selectedDate}?`)) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/teaching-sessions/offering/${cls.offeringId}`, {
+        credentials: 'include',
+        headers: { 'Accept': 'application/json' }
+      });
+      if (res.ok) {
+        const sessions: Array<{ id: number; sessionDate: string }> = await res.json();
+        const matching = sessions.find((s) => s.sessionDate === selectedDate);
+        if (matching) {
+          const delRes = await fetch(`/api/teaching-sessions/${matching.id}`, {
+            method: 'DELETE',
+            credentials: 'include'
+          });
+          if (delRes.ok) {
+            setSuccessMessage(`Session log for ${cls.courseCode} removed.`);
+            await fetchTodayClasses();
+            setTimeout(() => setSuccessMessage(null), 3000);
+            return;
+          }
+        }
+      }
+      alert('Could not find logged session for this date.');
+    } catch {
+      alert('Error deleting session log.');
+    }
+  };
+
   const getTopicsForCurrentModalUnit = (): SyllabusTopicDto[] => {
     if (!selectedClass || !selectedClass.availableUnits) return [];
     const unitObj = selectedClass.availableUnits.find((u) => u.unitNumber === selectedUnit);
@@ -174,17 +206,17 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="bg-white rounded-lg border border-border p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white rounded-xl border border-slate-200/80 p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-bold text-primary tracking-wide uppercase font-sans">
             <CalendarCheck className="w-4 h-4" />
-            Faculty Academic Workspace — Daily Teaching Log
+            Today&rsquo;s Teaching Log
           </div>
-          <h1 className="font-serif text-2xl font-bold text-slate-900 mt-1">
-            {user?.name ? `Hello, ${user.name}` : 'Welcome, Faculty Member'}
+          <h1 className="text-xl font-bold text-slate-900 mt-1">
+            {user?.name ? user.name : 'Faculty Member'}
           </h1>
-          <p className="text-xs text-slate-600 mt-1">
-            Log today&rsquo;s held or cancelled sessions in under 20 seconds. Syllabus coverage, LTP contact hours, and conduct pacing are derived automatically.
+          <p className="text-xs text-slate-500 mt-1">
+            Record your conducted lectures and labs. Syllabus coverage and contact hours update in real-time.
           </p>
         </div>
 
@@ -192,7 +224,7 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
           <button
             type="button"
             onClick={fetchTodayClasses}
-            className="p-2 border border-border rounded-md hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-colors"
+            className="p-2 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-colors"
             title="Refresh schedule"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-primary' : ''}`} />
@@ -201,14 +233,14 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
             <button
               type="button"
               onClick={() => onNavigate('timetable')}
-              className="px-3 py-1.5 rounded-md border border-primary text-primary hover:bg-primary/5 text-xs font-bold flex items-center gap-1.5 transition-colors"
+              className="px-3 py-1.5 rounded-lg border border-primary text-primary hover:bg-primary/5 text-xs font-bold flex items-center gap-1.5 transition-colors"
             >
               <Calendar className="w-3.5 h-3.5" />
-              Weekly Timetable
+              Weekly Schedule
             </button>
           )}
-          <div className="px-3.5 py-1.5 rounded-md bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700">
-            Term: <span className="text-primary font-bold">Odd 2026-27</span>
+          <div className="px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700">
+            Term: <span className="text-primary font-bold">Semester 1 (2026-27)</span>
           </div>
         </div>
       </div>
@@ -346,7 +378,7 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
         {/* Classes Scheduled Today (2 cols) */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold font-serif text-slate-900 uppercase tracking-wider flex items-center gap-2">
+            <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
               <Clock className="w-4 h-4 text-primary" />
               Classes Scheduled For {selectedDate === todayStr ? 'Today' : new Date(`${selectedDate}T00:00:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
             </h2>
@@ -356,11 +388,11 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
           </div>
 
           {loading && classes.length === 0 ? (
-            <div className="p-8 text-center bg-white rounded-lg border border-border text-xs text-slate-500 animate-pulse">
+            <div className="p-8 text-center bg-white rounded-xl border border-slate-200 text-xs text-slate-500 animate-pulse">
               Loading timetable for {selectedDate === todayStr ? 'today' : selectedDate}...
             </div>
           ) : classes.length === 0 ? (
-            <div className="p-8 text-center bg-white rounded-lg border border-border text-xs text-slate-500">
+            <div className="p-8 text-center bg-white rounded-xl border border-slate-200 text-xs text-slate-500">
               No teaching allocations found for your account in the active term.
             </div>
           ) : (
@@ -373,10 +405,10 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
                 return (
                   <div
                     key={cls.offeringId}
-                    className={`bg-white rounded-lg border transition-all p-5 shadow-xs ${
+                    className={`bg-white rounded-xl border transition-all p-5 shadow-xs ${
                       cls.isLogged
-                        ? 'border-emerald-200 bg-emerald-50/20'
-                        : 'border-border hover:border-primary/50'
+                        ? 'border-emerald-200 bg-emerald-50/10'
+                        : 'border-slate-200/80 hover:border-primary/50'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-4">
@@ -401,7 +433,7 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
                           )}
                         </div>
 
-                        <h3 className="font-serif text-lg font-bold text-slate-900 mt-1">{cls.courseName}</h3>
+                        <h3 className="text-base font-bold text-slate-900 mt-1">{cls.courseName}</h3>
 
                         <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-1">
                           <div className="flex items-center gap-1.5">
@@ -425,15 +457,25 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
                       </div>
 
                       {cls.isLogged ? (
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-100 text-emerald-800 text-xs font-bold shrink-0">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                          Logged for {selectedDate === todayStr ? 'Today' : selectedDate}
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-100/80 text-emerald-800 text-xs font-semibold shrink-0">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                            Logged for {selectedDate === todayStr ? 'Today' : selectedDate}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteLog(cls)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                            title="Remove session log"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       ) : (
                         <button
                           type="button"
                           onClick={() => handleQuickLog(cls)}
-                          className="flex items-center gap-1.5 px-4 py-2 rounded-md bg-primary text-white text-xs font-bold shadow-xs hover:bg-primary-hover transition-colors shrink-0"
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-xs font-bold shadow-xs hover:bg-primary-hover transition-colors shrink-0"
                         >
                           <PlusCircle className="w-4 h-4" />
                           1-Tap Log Session
@@ -476,7 +518,7 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
         {/* Weekly Targets & Deadlines Sidebar Widget */}
         <div className="space-y-4">
           <div className="bg-white rounded-lg border border-border p-5 shadow-xs space-y-4">
-            <h3 className="font-serif text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+            <h3 className="font-sans text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-amber-500" />
               This Week&rsquo;s Target Pacing
             </h3>
@@ -522,7 +564,7 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
           </div>
 
           <div className="bg-white rounded-lg border border-border p-5 shadow-xs space-y-3">
-            <h3 className="font-serif text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+            <h3 className="font-sans text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-primary" />
               Upcoming Academic Deadlines
             </h3>
@@ -565,7 +607,7 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
             <div className="flex items-center justify-between pb-3 border-b border-border">
               <div>
                 <span className="text-xs font-bold text-primary uppercase tracking-wider">Quick Session Log</span>
-                <h3 className="font-serif text-lg font-bold text-slate-900 mt-0.5">
+                <h3 className="font-sans text-lg font-bold text-slate-900 mt-0.5">
                   {selectedClass.courseCode} &mdash; {selectedClass.courseName}
                 </h3>
                 <div className="text-[11px] text-slate-500">
@@ -639,29 +681,38 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
 
                     <div>
                       <label className="block font-bold text-slate-700 mb-1 flex items-center justify-between">
-                        <span>Section / Lab Batch</span>
-                        <span className="text-[10px] text-slate-400 font-normal">Grouped hierarchy</span>
+                        <span>Section / Batch</span>
+                        <span className="text-[10px] text-slate-400 font-normal">All sections supported</span>
                       </label>
-                      <select
-                        value={selectedSubSection}
-                        onChange={(e) => setSelectedSubSection(e.target.value)}
-                        className="w-full px-3 py-2 border border-border rounded-md text-xs bg-white focus:ring-1 focus:ring-primary focus:border-primary outline-hidden font-medium"
-                      >
-                        <optgroup label={`Section ${selectedClass.section} — Whole Class`}>
-                          <option value="ALL">Section {selectedClass.section} (Entire Division / Theory)</option>
-                        </optgroup>
-                        <optgroup label={`Section ${selectedClass.section} — Lab / Tutorial Batches`}>
-                          <option value={`${selectedClass.section}1`}>Section {selectedClass.section} — Batch {selectedClass.section}1 (Lab/Tutorial)</option>
-                          <option value={`${selectedClass.section}2`}>Section {selectedClass.section} — Batch {selectedClass.section}2 (Lab/Tutorial)</option>
-                          <option value={`${selectedClass.section}3`}>Section {selectedClass.section} — Batch {selectedClass.section}3 (Lab/Tutorial)</option>
-                        </optgroup>
-                        <optgroup label="Other Standard Batches">
-                          <option value="A1">Batch A1 (Roll 1-30)</option>
-                          <option value="A2">Batch A2 (Roll 31-60)</option>
-                          <option value="B1">Batch B1 (Roll 1-30)</option>
-                          <option value="B2">Batch B2 (Roll 31-60)</option>
-                        </optgroup>
-                      </select>
+                      {(() => {
+                        const rawSec = selectedClass.section || 'A';
+                        const cleanSec = rawSec.replace(/^(sec|section|div|division)\s*/i, '').trim().toUpperCase() || 'A';
+                        const otherSecs = ['A', 'B', 'C'].filter((s) => s !== cleanSec);
+                        return (
+                          <select
+                            value={selectedSubSection}
+                            onChange={(e) => setSelectedSubSection(e.target.value)}
+                            className="w-full px-3 py-2 border border-border rounded-md text-xs bg-white focus:ring-1 focus:ring-primary focus:border-primary outline-hidden font-medium"
+                          >
+                            <optgroup label={`Section ${cleanSec} (Assigned)`}>
+                              <option value="ALL">Whole Section {cleanSec} (Theory / Full Class)</option>
+                              <option value={`${cleanSec}1`}>Batch {cleanSec}1 (Lab / Tutorial)</option>
+                              <option value={`${cleanSec}2`}>Batch {cleanSec}2 (Lab / Tutorial)</option>
+                              <option value={`${cleanSec}3`}>Batch {cleanSec}3 (Lab / Tutorial)</option>
+                            </optgroup>
+                            {otherSecs.map((s) => (
+                              <optgroup key={s} label={`Section ${s}`}>
+                                <option value={`SEC_${s}_ALL`}>Whole Section {s}</option>
+                                <option value={`${s}1`}>Batch {s}1</option>
+                                <option value={`${s}2`}>Batch {s}2</option>
+                              </optgroup>
+                            ))}
+                            <optgroup label="Other">
+                              <option value="COMBINED">Combined (All Sections / Elective)</option>
+                            </optgroup>
+                          </select>
+                        );
+                      })()}
                     </div>
                   </div>
 

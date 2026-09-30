@@ -45,4 +45,11 @@ public class DeadlineController {
         DeadlineDto created = deadlineService.createDeadline(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
+
+    @DeleteMapping("/deadlines/{id}")
+    @PreAuthorize("hasRole('COORDINATOR')")
+    public ResponseEntity<Void> deleteDeadline(@PathVariable Long id) {
+        deadlineService.deleteDeadline(id);
+        return ResponseEntity.noContent().build();
+    }
 }

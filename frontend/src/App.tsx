@@ -18,7 +18,7 @@ function MainAppShell() {
 
   const [activeTab, setActiveTab] = useState<string>(isCoordinator ? 'overview' : 'today');
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [activeTermName, setActiveTermName] = useState('Odd 2026-27');
+  const [activeTermName, setActiveTermName] = useState('Semester 1 (2026-27)');
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Sync default tab whenever the active role changes
@@ -59,25 +59,25 @@ function MainAppShell() {
   const getSectionTitle = () => {
     switch (activeTab) {
       case 'overview':
-        return 'Department Overview & Compliance Analytics';
+        return 'Overview';
       case 'today':
-        return "Today's Academic Session Log";
+        return "Today's Classes";
       case 'timetable':
-        return isCoordinator ? 'Department Master Timetable & Class Schedule' : 'My Weekly Class Schedule & Timetable';
+        return 'Timetable';
       case 'my-courses':
-        return 'My Allocated Courses & Syllabus Pacing';
+        return 'My Courses';
       case 'deadlines':
-        return isCoordinator ? 'Administrative Deadlines & Cycles' : 'Assigned Deadlines & Deliverables';
+        return 'Deadlines';
       case 'faculty':
-        return 'Department Faculty Directory & Skills';
+        return 'Faculty Directory';
       case 'academics':
-        return 'Academic Curriculum & Teaching Allocation Matrix';
+        return 'Course Allocations';
       case 'compliance':
-        return 'Submissions Compliance Audit Roster';
+        return 'Compliance Tracking';
       case 'audit':
-        return 'Departmental Security & Audit Trail';
+        return 'Audit Logs';
       default:
-        return 'Academic Workspace';
+        return 'Academic Portal';
     }
   };
 
@@ -98,7 +98,7 @@ function MainAppShell() {
         {/* Top Utility Header */}
         <header className="h-16 bg-white border-b border-border sticky top-0 z-30 px-6 flex items-center justify-between shadow-2xs">
           <div className="flex items-center gap-3">
-            <h1 className="font-serif text-lg font-bold text-slate-900 tracking-tight">{getSectionTitle()}</h1>
+            <h1 className="font-sans text-lg font-bold text-slate-900 tracking-tight">{getSectionTitle()}</h1>
             <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
               {activeTermName}
             </span>

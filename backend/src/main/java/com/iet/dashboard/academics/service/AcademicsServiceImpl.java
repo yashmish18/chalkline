@@ -194,4 +194,20 @@ public class AcademicsServiceImpl implements AcademicsService {
                 .map(TimetableSlotDto::fromEntity)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public void deleteTeachingAssignment(Long assignmentId) {
+        if (!assignmentRepository.existsById(assignmentId)) {
+            throw new ResourceNotFoundException("Teaching assignment not found: " + assignmentId);
+        }
+        assignmentRepository.deleteById(assignmentId);
+    }
+
+    @Override
+    public void deleteCourse(Long courseId) {
+        if (!courseRepository.existsById(courseId)) {
+            throw new ResourceNotFoundException("Course not found: " + courseId);
+        }
+        courseRepository.deleteById(courseId);
+    }
 }

@@ -186,4 +186,18 @@ class TeachingSessionServiceTest {
         sessionService.getSessionsForOffering(1L, 2L, false);
         verify(academicsService).assertFacultyAssignedToOffering(2L, 1L);
     }
+
+    @Test
+    void testDeleteSession_Success() {
+        CourseOffering offering = new CourseOffering();
+        offering.setId(1L);
+        com.iet.dashboard.teaching.domain.TeachingSession session = new com.iet.dashboard.teaching.domain.TeachingSession(
+                offering, 2L, LocalDate.now(), "LECTURE", com.iet.dashboard.teaching.domain.SessionStatus.HELD, 1, "custom topic", "ALL", 1, "notes", null
+        );
+        session.setId(99L);
+        when(sessionRepository.findById(99L)).thenReturn(Optional.of(session));
+
+        sessionService.deleteSession(99L, 2L, false);
+        verify(sessionRepository).delete(session);
+    }
 }

@@ -19,4 +19,6 @@ public interface TeachingAssignmentRepository extends JpaRepository<TeachingAssi
 
     @Query("SELECT ta FROM TeachingAssignment ta WHERE ta.offering.id = :offeringId")
     List<TeachingAssignment> findByOfferingId(@Param("offeringId") Long offeringId);
+
+    boolean existsByOfferingIdAndFacultyIdAndComponentAndSubSection(Long offeringId, Long facultyId, com.iet.dashboard.academics.domain.CourseComponent component, String subSection);
 }
