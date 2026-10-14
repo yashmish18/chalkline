@@ -59,6 +59,10 @@ app:
     csrf: true
   storage:
     upload-dir: ${STORAGE_UPLOAD_DIR:/data/uploads}
+  # Render's free plan sleeps after 15 idle minutes; the app pings its own public URL every 10.
+  # Render sets RENDER_EXTERNAL_URL itself. Set APP_KEEP_AWAKE_URL= (empty) to switch this off.
+  keep-awake:
+    url: ${APP_KEEP_AWAKE_URL:${RENDER_EXTERNAL_URL:}}
 
 springdoc:
   api-docs:

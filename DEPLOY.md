@@ -176,6 +176,12 @@ Then follow **4. First use** above (semester dates, allocation import, timetable
 
 ### 5. Render free tier: what changes
 
+- **Sleeping:** free web services spin down after 15 minutes without requests. The backend pings its
+  own public URL (`RENDER_EXTERNAL_URL`, set by Render) every 10 minutes, so it stays awake. One
+  service running all month (~744 h) fits inside Render's 750 free instance hours. As a backup, add
+  a free uptime monitor (UptimeRobot or cron-job.org) on `https://<service>.onrender.com/actuator/health`
+  every 10 minutes.
+
 - **Cold starts.** A free web service sleeps after about 15 minutes without traffic. The next request
   wakes it, which takes a minute or more for a Spring Boot app. Meanwhile the Vercel proxy may time
   out and show an error, so reload after a minute. Every wake is also a restart, and sessions are
