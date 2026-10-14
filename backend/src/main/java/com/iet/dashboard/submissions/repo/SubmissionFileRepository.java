@@ -13,7 +13,4 @@ import java.util.Optional;
 public interface SubmissionFileRepository extends JpaRepository<SubmissionFile, Long> {
 
     List<SubmissionFile> findBySubmissionIdOrderByVersionDesc(Long submissionId);
-
-    @Query("SELECT sf FROM SubmissionFile sf WHERE sf.submission.id = :submissionId ORDER BY sf.version DESC LIMIT 1")
-    Optional<SubmissionFile> findLatestBySubmissionId(@Param("submissionId") Long submissionId);
 }

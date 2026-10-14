@@ -71,7 +71,7 @@ public class DeadlineServiceImpl implements DeadlineService {
     @Transactional(readOnly = true)
     public List<DeadlineAssignmentDto> getAssignmentsForDeadline(Long deadlineId) {
         List<DeadlineAssignment> assignments = assignmentRepository.findByDeadlineId(deadlineId);
-        Map<Long, String> facultyNames = facultyService.getAllFaculty(null).stream()
+        Map<Long, String> facultyNames = facultyService.getAllFaculty(null, null).stream()
                 .collect(Collectors.toMap(FacultyDto::id, FacultyDto::name, (a, b) -> a));
 
         return assignments.stream()
@@ -125,7 +125,7 @@ public class DeadlineServiceImpl implements DeadlineService {
         String rule = request.targetRule().toUpperCase();
 
         if ("ALL_FACULTY".equals(rule)) {
-            List<FacultyDto> allFaculty = facultyService.getAllFaculty(null);
+            List<FacultyDto> allFaculty = facultyService.getAllFaculty(null, null);
             for (FacultyDto f : allFaculty) {
                 assignmentsToCreate.add(new DeadlineAssignment(savedDeadline, f.id(), null));
             }
@@ -134,7 +134,7 @@ public class DeadlineServiceImpl implements DeadlineService {
                 assignmentsToCreate.add(new DeadlineAssignment(savedDeadline, facultyId, null));
             }
         } else if ("BY_SEMESTER".equals(rule) && request.semester() != null) {
-            List<TeachingAssignmentDto> teachingAssignments = academicsService.getAllTeachingAssignments();
+            List<TeachingAssignmentDto> teachingAssignments = academicsService.getAllTeachingAssignments(null);
             Set<String> seen = new HashSet<>();
             for (TeachingAssignmentDto ta : teachingAssignments) {
                 if (ta.offering().semester() == request.semester()) {
@@ -145,7 +145,7 @@ public class DeadlineServiceImpl implements DeadlineService {
                 }
             }
         } else if ("BY_OFFERING".equals(rule) && request.selectedOfferingIds() != null) {
-            List<TeachingAssignmentDto> teachingAssignments = academicsService.getAllTeachingAssignments();
+            List<TeachingAssignmentDto> teachingAssignments = academicsService.getAllTeachingAssignments(null);
             Set<Long> targetOfferingIds = new HashSet<>(request.selectedOfferingIds());
             Set<String> seen = new HashSet<>();
             for (TeachingAssignmentDto ta : teachingAssignments) {
@@ -158,7 +158,7 @@ public class DeadlineServiceImpl implements DeadlineService {
             }
         } else {
             // Default fallback: assign to all faculty
-            List<FacultyDto> allFaculty = facultyService.getAllFaculty(null);
+            List<FacultyDto> allFaculty = facultyService.getAllFaculty(null, null);
             for (FacultyDto f : allFaculty) {
                 assignmentsToCreate.add(new DeadlineAssignment(savedDeadline, f.id(), null));
             }

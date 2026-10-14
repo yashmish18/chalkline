@@ -25,6 +25,14 @@ public interface TeachingSessionRepository extends JpaRepository<TeachingSession
     @Query("SELECT COUNT(s) FROM TeachingSession s WHERE s.offering.id = :offeringId AND s.status = :status")
     long countByOfferingIdAndStatus(@Param("offeringId") Long offeringId, @Param("status") SessionStatus status);
 
+    /** (offeringId, topicId) for every topic covered in a held session — one query for all sections. */
+    @Query("SELECT DISTINCT s.offering.id, t.id FROM TeachingSession s JOIN s.topicsCovered t WHERE s.status = 'HELD'")
+    List<Object[]> findAllCoveredTopicPairs();
+
+    /** (offeringId, status, count) across all sections. */
+    @Query("SELECT s.offering.id, s.status, COUNT(s) FROM TeachingSession s GROUP BY s.offering.id, s.status")
+    List<Object[]> countAllByOfferingAndStatus();
+
     @Query("SELECT COUNT(s) FROM TeachingSession s WHERE s.offering.id = :offeringId")
     long countTotalSessionsForOffering(@Param("offeringId") Long offeringId);
 }

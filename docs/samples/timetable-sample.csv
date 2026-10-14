@@ -1,0 +1,20 @@
+Day,Start,End,Room,Course Code,Semester,Section,Component,Batch,Faculty Email
+Mon,09:00,10:00,LT-2,CS1139,1,C,Lecture,,amit.sinhal@iet.edu
+Mon,10:00,11:00,LT-3,CS1139,1,F,Lecture,,amit.sinhal@iet.edu
+Tue,14:00,16:00,Lab 3,CS1139,1,C,Practical,,amit.sinhal@iet.edu
+Wed,09:00,10:00,LT-2,CS1139,1,C,Lecture,,amit.sinhal@iet.edu
+Wed,10:00,11:00,LT-3,CS1139,1,F,Lecture,,amit.sinhal@iet.edu
+Thu,14:00,16:00,Lab 3,CS1139,1,F,Practical,,amit.sinhal@iet.edu
+Fri,09:00,10:00,LT-2,CS1139,1,C,Lecture,,amit.sinhal@iet.edu
+Fri,10:00,11:00,LT-3,CS1139,1,F,Lecture,,amit.sinhal@iet.edu
+Mon,11:00,12:00,LT-4,CS1139,1,E,Lecture,,mayank.kundalwal@iet.edu
+Mon,12:00,13:00,LT-5,CS1139,1,G,Lecture,,mayank.kundalwal@iet.edu
+Tue,09:00,10:00,LT-7,CS1218,5,D,Lecture,,mayank.kundalwal@iet.edu
+Tue,11:00,13:00,Lab 4,CS1139,1,G,Practical,H,mayank.kundalwal@iet.edu
+Wed,11:00,12:00,LT-4,CS1139,1,E,Lecture,,mayank.kundalwal@iet.edu
+Wed,12:00,13:00,LT-5,CS1139,1,G,Lecture,,mayank.kundalwal@iet.edu
+Thu,09:00,10:00,LT-7,CS1218,5,D,Lecture,,mayank.kundalwal@iet.edu
+Thu,14:00,16:00,AI Lab,CS1218,5,D,Practical,,mayank.kundalwal@iet.edu
+Fri,11:00,12:00,LT-4,CS1139,1,E,Lecture,,mayank.kundalwal@iet.edu
+Fri,12:00,13:00,LT-5,CS1139,1,G,Lecture,,mayank.kundalwal@iet.edu
+Fri,14:00,15:00,LT-7,CS1218,5,D,Lecture,,mayank.kundalwal@iet.edu

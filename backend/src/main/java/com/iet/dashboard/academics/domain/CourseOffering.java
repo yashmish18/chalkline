@@ -32,6 +32,10 @@ public class CourseOffering {
     @JoinColumn(name = "term_id")
     private AcademicTerm term;
 
+    /** Students enrolled in this section. 0 means not yet known. */
+    @Column(name = "student_count", nullable = false)
+    private int studentCount = 0;
+
     public CourseOffering() {
     }
 
@@ -102,5 +106,13 @@ public class CourseOffering {
 
     public void setTerm(AcademicTerm term) {
         this.term = term;
+    }
+
+    public int getStudentCount() {
+        return studentCount;
+    }
+
+    public void setStudentCount(int studentCount) {
+        this.studentCount = studentCount;
     }
 }

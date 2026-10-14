@@ -20,5 +20,11 @@ public interface TeachingAssignmentRepository extends JpaRepository<TeachingAssi
     @Query("SELECT ta FROM TeachingAssignment ta WHERE ta.offering.id = :offeringId")
     List<TeachingAssignment> findByOfferingId(@Param("offeringId") Long offeringId);
 
-    boolean existsByOfferingIdAndFacultyIdAndComponentAndSubSection(Long offeringId, Long facultyId, com.iet.dashboard.academics.domain.CourseComponent component, String subSection);
+    boolean existsByOfferingIdAndFacultyId(Long offeringId, Long facultyId);
+
+    java.util.Optional<TeachingAssignment> findByOfferingIdAndFacultyIdAndComponentAndSubSection(Long offeringId, Long facultyId, com.iet.dashboard.academics.domain.CourseComponent component, String subSection);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("DELETE FROM TeachingAssignment ta WHERE ta.offering.semester = :semester")
+    void deleteByOfferingSemester(@Param("semester") Integer semester);
 }

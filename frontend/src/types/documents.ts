@@ -1,4 +1,11 @@
-export type AcademicDocumentCategory = 'MASTER_TIMETABLE' | 'ACADEMIC_CALENDAR' | 'COURSE_SYLLABUS';
+export type AcademicDocumentCategory =
+  | 'MASTER_TIMETABLE'
+  | 'ACADEMIC_CALENDAR'
+  | 'COURSE_SYLLABUS'
+  | 'CONTINUOUS_ASSESSMENT'
+  | 'MID_SEM_QUESTION_BANK'
+  | 'COURSE_FILE'
+  | 'REPORTS';
 
 export interface AcademicDocumentDto {
   id: number;

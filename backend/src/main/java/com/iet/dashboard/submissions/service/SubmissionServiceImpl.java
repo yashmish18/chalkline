@@ -2,6 +2,7 @@ package com.iet.dashboard.submissions.service;
 
 import com.iet.dashboard.deadlines.service.DeadlineService;
 import com.iet.dashboard.deadlines.web.DeadlineAssignmentDto;
+import com.iet.dashboard.deadlines.web.DeadlineDto;
 import com.iet.dashboard.directory.service.FacultyService;
 import com.iet.dashboard.directory.web.FacultyDto;
 import com.iet.dashboard.identity.service.UserService;
@@ -18,6 +19,7 @@ import com.iet.dashboard.submissions.storage.FileStorage;
 import com.iet.dashboard.submissions.web.ReviewRequest;
 import com.iet.dashboard.submissions.web.SubmissionDto;
 import com.iet.dashboard.submissions.web.SubmissionFileDto;
+import com.iet.dashboard.submissions.web.SubmissionOverviewDto;
 import org.apache.tika.Tika;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -159,6 +161,21 @@ public class SubmissionServiceImpl implements SubmissionService {
         submission.setReviewerComment(null); // Clear previous return comment on new submission
 
         Submission saved = submissionRepository.save(submission);
+
+        // Alert the coordinator side. Without this, faculty uploads are only discoverable by
+        // manually opening the tracking screen, which is exactly the email-chasing we are replacing.
+        if (eventPublisher != null) {
+            eventPublisher.publishEvent(new com.iet.dashboard.shared.events.SubmissionSubmittedEvent(
+                    saved.getId(),
+                    assignment.deadlineId(),
+                    assignment.title(),
+                    assignment.facultyId(),
+                    assignment.facultyName(),
+                    isLate,
+                    nextVersion
+            ));
+        }
+
         return SubmissionDto.fromEntity(saved);
     }
 
@@ -252,6 +269,17 @@ public class SubmissionServiceImpl implements SubmissionService {
 
     @Override
     @Transactional(readOnly = true)
+    public java.util.Map<Long, String> getSubmissionStatusesForDeadline(Long deadlineId) {
+        java.util.Map<Long, String> statuses = new java.util.HashMap<>();
+        for (DeadlineAssignmentDto a : deadlineService.getAssignmentsForDeadline(deadlineId)) {
+            statuses.put(a.id(), submissionRepository.findByDeadlineAssignmentId(a.id())
+                    .map(sub -> sub.getStatus().name()).orElse("PENDING"));
+        }
+        return statuses;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<SubmissionDto> getSubmissionsForDeadline(Long deadlineId) {
         UserDto currentUser = userService.getCurrentUser();
         if (!"COORDINATOR".equals(currentUser.role())) {
@@ -265,6 +293,36 @@ public class SubmissionServiceImpl implements SubmissionService {
             dtos.add(sub != null ? SubmissionDto.fromEntity(sub) : SubmissionDto.pending(a.id()));
         }
         return dtos;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SubmissionOverviewDto> getAllSubmissions(String statusFilter) {
+        UserDto currentUser = userService.getCurrentUser();
+        if (!"COORDINATOR".equals(currentUser.role())) {
+            throw new ForbiddenException("Only coordinators can view all submissions");
+        }
+
+        String filter = statusFilter == null || statusFilter.isBlank()
+                ? null
+                : statusFilter.trim().toUpperCase(Locale.ROOT);
+
+        List<SubmissionOverviewDto> rows = new ArrayList<>();
+        for (DeadlineDto deadline : deadlineService.getAllDeadlines()) {
+            for (DeadlineAssignmentDto assignment : deadlineService.getAssignmentsForDeadline(deadline.id())) {
+                Submission submission = submissionRepository.findByDeadlineAssignmentId(assignment.id()).orElse(null);
+                SubmissionOverviewDto row = SubmissionOverviewDto.fromAssignment(
+                        assignment,
+                        submission != null ? SubmissionDto.fromEntity(submission) : null);
+                if (filter == null || filter.equals(row.status())) {
+                    rows.add(row);
+                }
+            }
+        }
+
+        // Newest activity first; pending rows (no submitted timestamp) sink to the bottom.
+        rows.sort(Comparator.comparing(SubmissionOverviewDto::submittedAt, Comparator.nullsLast(Comparator.reverseOrder())));
+        return rows;
     }
 
     private void assertUserCanAccessAssignment(DeadlineAssignmentDto assignment) {

@@ -74,7 +74,7 @@ class DeadlineServiceTest {
 
         FacultyDto f1 = new FacultyDto(1L, 2L, "Dr. Amit", "Assoc Prof", "PhD", "IT", Collections.emptyList());
         FacultyDto f2 = new FacultyDto(2L, 3L, "Prof. Priya", "Asst Prof", "MTech", "IT", Collections.emptyList());
-        when(facultyService.getAllFaculty(null)).thenReturn(List.of(f1, f2));
+        when(facultyService.getAllFaculty(null, null)).thenReturn(List.of(f1, f2));
 
         DeadlineDto result = deadlineService.createDeadline(request);
 
@@ -103,7 +103,7 @@ class DeadlineServiceTest {
         CourseOfferingDto offering = new CourseOfferingDto(1L, course, "2026-2027", 3, 5, "A");
         TeachingAssignmentDto ta = new TeachingAssignmentDto(1L, offering, 3L, "Prof. Priya", "LAB");
 
-        when(academicsService.getAllTeachingAssignments()).thenReturn(List.of(ta));
+        when(academicsService.getAllTeachingAssignments(null)).thenReturn(List.of(ta));
 
         DeadlineDto result = deadlineService.createDeadline(request);
 

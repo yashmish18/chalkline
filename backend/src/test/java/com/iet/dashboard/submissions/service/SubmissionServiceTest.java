@@ -2,6 +2,7 @@ package com.iet.dashboard.submissions.service;
 
 import com.iet.dashboard.deadlines.service.DeadlineService;
 import com.iet.dashboard.deadlines.web.DeadlineAssignmentDto;
+import com.iet.dashboard.deadlines.web.DeadlineDto;
 import com.iet.dashboard.directory.service.FacultyService;
 import com.iet.dashboard.directory.web.FacultyDto;
 import com.iet.dashboard.identity.service.UserService;
@@ -16,6 +17,7 @@ import com.iet.dashboard.submissions.repo.SubmissionRepository;
 import com.iet.dashboard.submissions.storage.FileStorage;
 import com.iet.dashboard.submissions.web.ReviewRequest;
 import com.iet.dashboard.submissions.web.SubmissionDto;
+import com.iet.dashboard.submissions.web.SubmissionOverviewDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -261,5 +263,54 @@ class SubmissionServiceTest {
         assertNotNull(dto);
         assertEquals(99L, dto.id());
         assertEquals("SUBMITTED", dto.status());
+    }
+
+    @Test
+    void testGetAllSubmissions_CoordinatorSeesRowsAndPending() {
+        when(userService.getCurrentUser()).thenReturn(coordinatorUser);
+
+        DeadlineDto deadline = new DeadlineDto(
+                100L, "Course Plan", "Upload course plan", "COURSE_FILE",
+                Instant.now().plus(5, ChronoUnit.DAYS), 1L, Instant.now(), false, 1L);
+        when(deadlineService.getAllDeadlines()).thenReturn(java.util.List.of(deadline));
+        when(deadlineService.getAssignmentsForDeadline(100L)).thenReturn(java.util.List.of(futureAssignment));
+
+        Submission submission = new Submission(50L);
+        submission.setId(7L);
+        submission.setStatus(SubmissionStatus.SUBMITTED);
+        submission.setSubmittedAt(Instant.now());
+        when(submissionRepository.findByDeadlineAssignmentId(50L)).thenReturn(Optional.of(submission));
+
+        java.util.List<SubmissionOverviewDto> rows = submissionService.getAllSubmissions(null);
+
+        assertEquals(1, rows.size());
+        SubmissionOverviewDto row = rows.get(0);
+        assertEquals("Course Plan", row.deadlineTitle());
+        assertEquals("Dr. Amit", row.facultyName());
+        assertEquals("SUBMITTED", row.status());
+        assertEquals(50L, row.assignmentId());
+    }
+
+    @Test
+    void testGetAllSubmissions_StatusFilterExcludesOtherStatuses() {
+        when(userService.getCurrentUser()).thenReturn(coordinatorUser);
+
+        DeadlineDto deadline = new DeadlineDto(
+                100L, "Course Plan", "Upload course plan", "COURSE_FILE",
+                Instant.now().plus(5, ChronoUnit.DAYS), 1L, Instant.now(), false, 1L);
+        when(deadlineService.getAllDeadlines()).thenReturn(java.util.List.of(deadline));
+        when(deadlineService.getAssignmentsForDeadline(100L)).thenReturn(java.util.List.of(futureAssignment));
+        when(submissionRepository.findByDeadlineAssignmentId(50L)).thenReturn(Optional.empty());
+
+        java.util.List<SubmissionOverviewDto> rows = submissionService.getAllSubmissions("submitted");
+
+        assertTrue(rows.isEmpty());
+    }
+
+    @Test
+    void testGetAllSubmissions_NonCoordinator_ThrowsForbiddenException() {
+        when(userService.getCurrentUser()).thenReturn(facultyUser);
+
+        assertThrows(ForbiddenException.class, () -> submissionService.getAllSubmissions(null));
     }
 }

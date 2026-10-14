@@ -128,12 +128,12 @@ export function NotificationCenter({ onNavigate }: NotificationCenterProps) {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20"
+        className="relative p-2 text-[#6B6F76] hover:text-[#0B4747] hover:bg-[#F6F5F1] rounded-lg border border-transparent hover:border-[#E6E4DD] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0F5C5C]/40"
         aria-label={`Notifications (${unreadCount} unread)`}
       >
-        <Bell className="w-5 h-5" />
+        <Bell className="w-4 h-4" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-rose-600 rounded-full ring-2 ring-white animate-pulse">
+          <span className="absolute top-1 right-1 flex items-center justify-center min-w-[16px] h-[16px] px-1 text-[9px] font-bold text-white bg-[#0F5C5C] rounded-full ring-2 ring-[#FFFFFF]">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -141,13 +141,13 @@ export function NotificationCenter({ onNavigate }: NotificationCenterProps) {
 
       {/* Popover */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white border border-border rounded-lg shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-[#F6F5F1] border border-[#E6E4DD] rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
           {/* Header */}
-          <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-slate-50/80">
+          <div className="px-4 py-3 border-b border-[#E6E4DD] flex items-center justify-between bg-[#F6F5F1]">
             <div className="flex items-center gap-2">
-              <span className="font-sans text-sm font-bold text-slate-900">Notifications</span>
+              <span className="font-sans text-sm font-bold text-[#16181D]">Notifications</span>
               {unreadCount > 0 && (
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#0F5C5C]/20 text-[#0B4747] border border-[#0F5C5C]/40">
                   {unreadCount} new
                 </span>
               )}
@@ -157,7 +157,7 @@ export function NotificationCenter({ onNavigate }: NotificationCenterProps) {
                 type="button"
                 onClick={() => markAllReadMutation.mutate()}
                 disabled={markAllReadMutation.isPending}
-                className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-primary transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-[#6B6F76] hover:text-[#0B4747] transition-colors disabled:opacity-50"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 Mark all as read
@@ -166,44 +166,44 @@ export function NotificationCenter({ onNavigate }: NotificationCenterProps) {
           </div>
 
           {/* List */}
-          <div className="max-h-96 overflow-y-auto divide-y divide-slate-100">
+          <div className="max-h-96 overflow-y-auto divide-y divide-[#E6E4DD]">
             {isLoading ? (
-              <div className="p-8 text-center text-xs text-slate-500">Loading notifications...</div>
+              <div className="p-8 text-center text-xs text-[#6B6F76]">Loading notifications...</div>
             ) : notifications.length === 0 ? (
               <div className="p-8 text-center">
-                <Check className="w-8 h-8 text-slate-300 mx-auto mb-1.5" />
-                <p className="text-xs font-medium text-slate-700">No notifications yet</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">We'll alert you here when deadlines or reviews occur.</p>
+                <Check className="w-8 h-8 text-[#8A8E95] mx-auto mb-1.5" />
+                <p className="text-xs font-medium text-[#3A3D44]">No notifications yet</p>
+                <p className="text-[11px] text-[#8A8E95] mt-0.5">We'll alert you here when deadlines or reviews occur.</p>
               </div>
             ) : (
               notifications.map((n) => (
                 <div
                   key={n.id}
                   onClick={() => handleNotificationClick(n)}
-                  className={`p-3.5 flex items-start gap-3 hover:bg-slate-50 transition-colors cursor-pointer ${
-                    !n.isRead ? 'bg-blue-50/40' : ''
+                  className={`p-3.5 flex items-start gap-3 transition-colors cursor-pointer hover:bg-[#0F5C5C]/10 ${
+                    !n.isRead ? 'bg-[#0F5C5C]/5' : 'bg-transparent'
                   }`}
                 >
-                  <div className="mt-0.5 shrink-0 w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center">
+                  <div className="mt-0.5 shrink-0 w-7 h-7 rounded-full bg-[#F6F5F1] border border-[#E7E5DF] flex items-center justify-center">
                     {getNotificationIcon(n.type)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-1">
                       <h4
                         className={`text-xs truncate ${
-                          !n.isRead ? 'font-bold text-slate-900' : 'font-medium text-slate-700'
+                          !n.isRead ? 'font-bold text-[#16181D]' : 'font-medium text-[#3A3D44]'
                         }`}
                       >
                         {n.title}
                       </h4>
-                      <span className="text-[10px] text-slate-400 shrink-0">
+                      <span className="text-[10px] text-[#8A8E95] shrink-0">
                         {formatRelativeTime(n.createdAt)}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-600 mt-0.5 line-clamp-2">{n.message}</p>
+                    <p className="text-xs text-[#6B6F76] mt-0.5 line-clamp-2">{n.message}</p>
                   </div>
                   {!n.isRead && (
-                    <span className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0" aria-label="Unread" />
+                    <span className="w-2 h-2 rounded-full bg-[#0B4747] mt-1.5 shrink-0 shadow-xs shadow-[#0F5C5C]" aria-label="Unread" />
                   )}
                 </div>
               ))

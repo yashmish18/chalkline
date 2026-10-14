@@ -27,3 +27,22 @@ export interface ReviewRequest {
   action: 'ACCEPT' | 'RETURN';
   comment?: string;
 }
+
+/** Flat coordinator-facing row: one deadline assignment with its submission status. */
+export interface SubmissionOverviewDto {
+  submissionId: number | null;
+  assignmentId: number;
+  deadlineId: number;
+  deadlineTitle: string;
+  deadlineType: string;
+  dueAt: string;
+  isOverdue: boolean;
+  facultyId: number;
+  facultyName: string;
+  status: SubmissionStatus;
+  submittedAt: string | null;
+  totalVersions: number;
+  latestFileId: number | null;
+  latestFileName: string | null;
+  reviewerComment: string | null;
+}

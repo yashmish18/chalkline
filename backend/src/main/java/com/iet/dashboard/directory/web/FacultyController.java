@@ -9,24 +9,64 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import com.iet.dashboard.identity.service.UserService;
+import com.iet.dashboard.identity.web.UserDto;
+import com.iet.dashboard.tracking.service.TrackingService;
+import com.iet.dashboard.tracking.web.FacultyProfileDto;
+
 @RestController
 @RequestMapping("/api")
 public class FacultyController {
 
     private final FacultyService facultyService;
-    private final com.iet.dashboard.directory.service.FacultyImportService facultyImportService;
+    private final UserService userService;
+    private final TrackingService trackingService;
+    private final com.iet.dashboard.identity.config.AppSettings settings;
 
     public FacultyController(
             FacultyService facultyService,
-            com.iet.dashboard.directory.service.FacultyImportService facultyImportService
+            UserService userService,
+            TrackingService trackingService,
+            com.iet.dashboard.identity.config.AppSettings settings
     ) {
         this.facultyService = facultyService;
-        this.facultyImportService = facultyImportService;
+        this.userService = userService;
+        this.trackingService = trackingService;
+        this.settings = settings;
     }
 
     @GetMapping("/faculty")
-    public ResponseEntity<List<FacultyDto>> getFaculty(@RequestParam(required = false) String skill) {
-        return ResponseEntity.ok(facultyService.getAllFaculty(skill));
+    public ResponseEntity<List<FacultyDto>> getFaculty(
+            @RequestParam(required = false) String skill,
+            @RequestParam(required = false) Long departmentId) {
+        return ResponseEntity.ok(facultyService.getAllFaculty(skill, departmentId));
+    }
+
+    @GetMapping("/departments")
+    public ResponseEntity<List<DepartmentDto>> getDepartments() {
+        return ResponseEntity.ok(facultyService.getAllDepartments());
+    }
+
+    @GetMapping("/faculty/me")
+    public ResponseEntity<FacultyDto> getCurrentFaculty() {
+        UserDto currentUser = userService.getCurrentUser();
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return facultyService.getFacultyByUserId(currentUser.id())
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/faculty/me/profile")
+    public ResponseEntity<FacultyProfileDto> getCurrentFacultyProfile() {
+        UserDto currentUser = userService.getCurrentUser();
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return facultyService.getFacultyByUserId(currentUser.id())
+                .map(f -> ResponseEntity.ok(trackingService.getFacultyProfile(f.id())))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/faculty/{id}")
@@ -71,21 +111,13 @@ public class FacultyController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/faculty/import")
+    @DeleteMapping("/faculty")
     @PreAuthorize("hasRole('COORDINATOR')")
-    public ResponseEntity<ImportResultDto> importFaculty(
-            @RequestParam("file") org.springframework.web.multipart.MultipartFile file
-    ) {
-        return ResponseEntity.ok(facultyImportService.importFacultyAndAllocations(file));
+    public ResponseEntity<BulkDeleteResult> deleteAllFaculty() {
+        com.iet.dashboard.shared.admin.DatabaseWipeController.requireDestructiveActions(settings);
+        return ResponseEntity.ok(new BulkDeleteResult(facultyService.deleteAllFaculty()));
     }
 
-    @GetMapping("/faculty/import-template")
-    @PreAuthorize("hasRole('COORDINATOR')")
-    public ResponseEntity<byte[]> getImportTemplate() {
-        byte[] csv = facultyImportService.generateTemplateCsv();
-        return ResponseEntity.ok()
-                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"faculty_allocations_template.csv\"")
-                .contentType(org.springframework.http.MediaType.parseMediaType("text/csv"))
-                .body(csv);
+    public record BulkDeleteResult(int deleted) {
     }
 }

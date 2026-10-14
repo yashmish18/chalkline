@@ -5,6 +5,7 @@ import com.iet.dashboard.academics.domain.SyllabusTopic;
 import com.iet.dashboard.academics.repo.CourseOfferingRepository;
 import com.iet.dashboard.academics.repo.SyllabusTopicRepository;
 import com.iet.dashboard.academics.service.AcademicsService;
+import com.iet.dashboard.academics.web.AcademicTermDto;
 import com.iet.dashboard.academics.web.CourseOfferingDto;
 import com.iet.dashboard.academics.web.SyllabusTopicDto;
 import com.iet.dashboard.academics.web.TeachingAssignmentDto;
@@ -60,6 +61,14 @@ public class TeachingSessionServiceImpl implements TeachingSessionService {
         // Enforce IDOR protection: faculty must be assigned to this offering
         academicsService.assertFacultyAssignedToOffering(currentFacultyId, request.offeringId());
 
+        // A class cannot have been held before the semester it belongs to even started.
+        AcademicTermDto activeTerm = academicsService.getActiveTerm();
+        if (activeTerm != null && activeTerm.startDate() != null
+                && request.sessionDate().isBefore(activeTerm.startDate())) {
+            throw new ValidationException(
+                    "Classes cannot be logged before the semester starts (" + activeTerm.startDate() + ")");
+        }
+
         if (request.status() != SessionStatus.HELD && (request.reasonNotHeld() == null || request.reasonNotHeld().isBlank())) {
             throw new ValidationException("Reason is required when class is cancelled or swapped");
         }
@@ -75,7 +84,7 @@ public class TeachingSessionServiceImpl implements TeachingSessionService {
                 request.status(),
                 request.unitNumber(),
                 request.customTopicName(),
-                request.subSection() != null ? request.subSection() : "ALL",
+                com.iet.dashboard.academics.domain.SubSections.normalise(request.subSection(), offering.getSection()),
                 request.lecturesTaken() != null ? request.lecturesTaken() : 1,
                 request.note(),
                 request.reasonNotHeld()
@@ -92,6 +101,11 @@ public class TeachingSessionServiceImpl implements TeachingSessionService {
         return TeachingSessionDto.fromEntity(saved);
     }
 
+    /**
+     * The classes a faculty member should log on a date. With an uploaded timetable this is exactly
+     * that weekday's slots, in time order. Without one, every allocation is listed as unscheduled so
+     * logging still works — but no time or room is invented.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<TodayClassDto> getTodayClassesForFaculty(Long facultyId, LocalDate date) {
@@ -99,102 +113,81 @@ public class TeachingSessionServiceImpl implements TeachingSessionService {
             return List.of();
         }
         LocalDate targetDate = date != null ? date : LocalDate.now();
-        String dayOfWeekStr = targetDate.getDayOfWeek().name();
+        String weekday = targetDate.getDayOfWeek().name();
 
         List<TeachingAssignmentDto> assignments = academicsService.getTeachingAssignmentsForFaculty(facultyId);
-        List<TeachingSession> todaySessions = sessionRepository.findByFacultyIdAndSessionDate(facultyId, targetDate);
-        List<com.iet.dashboard.academics.web.TimetableSlotDto> timetableSlots = academicsService.getTimetableForFaculty(facultyId);
+        List<TeachingSession> sessionsThatDay = sessionRepository.findByFacultyIdAndSessionDate(facultyId, targetDate);
+        List<com.iet.dashboard.academics.web.TimetableSlotDto> timetable = academicsService.getTimetableForFaculty(facultyId);
 
         List<TodayClassDto> result = new ArrayList<>();
-        for (TeachingAssignmentDto assignment : assignments) {
-            CourseOfferingDto offering = assignment.offering();
-            if (offering == null || offering.course() == null) {
-                continue;
-            }
-
-            List<SyllabusTopicDto> allTopics = academicsService.getSyllabusForCourse(offering.course().id());
-            Set<Long> coveredTopicIds = sessionRepository.findCoveredTopicIdsForOffering(offering.id());
-
-            // Build available units with their syllabus topics
-            Map<Integer, List<SyllabusTopicDto>> topicsByUnit = allTopics.stream()
-                    .collect(Collectors.groupingBy(SyllabusTopicDto::unitNumber, LinkedHashMap::new, Collectors.toList()));
-
-            List<UnitOptionDto> availableUnits = new ArrayList<>();
-            for (Map.Entry<Integer, List<SyllabusTopicDto>> entry : topicsByUnit.entrySet()) {
-                String uTitle = entry.getValue().isEmpty() ? "Unit " + entry.getKey() : entry.getValue().get(0).unitTitle();
-                availableUnits.add(new UnitOptionDto(entry.getKey(), uTitle, entry.getValue()));
-            }
-
-            // Pre-select the next uncovered topic in sequential syllabus order
-            Long nextTopicId = null;
-            String nextTopicName = "All syllabus topics completed";
-            String unitTitle = "Course Complete";
-            int currentUnitNumber = 5;
-            int targetWeek = 14;
-
-            for (SyllabusTopicDto topic : allTopics) {
-                if (!coveredTopicIds.contains(topic.id())) {
-                    nextTopicId = topic.id();
-                    nextTopicName = topic.topicName();
-                    unitTitle = topic.unitTitle();
-                    currentUnitNumber = topic.unitNumber();
-                    targetWeek = topic.targetWeek();
-                    break;
+        if (timetable.isEmpty()) {
+            for (TeachingAssignmentDto a : assignments) {
+                if (a.offering() != null && a.offering().course() != null) {
+                    result.add(todayClass(a.offering(), a.component(), a.subSection(), "", "", false, sessionsThatDay));
                 }
             }
-
-            if (allTopics.isEmpty()) {
-                nextTopicName = "No syllabus topics configured";
-                unitTitle = "Unit 1";
-                currentUnitNumber = 1;
-                targetWeek = 1;
-            }
-
-            // Match timetable slot for this offering and today's day of week
-            String timeSlot = (offering.id() % 2 == 1)
-                    ? "10:00 AM – 11:00 AM"
-                    : "02:00 PM – 03:00 PM";
-            String room = (offering.id() % 2 == 1) ? "Room 304 (Lecture Hall)" : "Room 201 (Smart Class)";
-
-            for (com.iet.dashboard.academics.web.TimetableSlotDto slot : timetableSlots) {
-                if (offering.id().equals(slot.offeringId()) && dayOfWeekStr.equalsIgnoreCase(slot.dayOfWeek())) {
-                    timeSlot = slot.startTime() + " – " + slot.endTime();
-                    room = slot.room();
-                    break;
-                }
-            }
-
-            boolean isLogged = todaySessions.stream()
-                    .anyMatch(s -> s.getOffering() != null && offering.id().equals(s.getOffering().getId()));
-
-            String ltp = offering.course().ltp() != null ? offering.course().ltp() : "3-0-0";
-            String courseDesc = offering.course().description() != null ? offering.course().description() : "";
-            String subSec = assignment.subSection() != null ? assignment.subSection() : "ALL";
-
-            result.add(new TodayClassDto(
-                    offering.id(),
-                    offering.course().code(),
-                    offering.course().name(),
-                    courseDesc,
-                    ltp,
-                    "Sec " + offering.section(),
-                    subSec,
-                    assignment.component(),
-                    timeSlot,
-                    room,
-                    currentUnitNumber,
-                    nextTopicId,
-                    nextTopicName,
-                    unitTitle,
-                    targetWeek,
-                    allTopics.size(),
-                    coveredTopicIds.size(),
-                    isLogged,
-                    availableUnits
-            ));
+            return result;
         }
 
+        for (var slot : timetable) {
+            if (!weekday.equalsIgnoreCase(slot.dayOfWeek())) {
+                continue;
+            }
+            assignments.stream()
+                    .map(TeachingAssignmentDto::offering)
+                    .filter(o -> o != null && o.id().equals(slot.offeringId()))
+                    .findFirst()
+                    .ifPresent(offering -> result.add(todayClass(offering, slot.component(), slot.subSection(),
+                            slot.startTime() + " – " + slot.endTime(), slot.room(), true, sessionsThatDay)));
+        }
         return result;
+    }
+
+    private TodayClassDto todayClass(CourseOfferingDto offering, String component, String subSection, String timeSlot,
+                                     String room, boolean scheduled, List<TeachingSession> sessionsThatDay) {
+        List<SyllabusTopicDto> allTopics = academicsService.getSyllabusForCourse(offering.course().id());
+        Set<Long> coveredTopicIds = sessionRepository.findCoveredTopicIdsForOffering(offering.id());
+
+        Map<Integer, List<SyllabusTopicDto>> topicsByUnit = allTopics.stream()
+                .collect(Collectors.groupingBy(SyllabusTopicDto::unitNumber, LinkedHashMap::new, Collectors.toList()));
+        List<UnitOptionDto> availableUnits = new ArrayList<>();
+        topicsByUnit.forEach((unit, topics) -> availableUnits.add(new UnitOptionDto(unit, topics.get(0).unitTitle(), topics)));
+
+        // Pre-select the next uncovered topic in syllabus order.
+        SyllabusTopicDto next = allTopics.stream().filter(t -> !coveredTopicIds.contains(t.id())).findFirst().orElse(null);
+        String batch = com.iet.dashboard.academics.domain.SubSections.normalise(subSection, offering.section());
+        // A class is logged only when that exact component of that batch was logged: logging the
+        // lecture must not also tick the tutorial that shares the section.
+        com.iet.dashboard.academics.domain.CourseComponent ownComponent =
+                com.iet.dashboard.academics.domain.CourseComponent.parse(component);
+        boolean logged = sessionsThatDay.stream().anyMatch(s -> s.getOffering() != null
+                && offering.id().equals(s.getOffering().getId())
+                && ownComponent == com.iet.dashboard.academics.domain.CourseComponent.parse(s.getSessionType())
+                && batch.equals(com.iet.dashboard.academics.domain.SubSections.normalise(s.getSubSection(), offering.section())));
+
+        return new TodayClassDto(
+                offering.id(),
+                offering.course().id(),
+                offering.course().code(),
+                offering.course().name(),
+                offering.course().description() != null ? offering.course().description() : "",
+                offering.course().ltp() != null ? offering.course().ltp() : "",
+                offering.section(),
+                batch,
+                component,
+                timeSlot,
+                room,
+                next != null ? next.unitNumber() : 1,
+                next != null ? next.id() : null,
+                allTopics.isEmpty() ? "No syllabus loaded" : next != null ? next.topicName() : "All topics covered",
+                next != null ? next.unitTitle() : "",
+                next != null ? next.targetWeek() : 0,
+                allTopics.size(),
+                coveredTopicIds.size(),
+                logged,
+                availableUnits,
+                scheduled
+        );
     }
 
     @Override

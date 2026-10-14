@@ -27,6 +27,10 @@ public class AcademicTerm {
     @Column(name = "is_active", nullable = false)
     private boolean active = false;
 
+    /** Continuous assessments each section must hold this semester. */
+    @Column(name = "required_assessments", nullable = false)
+    private int requiredAssessments = 3;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
@@ -96,5 +100,13 @@ public class AcademicTerm {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public int getRequiredAssessments() {
+        return requiredAssessments;
+    }
+
+    public void setRequiredAssessments(int requiredAssessments) {
+        this.requiredAssessments = requiredAssessments;
     }
 }

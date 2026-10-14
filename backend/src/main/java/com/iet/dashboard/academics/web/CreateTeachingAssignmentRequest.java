@@ -10,12 +10,22 @@ public record CreateTeachingAssignmentRequest(
         @NotNull(message = "Faculty ID is required")
         Long facultyId,
 
-        @NotBlank(message = "Component (THEORY or LAB) is required")
+        @NotBlank(message = "Component (ALL, THEORY, LECTURE, TUTORIAL or PRACTICAL) is required")
         String component,
 
-        String subSection
+        String subSection,
+
+        /**
+         * Weekly contact hours this faculty member owns for the component. Optional — when null
+         * or non-positive the course LTP hours for the component are used.
+         */
+        Integer contactHours
 ) {
     public CreateTeachingAssignmentRequest(Long offeringId, Long facultyId, String component) {
-        this(offeringId, facultyId, component, "ALL");
+        this(offeringId, facultyId, component, "ALL", null);
+    }
+
+    public CreateTeachingAssignmentRequest(Long offeringId, Long facultyId, String component, String subSection) {
+        this(offeringId, facultyId, component, subSection, null);
     }
 }

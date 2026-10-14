@@ -9,5 +9,4 @@ import java.util.Optional;
 @Repository
 public interface AcademicTermRepository extends JpaRepository<AcademicTerm, Long> {
     Optional<AcademicTerm> findByActiveTrue();
-    Optional<AcademicTerm> findByName(String name);
 }

@@ -12,8 +12,8 @@ import java.util.List;
 public interface SyllabusTopicRepository extends JpaRepository<SyllabusTopic, Long> {
     List<SyllabusTopic> findByCourseIdOrderByLectureOrderAsc(Long courseId);
 
-    @Query("SELECT st FROM SyllabusTopic st WHERE st.course.id = :courseId ORDER BY st.unitNumber ASC, st.lectureOrder ASC")
-    List<SyllabusTopic> findByCourseIdGrouped(@Param("courseId") Long courseId);
+    @Query("SELECT st FROM SyllabusTopic st ORDER BY st.course.id, st.lectureOrder")
+    List<SyllabusTopic> findAllOrdered();
 
-    long countByCourseId(Long courseId);
+    void deleteByCourseId(Long courseId);
 }

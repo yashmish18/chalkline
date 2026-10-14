@@ -34,28 +34,37 @@ export interface FacultyComplianceRowDto {
   complianceStatus: 'CRITICAL' | 'WATCH' | 'GOOD';
 }
 
-export interface AuditLogDto {
-  id: number;
-  userId: number | null;
-  userName: string;
-  action: string;
-  targetEntity: string;
-  targetId: number | null;
-  details: string;
-  createdAt: string;
-}
+export type FacultyPerformanceStatus = 'NOT_STARTED' | 'NO_TIMETABLE' | 'NOT_LOGGING' | 'BEHIND' | 'ON_TRACK' | 'NO_DATA';
 
 export interface OverviewSummaryDto {
+  term: {
+    name: string | null;
+    startDate: string | null;
+    endDate: string | null;
+    currentWeek: number | null;
+    totalWeeks: number | null;
+    started: boolean;
+  };
   kpis: {
-    averageCoveragePercentage: number;
-    averageConductRatePercentage: number;
+    /** null when no section has a syllabus to measure against */
+    averageCoveragePercentage: number | null;
+    /** null when no class has been logged yet */
+    averageConductRatePercentage: number | null;
     coursesBehindPacing: number;
     needsAttentionCount: number;
+    offeringsWithoutSyllabus: number;
+    facultyNotLogging: number;
+    /** classes logged / classes the timetable scheduled so far; null before anything is due */
+    loggingRatePercentage: number | null;
+    facultyWithoutTimetable: number;
+    totalStudents: number;
   };
+  /** Furthest behind the planned syllabus position first; sections without a syllabus last. */
   worstFirstCoverage: Array<{
     offeringId: number;
     courseCode: string;
     courseName: string;
+    semester: number;
     section: string;
     facultyName: string;
     coveredTopics: number;
@@ -64,6 +73,10 @@ export interface OverviewSummaryDto {
     expectedPercentage: number;
     pacingStatus: 'BEHIND' | 'ON_TRACK' | 'AHEAD';
     topicDelta: number;
+    syllabusConfigured: boolean;
+    lastSessionDate: string | null;
+    yearOfStudy?: number;
+    studentCount?: number;
   }>;
   conductTrajectory: Array<{
     weekNumber: number;
@@ -80,6 +93,22 @@ export interface OverviewSummaryDto {
     facultyId: number | null;
     facultyName: string;
     actionLabel: string;
+  }>;
+  facultyPerformance: Array<{
+    facultyId: number;
+    facultyName: string;
+    offerings: number;
+    weeklyHours: number;
+    pblHours: number;
+    sessionsHeld: number;
+    sessionsCancelled: number;
+    lastSessionDate: string | null;
+    daysSinceLastLog: number | null;
+    offeringsBehind: number;
+    averageCoverage: number | null;
+    scheduledSoFar: number;
+    loggingRate: number | null;
+    status: FacultyPerformanceStatus;
   }>;
 }
 
@@ -104,3 +133,21 @@ export interface ComplianceMatrixDto {
     }>;
   }>;
 }
+
+export interface IrregularityAuditDto {
+  totalIssues: number;
+  criticalCount: number;
+  warningCount: number;
+  items: Array<{
+    offeringId: number;
+    courseCode: string;
+    courseName: string;
+    section: string;
+    ltp: string;
+    issueType: string;
+    severity: 'CRITICAL' | 'WARNING' | 'INFO';
+    description: string;
+    assignedFaculty: string;
+  }>;
+}
+

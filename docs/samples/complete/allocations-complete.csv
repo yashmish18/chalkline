@@ -1,0 +1,19 @@
+Faculty Name,Email,Designation,Department,Course Code,Course Name,L-T-P,Semester,Section,Section Students,Component,Batch,Batch Students,Weekly Hours,PBL Hours,Role
+Dr. Amit Sinhal,amit.sinhal@jklu.edu.in,Professor,CSE,CS1139,Programming-I,3-0-2,1,A,64,Lecture,ALL,64,3,2,Faculty
+Dr. Amit Sinhal,amit.sinhal@jklu.edu.in,Professor,CSE,CS1139,Programming-I,3-0-2,1,A,64,Practical,A1,32,2,2,Faculty
+Dr. Surbhi Chhabra,surbhi.chhabra@jklu.edu.in,Assistant Professor,CSE,CS1139,Programming-I,3-0-2,1,A,64,Practical,A2,32,2,2,Faculty
+Dr. Surbhi Chhabra,surbhi.chhabra@jklu.edu.in,Assistant Professor,CSE,CS2105,Data Structures,3-1-2,3,B,60,Lecture,ALL,60,3,2,Faculty
+Dr. Surbhi Chhabra,surbhi.chhabra@jklu.edu.in,Assistant Professor,CSE,CS2105,Data Structures,3-1-2,3,B,60,Tutorial,ALL,60,1,2,Faculty
+Dr. Mayank Kundalwal,mayank.kundalwal@jklu.edu.in,Assistant Professor,CSE,CS2105,Data Structures,3-1-2,3,B,60,Practical,B1,30,2,3,Faculty
+Dr. Mayank Kundalwal,mayank.kundalwal@jklu.edu.in,Assistant Professor,CSE,CS2105,Data Structures,3-1-2,3,B,60,Practical,B2,30,2,3,Faculty
+Dr. Mayank Kundalwal,mayank.kundalwal@jklu.edu.in,Assistant Professor,CSE,CS3201,Operating Systems,3-0-2,5,A,58,Lecture,ALL,58,3,3,Faculty
+Dr. Mayank Kundalwal,mayank.kundalwal@jklu.edu.in,Assistant Professor,CSE,CS3201,Operating Systems,3-0-2,5,A,58,Practical,A1,29,2,3,Faculty
+Dr. Amit Sinhal,amit.sinhal@jklu.edu.in,Professor,CSE,CS3201,Operating Systems,3-0-2,5,A,58,Practical,A2,29,2,2,Faculty
+Dr. S Taruna,s.taruna@jklu.edu.in,Professor,CSE,CS4110,Machine Learning,3-0-2,7,A,45,Lecture,ALL,45,3,0,Coordinator
+Dr. S Taruna,s.taruna@jklu.edu.in,Professor,CSE,CS4110,Machine Learning,3-0-2,7,A,45,Practical,ALL,45,2,0,Coordinator
+Dr. Rajesh Patel,rajesh.patel@jklu.edu.in,Professor,ECE,EC2101,Digital Electronics,3-1-2,3,A,62,Lecture,ALL,62,3,2,Faculty
+Dr. Rajesh Patel,rajesh.patel@jklu.edu.in,Professor,ECE,EC2101,Digital Electronics,3-1-2,3,A,62,Tutorial,ALL,62,1,2,Faculty
+Dr. Rajesh Patel,rajesh.patel@jklu.edu.in,Professor,ECE,EC2101,Digital Electronics,3-1-2,3,A,62,Practical,A1,31,2,2,Faculty
+Dr. Kavita Rao,kavita.rao@jklu.edu.in,Assistant Professor,ECE,EC2101,Digital Electronics,3-1-2,3,A,62,Practical,A2,31,2,1,Faculty
+Dr. Kavita Rao,kavita.rao@jklu.edu.in,Assistant Professor,ECE,EC3105,Signals and Systems,3-1-0,5,B,55,Lecture,ALL,55,3,1,Faculty
+Dr. Kavita Rao,kavita.rao@jklu.edu.in,Assistant Professor,ECE,EC3105,Signals and Systems,3-1-0,5,B,55,Tutorial,ALL,55,1,1,Faculty

@@ -1,0 +1,31 @@
+Day,Start,End,Room,Course Code,Semester,Section,Component,Batch,Faculty Name,Faculty Email
+Mon,09:00,10:00,LT-1,CS1139,1,A,Lecture,,Dr. Amit Sinhal,amit.sinhal@jklu.edu.in
+Mon,09:00,10:00,LT-2,CS2105,3,B,Lecture,,Dr. Surbhi Chhabra,surbhi.chhabra@jklu.edu.in
+Mon,09:00,10:00,LT-3,CS3201,5,A,Lecture,,Dr. Mayank Kundalwal,mayank.kundalwal@jklu.edu.in
+Mon,09:00,10:00,LT-4,EC2101,3,A,Lecture,,Dr. Rajesh Patel,rajesh.patel@jklu.edu.in
+Mon,09:00,10:00,LT-5,EC3105,5,B,Lecture,,Dr. Kavita Rao,kavita.rao@jklu.edu.in
+Mon,10:00,12:00,Lab 1,CS1139,1,A,Practical,A1,Dr. Amit Sinhal,amit.sinhal@jklu.edu.in
+Mon,10:00,12:00,Lab 2,CS1139,1,A,Practical,A2,Dr. Surbhi Chhabra,surbhi.chhabra@jklu.edu.in
+Mon,10:00,12:00,Lab 3,CS2105,3,B,Practical,B1,Dr. Mayank Kundalwal,mayank.kundalwal@jklu.edu.in
+Mon,10:00,11:00,LT-1,CS4110,7,A,Lecture,,Dr. S Taruna,s.taruna@jklu.edu.in
+Mon,10:00,11:00,LT-4,EC2101,3,A,Tutorial,,Dr. Rajesh Patel,rajesh.patel@jklu.edu.in
+Mon,10:00,11:00,LT-5,EC3105,5,B,Tutorial,,Dr. Kavita Rao,kavita.rao@jklu.edu.in
+Mon,12:00,13:00,LT-1,CS2105,3,B,Tutorial,,Dr. Surbhi Chhabra,surbhi.chhabra@jklu.edu.in
+Mon,14:00,16:00,Lab 1,CS2105,3,B,Practical,B2,Dr. Mayank Kundalwal,mayank.kundalwal@jklu.edu.in
+Mon,14:00,16:00,Lab 2,CS3201,5,A,Practical,A2,Dr. Amit Sinhal,amit.sinhal@jklu.edu.in
+Mon,14:00,16:00,Lab 3,CS4110,7,A,Practical,,Dr. S Taruna,s.taruna@jklu.edu.in
+Tue,09:00,10:00,LT-1,CS1139,1,A,Lecture,,Dr. Amit Sinhal,amit.sinhal@jklu.edu.in
+Tue,09:00,10:00,LT-2,CS2105,3,B,Lecture,,Dr. Surbhi Chhabra,surbhi.chhabra@jklu.edu.in
+Tue,09:00,10:00,LT-3,CS3201,5,A,Lecture,,Dr. Mayank Kundalwal,mayank.kundalwal@jklu.edu.in
+Tue,09:00,10:00,LT-4,EC2101,3,A,Lecture,,Dr. Rajesh Patel,rajesh.patel@jklu.edu.in
+Tue,09:00,10:00,LT-5,EC3105,5,B,Lecture,,Dr. Kavita Rao,kavita.rao@jklu.edu.in
+Tue,10:00,12:00,Lab 1,CS3201,5,A,Practical,A1,Dr. Mayank Kundalwal,mayank.kundalwal@jklu.edu.in
+Tue,10:00,11:00,LT-1,CS4110,7,A,Lecture,,Dr. S Taruna,s.taruna@jklu.edu.in
+Tue,10:00,12:00,Lab 2,EC2101,3,A,Practical,A1,Dr. Rajesh Patel,rajesh.patel@jklu.edu.in
+Tue,10:00,12:00,Lab 3,EC2101,3,A,Practical,A2,Dr. Kavita Rao,kavita.rao@jklu.edu.in
+Wed,09:00,10:00,LT-1,CS1139,1,A,Lecture,,Dr. Amit Sinhal,amit.sinhal@jklu.edu.in
+Wed,09:00,10:00,LT-2,CS2105,3,B,Lecture,,Dr. Surbhi Chhabra,surbhi.chhabra@jklu.edu.in
+Wed,09:00,10:00,LT-3,CS3201,5,A,Lecture,,Dr. Mayank Kundalwal,mayank.kundalwal@jklu.edu.in
+Wed,09:00,10:00,LT-4,EC2101,3,A,Lecture,,Dr. Rajesh Patel,rajesh.patel@jklu.edu.in
+Wed,09:00,10:00,LT-5,EC3105,5,B,Lecture,,Dr. Kavita Rao,kavita.rao@jklu.edu.in
+Wed,10:00,11:00,LT-1,CS4110,7,A,Lecture,,Dr. S Taruna,s.taruna@jklu.edu.in

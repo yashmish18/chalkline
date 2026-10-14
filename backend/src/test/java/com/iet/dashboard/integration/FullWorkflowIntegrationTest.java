@@ -26,8 +26,6 @@ import com.iet.dashboard.submissions.service.SubmissionServiceImpl;
 import com.iet.dashboard.submissions.storage.FileStorage;
 import com.iet.dashboard.submissions.web.ReviewRequest;
 import com.iet.dashboard.submissions.web.SubmissionDto;
-import com.iet.dashboard.tracking.domain.AuditLog;
-import com.iet.dashboard.tracking.repo.AuditLogRepository;
 import com.iet.dashboard.tracking.service.TrackingServiceImpl;
 import com.iet.dashboard.tracking.web.DepartmentMetricsDto;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -64,8 +62,6 @@ class FullWorkflowIntegrationTest {
     private SubmissionFileRepository submissionFileRepository;
     @Mock
     private NotificationRepository notificationRepository;
-    @Mock
-    private AuditLogRepository auditLogRepository;
     @Mock
     private FacultyService facultyService;
     @Mock
@@ -109,13 +105,14 @@ class FullWorkflowIntegrationTest {
         );
 
         trackingService = new TrackingServiceImpl(
-                auditLogRepository,
                 deadlineService,
                 facultyService,
                 submissionService,
                 userService,
                 mock(com.iet.dashboard.academics.service.AcademicsService.class),
-                mock(com.iet.dashboard.academics.service.PacingCalculationService.class)
+                mock(com.iet.dashboard.academics.service.PacingCalculationService.class),
+                mock(com.iet.dashboard.teaching.repo.TeachingSessionRepository.class),
+                mock(com.iet.dashboard.academics.repo.TimetableSlotRepository.class)
         );
     }
 
@@ -128,7 +125,7 @@ class FullWorkflowIntegrationTest {
         Deadline deadline = new Deadline("Course File Audit", "Upload syllabus and lecture notes", DeadlineType.COURSE_FILE, dueAt, 1L);
         deadline.setId(100L);
         when(deadlineRepository.save(any(Deadline.class))).thenReturn(deadline);
-        when(facultyService.getAllFaculty(null)).thenReturn(List.of(facultyDto));
+        when(facultyService.getAllFaculty(null, null)).thenReturn(List.of(facultyDto));
 
         CreateDeadlineRequest request = new CreateDeadlineRequest(
                 "Course File Audit", "Upload syllabus and lecture notes", "COURSE_FILE",
@@ -212,6 +209,5 @@ class FullWorkflowIntegrationTest {
             assertEquals("INSTITUTE OF ENGINEERING & TECHNOLOGY (IET)", wb.getSheetAt(0).getRow(0).getCell(0).getStringCellValue());
         }
 
-        verify(auditLogRepository).save(any(AuditLog.class));
     }
 }

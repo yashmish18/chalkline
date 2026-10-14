@@ -4,6 +4,11 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 import './index.css';
+import { installCsrfFetch } from './lib/csrf';
+import { captureSetupToken } from './lib/coordinatorSetup';
+
+installCsrfFetch();
+captureSetupToken();
 
 const queryClient = new QueryClient({
   defaultOptions: {

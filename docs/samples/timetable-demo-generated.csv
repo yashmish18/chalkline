@@ -1,0 +1,514 @@
+Day,Start,End,Room,Course Code,Semester,Section,Component,Batch,Faculty Email
+Mon,11:00,13:00,Lab 1,CS1139,1,C,Practical,,amit.sinhal@iet.edu
+Fri,14:00,16:00,Lab 1,CS1139,1,F,Practical,,amit.sinhal@iet.edu
+Mon,10:00,12:00,Lab 2,CS1139,1,H,Practical,G,surbhi.chhabra@iet.edu
+Fri,14:00,16:00,Lab 2,CS1139,1,J,Practical,,surbhi.chhabra@iet.edu
+Tue,09:00,11:00,Lab 1,CS1139,1,E,Practical,,surbhi.chhabra@iet.edu
+Fri,09:00,11:00,Lab 1,CS1139,1,A,Practical,,amar.nath.patra@iet.edu
+Mon,11:00,13:00,Lab 3,CS1139,1,I,Practical,,amar.nath.patra@iet.edu
+Thu,15:00,17:00,Lab 1,CS1139,1,B,Practical,,ankush.soni@iet.edu
+Wed,10:00,12:00,Lab 1,CS1139,1,D,Practical,,ankush.soni@iet.edu
+Thu,11:00,13:00,Lab 1,CS1140,5,B,Practical,,ankush.soni@iet.edu
+Wed,11:00,13:00,Lab 2,CS1139,1,G,Practical,H,mayank.kundalwal@iet.edu
+Thu,15:00,17:00,Lab 2,CS1218,5,D,Practical,,mayank.kundalwal@iet.edu
+Fri,15:00,17:00,Lab 3,EE1126,3,F,Practical,,devika.kataria@iet.edu
+Mon,15:00,17:00,Lab 1,EE1118,1,E,Practical,,hanuman.prasad.agarwal@iet.edu
+Wed,09:00,11:00,Lab 2,EE1118,1,G,Practical,,hanuman.prasad.agarwal@iet.edu
+Fri,14:00,16:00,Lab 4,EE1118,1,D,Practical,,megha.sahu@iet.edu
+Wed,11:00,13:00,Lab 3,EE1118,1,F,Practical,,megha.sahu@iet.edu
+Thu,10:00,12:00,Lab 2,EE1118,1,A,Practical,,rashmi.kushwaha@iet.edu
+Fri,11:00,13:00,Lab 1,EE1118,1,C,Practical,,rashmi.kushwaha@iet.edu
+Wed,11:00,13:00,Lab 4,EE1118,1,I,Practical,,divanshu.jain@iet.edu
+Fri,14:00,16:00,Lab 5,CS1134,3,D,Practical,,divanshu.jain@iet.edu
+Thu,14:00,16:00,Lab 3,EE1118,1,B,Practical,,rajnish.kumar@iet.edu
+Mon,14:00,16:00,Lab 2,EE1118,1,H,Practical,,rajnish.kumar@iet.edu
+Fri,15:00,17:00,Lab 6,CS1134,3,E,Practical,,rajnish.kumar@iet.edu
+Mon,15:00,17:00,Lab 3,EE1118,1,J,Practical,,gaurav.mani.khanal@iet.edu
+Thu,10:00,12:00,Lab 3,EE1110,3,F,Practical,,gaurav.mani.khanal@iet.edu
+Thu,15:00,17:00,Lab 4,EE1126,3,F,Practical,,gaurav.mani.khanal@iet.edu
+Thu,15:00,17:00,Lab 5,CS1135,1,B,Practical,,manju.rana@iet.edu
+Fri,11:00,13:00,Lab 2,CS1135,1,D,Practical,,manju.rana@iet.edu
+Wed,14:00,16:00,Lab 1,CS1135,1,E,Practical,,manju.rana@iet.edu
+Fri,15:00,17:00,Lab 7,CS1135,1,A,Practical,,devisha.tiwari@iet.edu
+Tue,11:00,13:00,Lab 1,CS1135,1,C,Practical,,devisha.tiwari@iet.edu
+Wed,09:00,11:00,Lab 3,CS1131,3,A,Practical,,ashish.jain@iet.edu
+Mon,10:00,12:00,Lab 4,CS1131,3,B,Practical,,ashish.jain@iet.edu
+Wed,15:00,17:00,Lab 2,CS1131,3,AI,Practical,,ashish.jain@iet.edu
+Thu,14:00,16:00,Lab 6,CS1131,3,C,Practical,,satveer.singh@iet.edu
+Wed,11:00,13:00,Lab 5,CS1131,3,D,Practical,,anamika.satrawala@iet.edu
+Fri,11:00,13:00,Lab 3,CS1131,3,E,Practical,,anamika.satrawala@iet.edu
+Thu,10:00,12:00,Lab 4,CS1131,3,F,Practical,,anamika.satrawala@iet.edu
+Thu,09:00,11:00,Lab 1,CS1134,3,A,Practical,,rohit.singh@iet.edu
+Wed,09:00,11:00,Lab 4,CS1134,3,B,Practical,,rohit.singh@iet.edu
+Tue,15:00,17:00,Lab 1,CS1133,3,B,Practical,,rohit.singh@iet.edu
+Mon,09:00,11:00,Lab 1,CS1133,3,B,Practical,,rohit.singh@iet.edu
+Thu,14:00,16:00,Lab 7,CS1134,3,C,Practical,,pranab.roy@iet.edu
+Mon,14:00,16:00,Lab 4,CS1134,3,A,Practical,,pranab.roy@iet.edu
+Tue,10:00,11:00,Lab 2,CS1134,3,A,Practical,,pranab.roy@iet.edu
+Mon,14:00,16:00,Lab 5,CS1133,3,A,Practical,,s.taruna@iet.edu
+Fri,11:00,13:00,Lab 4,CS1133,3,B,Practical,,s.taruna@iet.edu
+Wed,10:00,12:00,Lab 6,CS1133,3,C,Practical,,deepika.prakash@iet.edu
+Mon,11:00,12:00,Lab 5,CS1133,3,C,Practical,,deepika.prakash@iet.edu
+Fri,14:00,16:00,Lab 8,CS1233,5,ALL,Practical,C,deepika.prakash@iet.edu
+Thu,15:00,16:00,Lab 8,CS1233,5,ALL,Practical,C,deepika.prakash@iet.edu
+Tue,14:00,16:00,Lab 2,CS1133,3,D,Practical,,supriya.mishra@iet.edu
+Fri,10:00,12:00,Lab 5,CS1133,3,D,Practical,,supriya.mishra@iet.edu
+Tue,10:00,12:00,Lab 3,CS1133,3,E,Practical,,supriya.mishra@iet.edu
+Mon,09:00,11:00,Lab 3,CS1133,3,E,Practical,,supriya.mishra@iet.edu
+Thu,09:00,11:00,Lab 5,CS1228,5,ALL,Practical,1,gaurav.raj@iet.edu
+Mon,16:00,17:00,Lab 2,CS1228,5,ALL,Practical,1,gaurav.raj@iet.edu
+Wed,15:00,17:00,Lab 3,CS1140,5,A,Practical,,devendra.bhavsar@iet.edu
+Mon,09:00,10:00,Lab 2,CS1140,5,A,Practical,,devendra.bhavsar@iet.edu
+Wed,15:00,17:00,Lab 4,CS1240,5,B,Practical,,tapas.kumar@iet.edu
+Wed,12:00,13:00,LT-1,CS1139,1,C,Lecture,,amit.sinhal@iet.edu
+Wed,09:00,10:00,LT-1,CS1139,1,C,Lecture,,amit.sinhal@iet.edu
+Thu,12:00,13:00,LT-1,CS1139,1,C,Lecture,,amit.sinhal@iet.edu
+Tue,10:00,11:00,LT-1,CS1139,1,F,Lecture,,amit.sinhal@iet.edu
+Tue,12:00,13:00,LT-1,CS1139,1,F,Lecture,,amit.sinhal@iet.edu
+Fri,11:00,12:00,LT-1,CS1139,1,F,Lecture,,amit.sinhal@iet.edu
+Thu,14:00,15:00,LT-1,CS1139,1,H,Lecture,,surbhi.chhabra@iet.edu
+Tue,15:00,16:00,LT-1,CS1139,1,H,Lecture,,surbhi.chhabra@iet.edu
+Mon,14:00,15:00,LT-1,CS1139,1,H,Lecture,,surbhi.chhabra@iet.edu
+Thu,09:00,10:00,LT-1,CS1139,1,J,Lecture,,surbhi.chhabra@iet.edu
+Fri,16:00,17:00,LT-1,CS1139,1,J,Lecture,,surbhi.chhabra@iet.edu
+Mon,12:00,13:00,LT-1,CS1139,1,J,Lecture,,surbhi.chhabra@iet.edu
+Tue,12:00,13:00,LT-2,CS1139,1,A,Lecture,,amar.nath.patra@iet.edu
+Mon,10:00,11:00,LT-1,CS1139,1,A,Lecture,,amar.nath.patra@iet.edu
+Tue,15:00,16:00,LT-2,CS1139,1,A,Lecture,,amar.nath.patra@iet.edu
+Wed,12:00,13:00,LT-2,CS1139,1,I,Lecture,,amar.nath.patra@iet.edu
+Fri,12:00,13:00,LT-1,CS1139,1,I,Lecture,,amar.nath.patra@iet.edu
+Wed,10:00,11:00,LT-1,CS1139,1,I,Lecture,,amar.nath.patra@iet.edu
+Wed,12:00,13:00,LT-3,CS1139,1,B,Lecture,,ankush.soni@iet.edu
+Thu,10:00,11:00,LT-1,CS1139,1,B,Lecture,,ankush.soni@iet.edu
+Wed,14:00,15:00,LT-1,CS1139,1,B,Lecture,,ankush.soni@iet.edu
+Mon,14:00,15:00,LT-2,CS1139,1,D,Lecture,,ankush.soni@iet.edu
+Fri,16:00,17:00,LT-2,CS1139,1,D,Lecture,,ankush.soni@iet.edu
+Wed,16:00,17:00,LT-1,CS1139,1,D,Lecture,,ankush.soni@iet.edu
+Mon,16:00,17:00,LT-1,CS1139,1,E,Lecture,,mayank.kundalwal@iet.edu
+Mon,09:00,10:00,LT-1,CS1139,1,E,Lecture,,mayank.kundalwal@iet.edu
+Fri,16:00,17:00,LT-3,CS1139,1,E,Lecture,,mayank.kundalwal@iet.edu
+Tue,09:00,10:00,LT-1,CS1139,1,G,Lecture,,mayank.kundalwal@iet.edu
+Wed,16:00,17:00,LT-2,CS1139,1,G,Lecture,,mayank.kundalwal@iet.edu
+Tue,11:00,12:00,LT-1,CS1139,1,G,Lecture,,mayank.kundalwal@iet.edu
+Fri,15:00,16:00,LT-1,CS1218,5,D,Lecture,,mayank.kundalwal@iet.edu
+Fri,10:00,11:00,LT-1,CS1218,5,D,Lecture,,mayank.kundalwal@iet.edu
+Mon,14:00,15:00,LT-3,CS1218,5,D,Lecture,,mayank.kundalwal@iet.edu
+Wed,14:00,15:00,LT-2,EE1118,1,H,Lecture,,devika.kataria@iet.edu
+Tue,14:00,15:00,LT-1,EE1118,1,H,Lecture,,devika.kataria@iet.edu
+Wed,15:00,16:00,LT-1,EE1118,1,H,Lecture,,devika.kataria@iet.edu
+Fri,10:00,11:00,LT-2,EE1118,1,H,Lecture,,devika.kataria@iet.edu
+Mon,16:00,17:00,LT-2,EE1118,1,H,Tutorial,,devika.kataria@iet.edu
+Wed,09:00,10:00,LT-2,CS1239,7,A,Lecture,,devika.kataria@iet.edu
+Thu,10:00,11:00,LT-2,CS1239,7,A,Lecture,,devika.kataria@iet.edu
+Mon,15:00,16:00,LT-1,CS1239,7,A,Lecture,,devika.kataria@iet.edu
+Tue,15:00,16:00,LT-3,CS1239,7,A,Lecture,,devika.kataria@iet.edu
+Mon,14:00,15:00,LT-4,CS1239,7,B,Lecture,,devika.kataria@iet.edu
+Wed,11:00,12:00,LT-1,CS1239,7,B,Lecture,,devika.kataria@iet.edu
+Mon,11:00,12:00,LT-1,CS1239,7,B,Lecture,,devika.kataria@iet.edu
+Wed,10:00,11:00,LT-2,CS1239,7,B,Lecture,,devika.kataria@iet.edu
+Wed,11:00,12:00,LT-2,EE1118,1,E,Lecture,,hanuman.prasad.agarwal@iet.edu
+Mon,09:00,10:00,LT-2,EE1118,1,E,Lecture,,hanuman.prasad.agarwal@iet.edu
+Thu,16:00,17:00,LT-1,EE1118,1,E,Lecture,,hanuman.prasad.agarwal@iet.edu
+Wed,12:00,13:00,LT-4,EE1118,1,E,Lecture,,hanuman.prasad.agarwal@iet.edu
+Mon,10:00,11:00,LT-2,EE1122,3,E,Lecture,,hanuman.prasad.agarwal@iet.edu
+Mon,11:00,12:00,LT-2,EE1122,3,E,Lecture,,hanuman.prasad.agarwal@iet.edu
+Fri,14:00,15:00,LT-1,EE1122,3,E,Lecture,,hanuman.prasad.agarwal@iet.edu
+Thu,14:00,15:00,LT-2,EE1122,3,E,Tutorial,,hanuman.prasad.agarwal@iet.edu
+Fri,09:00,10:00,LT-1,EE1122,3,G,Lecture,,hanuman.prasad.agarwal@iet.edu
+Thu,11:00,12:00,LT-1,EE1122,3,G,Lecture,,hanuman.prasad.agarwal@iet.edu
+Fri,10:00,11:00,LT-3,EE1122,3,G,Lecture,,hanuman.prasad.agarwal@iet.edu
+Fri,12:00,13:00,LT-2,EE1122,3,F,Lecture,,vijaysekhar.chellaboina@iet.edu
+Thu,15:00,16:00,LT-1,EE1122,3,F,Lecture,,vijaysekhar.chellaboina@iet.edu
+Mon,15:00,16:00,LT-2,EE1122,3,F,Lecture,,vijaysekhar.chellaboina@iet.edu
+Wed,16:00,17:00,LT-3,EE1122,3,F,Tutorial,,vijaysekhar.chellaboina@iet.edu
+Fri,15:00,16:00,LT-2,EE1201,5,ALL,Lecture,,vijaysekhar.chellaboina@iet.edu
+Wed,12:00,13:00,LT-5,EE1201,5,ALL,Lecture,,vijaysekhar.chellaboina@iet.edu
+Wed,09:00,10:00,LT-3,EE1201,5,ALL,Lecture,,vijaysekhar.chellaboina@iet.edu
+Thu,09:00,10:00,LT-2,EE1118,1,D,Lecture,,megha.sahu@iet.edu
+Wed,15:00,16:00,LT-2,EE1118,1,D,Lecture,,megha.sahu@iet.edu
+Mon,11:00,12:00,LT-3,EE1118,1,D,Lecture,,megha.sahu@iet.edu
+Thu,11:00,12:00,LT-2,EE1118,1,D,Lecture,,megha.sahu@iet.edu
+Fri,09:00,10:00,LT-2,EE1118,1,D,Tutorial,,megha.sahu@iet.edu
+Fri,11:00,12:00,LT-2,EE1118,1,F,Lecture,,megha.sahu@iet.edu
+Tue,14:00,15:00,LT-2,EE1118,1,F,Lecture,,megha.sahu@iet.edu
+Mon,15:00,16:00,LT-3,EE1118,1,F,Lecture,,megha.sahu@iet.edu
+Mon,10:00,11:00,LT-3,EE1118,1,F,Lecture,,megha.sahu@iet.edu
+Mon,09:00,10:00,LT-3,EE1118,1,F,Tutorial,,megha.sahu@iet.edu
+Tue,14:00,15:00,LT-3,EE1118,1,A,Lecture,,rashmi.kushwaha@iet.edu
+Wed,14:00,15:00,LT-3,EE1118,1,A,Lecture,,rashmi.kushwaha@iet.edu
+Wed,09:00,10:00,LT-4,EE1118,1,A,Lecture,,rashmi.kushwaha@iet.edu
+Thu,14:00,15:00,LT-3,EE1118,1,A,Lecture,,rashmi.kushwaha@iet.edu
+Tue,11:00,12:00,LT-2,EE1118,1,A,Tutorial,,rashmi.kushwaha@iet.edu
+Thu,12:00,13:00,LT-2,EE1118,1,C,Lecture,,rashmi.kushwaha@iet.edu
+Thu,15:00,16:00,LT-2,EE1118,1,C,Lecture,,rashmi.kushwaha@iet.edu
+Tue,16:00,17:00,LT-1,EE1118,1,C,Lecture,,rashmi.kushwaha@iet.edu
+Tue,10:00,11:00,LT-2,EE1118,1,C,Lecture,,rashmi.kushwaha@iet.edu
+Fri,09:00,10:00,LT-3,EE1118,1,C,Tutorial,,rashmi.kushwaha@iet.edu
+Fri,12:00,13:00,LT-3,EE1118,1,I,Lecture,,divanshu.jain@iet.edu
+Wed,16:00,17:00,LT-4,EE1118,1,I,Lecture,,divanshu.jain@iet.edu
+Tue,10:00,11:00,LT-3,EE1118,1,I,Lecture,,divanshu.jain@iet.edu
+Mon,09:00,10:00,LT-4,EE1118,1,I,Lecture,,divanshu.jain@iet.edu
+Wed,14:00,15:00,LT-4,EE1118,1,I,Tutorial,,divanshu.jain@iet.edu
+Thu,12:00,13:00,LT-3,CS1134,3,D,Lecture,,divanshu.jain@iet.edu
+Tue,15:00,16:00,LT-4,CS1134,3,D,Lecture,,divanshu.jain@iet.edu
+Fri,09:00,10:00,LT-4,CS1134,3,D,Lecture,,divanshu.jain@iet.edu
+Tue,14:00,15:00,LT-4,EE1118,1,B,Lecture,,rajnish.kumar@iet.edu
+Wed,11:00,12:00,LT-3,EE1118,1,B,Lecture,,rajnish.kumar@iet.edu
+Wed,09:00,10:00,LT-5,EE1118,1,B,Lecture,,rajnish.kumar@iet.edu
+Tue,12:00,13:00,LT-3,EE1118,1,B,Lecture,,rajnish.kumar@iet.edu
+Mon,10:00,11:00,LT-4,EE1118,1,B,Tutorial,,rajnish.kumar@iet.edu
+Tue,15:00,16:00,LT-5,CS1134,3,E,Lecture,,rajnish.kumar@iet.edu
+Wed,16:00,17:00,LT-5,CS1134,3,E,Lecture,,rajnish.kumar@iet.edu
+Tue,11:00,12:00,LT-3,CS1134,3,E,Lecture,,rajnish.kumar@iet.edu
+Wed,12:00,13:00,LT-6,CS1134,3,E,Tutorial,,rajnish.kumar@iet.edu
+Thu,16:00,17:00,LT-2,CS1134,3,E,Tutorial,,rajnish.kumar@iet.edu
+Fri,11:00,12:00,LT-3,EE1118,1,J,Lecture,,gaurav.mani.khanal@iet.edu
+Tue,10:00,11:00,LT-4,EE1118,1,J,Lecture,,gaurav.mani.khanal@iet.edu
+Thu,09:00,10:00,LT-3,EE1118,1,J,Lecture,,gaurav.mani.khanal@iet.edu
+Wed,16:00,17:00,LT-6,EE1118,1,J,Lecture,,gaurav.mani.khanal@iet.edu
+Fri,15:00,16:00,LT-3,EE1118,1,J,Tutorial,,gaurav.mani.khanal@iet.edu
+Tue,09:00,10:00,LT-2,EE1110,3,F,Lecture,,gaurav.mani.khanal@iet.edu
+Wed,11:00,12:00,LT-4,EE1110,3,F,Lecture,,gaurav.mani.khanal@iet.edu
+Wed,10:00,11:00,LT-3,EE1110,3,F,Lecture,,gaurav.mani.khanal@iet.edu
+Mon,09:00,10:00,LT-5,CS1135,1,B,Lecture,,manju.rana@iet.edu
+Fri,10:00,11:00,LT-4,CS1135,1,B,Lecture,,manju.rana@iet.edu
+Fri,09:00,10:00,LT-5,CS1135,1,D,Lecture,,manju.rana@iet.edu
+Thu,12:00,13:00,LT-4,CS1135,1,D,Lecture,,manju.rana@iet.edu
+Fri,14:00,15:00,LT-2,CS1135,1,E,Lecture,,manju.rana@iet.edu
+Tue,14:00,15:00,LT-5,CS1135,1,E,Lecture,,manju.rana@iet.edu
+Tue,15:00,16:00,LT-6,CS1220,5,ALL,Lecture,,manju.rana@iet.edu
+Thu,11:00,12:00,LT-3,CS1220,5,ALL,Lecture,,manju.rana@iet.edu
+Fri,11:00,12:00,LT-4,AS1109,1,B,Lecture,,manushi.gupta@iet.edu
+Wed,09:00,10:00,LT-6,AS1109,1,B,Lecture,,manushi.gupta@iet.edu
+Fri,15:00,16:00,LT-4,AS1109,1,B,Lecture,,manushi.gupta@iet.edu
+Tue,10:00,11:00,LT-5,AS1109,1,B,Tutorial,,manushi.gupta@iet.edu
+Wed,11:00,12:00,LT-5,CS1142,3,A,Lecture,,manushi.gupta@iet.edu
+Wed,10:00,11:00,LT-4,CS1142,3,A,Lecture,,manushi.gupta@iet.edu
+Thu,10:00,11:00,LT-3,CS1142,3,A,Lecture,,manushi.gupta@iet.edu
+Mon,16:00,17:00,LT-3,CS1142,3,A,Tutorial,,manushi.gupta@iet.edu
+Thu,12:00,13:00,LT-5,CS1142,3,B,Lecture,,manushi.gupta@iet.edu
+Wed,16:00,17:00,LT-7,CS1142,3,B,Lecture,,manushi.gupta@iet.edu
+Fri,10:00,11:00,LT-5,CS1142,3,B,Lecture,,manushi.gupta@iet.edu
+Fri,09:00,10:00,LT-6,CS1142,3,B,Tutorial,,manushi.gupta@iet.edu
+Tue,11:00,12:00,LT-4,CS1142,3,B,Tutorial,,manushi.gupta@iet.edu
+Fri,10:00,11:00,LT-6,AS1109,1,D,Lecture,,rabia.kamra@iet.edu
+Tue,09:00,10:00,LT-3,AS1109,1,D,Lecture,,rabia.kamra@iet.edu
+Mon,14:00,15:00,LT-5,AS1109,1,D,Lecture,,rabia.kamra@iet.edu
+Mon,16:00,17:00,LT-4,AS1109,1,D,Tutorial,,rabia.kamra@iet.edu
+Wed,09:00,10:00,LT-7,AS1109,1,I,Lecture,,rabia.kamra@iet.edu
+Wed,11:00,12:00,LT-6,AS1109,1,I,Lecture,,rabia.kamra@iet.edu
+Tue,14:00,15:00,LT-6,AS1109,1,I,Lecture,,rabia.kamra@iet.edu
+Wed,12:00,13:00,LT-7,AS1109,1,I,Tutorial,,rabia.kamra@iet.edu
+Mon,12:00,13:00,LT-2,AS1201,5,ALL,Lecture,,rabia.kamra@iet.edu
+Wed,14:00,15:00,LT-5,AS1201,5,ALL,Lecture,,rabia.kamra@iet.edu
+Wed,15:00,16:00,LT-3,AS1201,5,ALL,Lecture,,rabia.kamra@iet.edu
+Mon,11:00,12:00,LT-4,AS1201,5,ALL,Lecture,,rabia.kamra@iet.edu
+Thu,12:00,13:00,LT-6,AS1109,1,A,Lecture,,anant.pratap.singh@iet.edu
+Mon,14:00,15:00,LT-6,AS1109,1,A,Lecture,,anant.pratap.singh@iet.edu
+Fri,10:00,11:00,LT-7,AS1109,1,A,Lecture,,anant.pratap.singh@iet.edu
+Wed,15:00,16:00,LT-4,AS1109,1,A,Tutorial,,anant.pratap.singh@iet.edu
+Thu,14:00,15:00,LT-4,AS1109,1,C,Lecture,,anant.pratap.singh@iet.edu
+Wed,09:00,10:00,LT-8,AS1109,1,C,Lecture,,anant.pratap.singh@iet.edu
+Mon,16:00,17:00,LT-5,AS1109,1,C,Lecture,,anant.pratap.singh@iet.edu
+Thu,16:00,17:00,LT-3,AS1109,1,C,Tutorial,,anant.pratap.singh@iet.edu
+Wed,11:00,12:00,LT-7,AS1202,5,ALL,Lecture,,anant.pratap.singh@iet.edu
+Tue,10:00,11:00,LT-6,AS1202,5,ALL,Lecture,,anant.pratap.singh@iet.edu
+Wed,12:00,13:00,LT-8,AS1202,5,ALL,Lecture,,anant.pratap.singh@iet.edu
+Fri,14:00,15:00,LT-3,AS1202,5,ALL,Lecture,,anant.pratap.singh@iet.edu
+Wed,11:00,12:00,LT-8,AS1109,1,E,Lecture,,sushant.pokhriyal@iet.edu
+Thu,12:00,13:00,LT-7,AS1109,1,E,Lecture,,sushant.pokhriyal@iet.edu
+Wed,10:00,11:00,LT-5,AS1109,1,E,Lecture,,sushant.pokhriyal@iet.edu
+Tue,16:00,17:00,LT-2,AS1109,1,E,Tutorial,,sushant.pokhriyal@iet.edu
+Thu,10:00,11:00,LT-4,AS1109,1,E,Tutorial,,sushant.pokhriyal@iet.edu
+Wed,16:00,17:00,LT-8,CS1142,3,D,Lecture,,sushant.pokhriyal@iet.edu
+Wed,12:00,13:00,LT-9,CS1142,3,D,Lecture,,sushant.pokhriyal@iet.edu
+Fri,12:00,13:00,LT-4,CS1142,3,D,Lecture,,sushant.pokhriyal@iet.edu
+Tue,10:00,11:00,LT-7,CS1142,3,D,Tutorial,,sushant.pokhriyal@iet.edu
+Thu,15:00,16:00,LT-3,CS1142,3,D,Tutorial,,sushant.pokhriyal@iet.edu
+Fri,15:00,16:00,LT-5,CS1142,3,D,Tutorial,,sushant.pokhriyal@iet.edu
+Tue,12:00,13:00,LT-4,CS1142,3,C,Tutorial,,sushant.pokhriyal@iet.edu
+Mon,11:00,12:00,LT-5,CS1142,3,C,Tutorial,,sushant.pokhriyal@iet.edu
+Wed,16:00,17:00,LT-9,AS1109,1,G,Lecture,,anshu.yadav@iet.edu
+Thu,11:00,12:00,LT-4,AS1109,1,G,Lecture,,anshu.yadav@iet.edu
+Tue,14:00,15:00,LT-7,AS1109,1,G,Lecture,,anshu.yadav@iet.edu
+Wed,10:00,11:00,LT-6,AS1109,1,G,Tutorial,,anshu.yadav@iet.edu
+Fri,16:00,17:00,LT-4,AS1109,1,G,Tutorial,,anshu.yadav@iet.edu
+Mon,11:00,12:00,LT-6,CS1142,3,E,Lecture,,anshu.yadav@iet.edu
+Wed,14:00,15:00,LT-6,CS1142,3,E,Lecture,,anshu.yadav@iet.edu
+Thu,15:00,16:00,LT-4,CS1142,3,E,Lecture,,anshu.yadav@iet.edu
+Thu,12:00,13:00,LT-8,CS1142,3,E,Tutorial,,anshu.yadav@iet.edu
+Mon,14:00,15:00,LT-7,CS1142,3,E,Tutorial,,anshu.yadav@iet.edu
+Wed,15:00,16:00,LT-5,CS1142,3,E,Tutorial,,anshu.yadav@iet.edu
+Mon,15:00,16:00,LT-4,CS1142,3,B,Tutorial,,anshu.yadav@iet.edu
+Fri,14:00,15:00,LT-4,CS1142,3,B,Tutorial,,anshu.yadav@iet.edu
+Tue,12:00,13:00,LT-5,AS1109,1,F,Lecture,,shobha.mangal@iet.edu
+Wed,15:00,16:00,LT-6,AS1109,1,F,Lecture,,shobha.mangal@iet.edu
+Wed,09:00,10:00,LT-9,AS1109,1,F,Lecture,,shobha.mangal@iet.edu
+Thu,15:00,16:00,LT-5,AS1109,1,F,Tutorial,,shobha.mangal@iet.edu
+Tue,09:00,10:00,LT-4,AS1109,1,F,Tutorial,,shobha.mangal@iet.edu
+Wed,14:00,15:00,LT-7,AS1109,1,J,Lecture,,shobha.mangal@iet.edu
+Wed,10:00,11:00,LT-7,AS1109,1,J,Lecture,,shobha.mangal@iet.edu
+Fri,12:00,13:00,LT-5,AS1109,1,J,Lecture,,shobha.mangal@iet.edu
+Thu,16:00,17:00,LT-4,AS1109,1,J,Tutorial,,shobha.mangal@iet.edu
+Thu,11:00,12:00,LT-5,AS1109,1,J,Tutorial,,shobha.mangal@iet.edu
+Mon,09:00,10:00,LT-6,AS1109,1,J,Tutorial,,shobha.mangal@iet.edu
+Tue,15:00,16:00,LT-7,AS1109,1,ALL,Tutorial,EXTRA,shobha.mangal@iet.edu
+Mon,15:00,16:00,LT-5,AS1109,1,ALL,Tutorial,EXTRA,shobha.mangal@iet.edu
+Wed,11:00,12:00,LT-9,ES1115,1,A,Lecture,,shahnawaz.khan@iet.edu
+Mon,16:00,17:00,LT-6,ES1115,1,A,Lecture,,shahnawaz.khan@iet.edu
+Tue,16:00,17:00,LT-3,ES1115,1,B,Lecture,,shahnawaz.khan@iet.edu
+Thu,14:00,15:00,LT-5,ES1115,1,B,Lecture,,shahnawaz.khan@iet.edu
+Wed,14:00,15:00,LT-8,ES1115,1,C,Lecture,,shahnawaz.khan@iet.edu
+Wed,09:00,10:00,LT-10,ES1115,1,C,Lecture,,shahnawaz.khan@iet.edu
+Fri,15:00,16:00,LT-6,ES1115,1,D,Lecture,,shahnawaz.khan@iet.edu
+Tue,14:00,15:00,LT-8,ES1115,1,D,Lecture,,shahnawaz.khan@iet.edu
+Mon,09:00,10:00,LT-7,ES1115,1,E,Lecture,,shahnawaz.khan@iet.edu
+Tue,11:00,12:00,LT-5,ES1115,1,E,Lecture,,shahnawaz.khan@iet.edu
+Tue,12:00,13:00,LT-6,ES1201,7,ALL,Lecture,,shahnawaz.khan@iet.edu
+Tue,15:00,16:00,LT-8,ES1201,7,ALL,Lecture,,shahnawaz.khan@iet.edu
+Fri,12:00,13:00,LT-6,ES1201,7,ALL,Lecture,,shahnawaz.khan@iet.edu
+Fri,14:00,15:00,LT-5,ES1201,7,ALL,Lecture,,shahnawaz.khan@iet.edu
+Tue,09:00,10:00,LT-5,CC1101,1,A,Lecture,,vishwajeet.sehwag@iet.edu
+Mon,11:00,12:00,LT-7,CC1101,1,A,Lecture,,vishwajeet.sehwag@iet.edu
+Thu,09:00,10:00,LT-4,CC1101,1,A,Lecture,,vishwajeet.sehwag@iet.edu
+Tue,14:00,15:00,LT-9,CC1101,1,B,Lecture,,vishwajeet.sehwag@iet.edu
+Fri,10:00,11:00,LT-8,CC1101,1,B,Lecture,,vishwajeet.sehwag@iet.edu
+Thu,15:00,16:00,LT-6,CC1101,1,B,Lecture,,vishwajeet.sehwag@iet.edu
+Wed,11:00,12:00,LT-10,CC1101,1,C,Lecture,,vishwajeet.sehwag@iet.edu
+Fri,12:00,13:00,LT-7,CC1101,1,C,Lecture,,vishwajeet.sehwag@iet.edu
+Wed,12:00,13:00,LT-10,CC1101,1,C,Lecture,,vishwajeet.sehwag@iet.edu
+Wed,16:00,17:00,LT-10,CC1101,1,D,Lecture,,vishwajeet.sehwag@iet.edu
+Wed,09:00,10:00,LT-11,CC1101,1,D,Lecture,,vishwajeet.sehwag@iet.edu
+Thu,10:00,11:00,LT-5,CC1101,1,D,Lecture,,vishwajeet.sehwag@iet.edu
+Mon,12:00,13:00,LT-3,CC1101,1,E,Lecture,,vishwajeet.sehwag@iet.edu
+Fri,16:00,17:00,LT-5,CC1101,1,E,Lecture,,vishwajeet.sehwag@iet.edu
+Thu,11:00,12:00,LT-6,CC1101,1,E,Lecture,,vishwajeet.sehwag@iet.edu
+Tue,14:00,15:00,LT-10,CC1101,1,F,Lecture,,nf1.ccct@iet.edu
+Mon,16:00,17:00,LT-7,CC1101,1,F,Lecture,,nf1.ccct@iet.edu
+Thu,16:00,17:00,LT-5,CC1101,1,F,Lecture,,nf1.ccct@iet.edu
+Mon,15:00,16:00,LT-6,CC1101,1,G,Lecture,,nf1.ccct@iet.edu
+Fri,15:00,16:00,LT-7,CC1101,1,G,Lecture,,nf1.ccct@iet.edu
+Fri,16:00,17:00,LT-6,CC1101,1,G,Lecture,,nf1.ccct@iet.edu
+Wed,12:00,13:00,LT-11,CC1101,1,H,Lecture,,nf1.ccct@iet.edu
+Fri,09:00,10:00,LT-7,CC1101,1,H,Lecture,,nf1.ccct@iet.edu
+Fri,14:00,15:00,LT-6,CC1101,1,H,Lecture,,nf1.ccct@iet.edu
+Fri,11:00,12:00,LT-5,CC1101,1,I,Lecture,,nf1.ccct@iet.edu
+Thu,11:00,12:00,LT-7,CC1101,1,I,Lecture,,nf1.ccct@iet.edu
+Wed,11:00,12:00,LT-11,CC1101,1,I,Lecture,,nf1.ccct@iet.edu
+Tue,09:00,10:00,LT-6,CC1101,1,J,Lecture,,nf1.ccct@iet.edu
+Tue,16:00,17:00,LT-4,CC1101,1,J,Lecture,,nf1.ccct@iet.edu
+Wed,16:00,17:00,LT-11,CC1101,1,J,Lecture,,nf1.ccct@iet.edu
+Fri,14:00,15:00,LT-7,AS1108,1,F,Lecture,,abhinav.kumar.khorwal@iet.edu
+Thu,15:00,16:00,LT-7,AS1108,1,F,Lecture,,abhinav.kumar.khorwal@iet.edu
+Mon,14:00,15:00,LT-8,AS1108,1,F,Lecture,,abhinav.kumar.khorwal@iet.edu
+Tue,09:00,10:00,LT-7,AS1108,1,G,Lecture,,abhinav.kumar.khorwal@iet.edu
+Thu,10:00,11:00,LT-6,AS1108,1,G,Lecture,,abhinav.kumar.khorwal@iet.edu
+Tue,12:00,13:00,LT-7,AS1108,1,G,Lecture,,abhinav.kumar.khorwal@iet.edu
+Fri,16:00,17:00,LT-7,AS1108,1,H,Lecture,,abhinav.kumar.khorwal@iet.edu
+Fri,10:00,11:00,LT-9,AS1108,1,H,Lecture,,abhinav.kumar.khorwal@iet.edu
+Wed,16:00,17:00,LT-12,AS1108,1,H,Lecture,,abhinav.kumar.khorwal@iet.edu
+Thu,10:00,11:00,LT-7,AS1108,1,I,Lecture,,krishna.chaitanya.solasa@iet.edu
+Fri,15:00,16:00,LT-8,AS1108,1,I,Lecture,,krishna.chaitanya.solasa@iet.edu
+Wed,11:00,12:00,LT-12,AS1108,1,I,Lecture,,krishna.chaitanya.solasa@iet.edu
+Thu,14:00,15:00,LT-6,AS1108,1,J,Lecture,,krishna.chaitanya.solasa@iet.edu
+Fri,10:00,11:00,LT-10,AS1108,1,J,Lecture,,krishna.chaitanya.solasa@iet.edu
+Tue,14:00,15:00,LT-11,AS1108,1,J,Lecture,,krishna.chaitanya.solasa@iet.edu
+Fri,15:00,16:00,LT-9,IL1107,1,F,Lecture,,aman.mishra@iet.edu
+Tue,15:00,16:00,LT-9,IL1107,1,F,Lecture,,aman.mishra@iet.edu
+Tue,10:00,11:00,LT-8,IL1107,1,G,Lecture,,aman.mishra@iet.edu
+Fri,09:00,10:00,LT-8,IL1107,1,G,Lecture,,aman.mishra@iet.edu
+Mon,11:00,12:00,LT-8,IL1107,1,H,Lecture,,aman.mishra@iet.edu
+Wed,16:00,17:00,LT-13,IL1107,1,H,Lecture,,aman.mishra@iet.edu
+Wed,14:00,15:00,LT-9,IL1107,1,I,Lecture,,aman.mishra@iet.edu
+Wed,10:00,11:00,LT-8,IL1107,1,I,Lecture,,aman.mishra@iet.edu
+Thu,10:00,11:00,LT-8,IL1107,1,J,Lecture,,aman.mishra@iet.edu
+Mon,16:00,17:00,LT-8,IL1107,1,J,Lecture,,aman.mishra@iet.edu
+Tue,15:00,16:00,LT-10,CS1224,5,D,Lecture,,akshat.agarwal@iet.edu
+Tue,12:00,13:00,LT-8,CS1224,5,D,Lecture,,akshat.agarwal@iet.edu
+Fri,12:00,13:00,LT-8,CS1224,5,D,Lecture,,akshat.agarwal@iet.edu
+Fri,09:00,10:00,LT-9,CS1218,5,C,Lecture,,akshat.agarwal@iet.edu
+Wed,10:00,11:00,LT-9,CS1218,5,C,Lecture,,akshat.agarwal@iet.edu
+Fri,11:00,12:00,LT-6,CS1218,5,C,Lecture,,akshat.agarwal@iet.edu
+Thu,15:00,16:00,LT-8,CS1224,5,ALL,Lecture,,akshat.agarwal@iet.edu
+Thu,10:00,11:00,LT-9,CS1224,5,ALL,Lecture,,akshat.agarwal@iet.edu
+Thu,09:00,10:00,LT-5,CS1224,5,ALL,Lecture,,akshat.agarwal@iet.edu
+Mon,09:00,10:00,LT-8,CS1224,5,ALL,Lecture,,akshat.agarwal@iet.edu
+Wed,14:00,15:00,LT-10,CS1135,1,A,Lecture,,devisha.tiwari@iet.edu
+Wed,11:00,12:00,LT-13,CS1135,1,A,Lecture,,devisha.tiwari@iet.edu
+Mon,10:00,11:00,LT-5,CS1135,1,C,Lecture,,devisha.tiwari@iet.edu
+Fri,10:00,11:00,LT-11,CS1135,1,C,Lecture,,devisha.tiwari@iet.edu
+Mon,12:00,13:00,LT-4,CS1224,5,C,Lecture,,devisha.tiwari@iet.edu
+Thu,10:00,11:00,LT-10,CS1224,5,C,Lecture,,devisha.tiwari@iet.edu
+Tue,10:00,11:00,LT-9,CS1224,5,C,Lecture,,devisha.tiwari@iet.edu
+Tue,15:00,16:00,LT-11,CS1226,5,BBA,Lecture,,devisha.tiwari@iet.edu
+Wed,10:00,11:00,LT-10,CS1226,5,BBA,Lecture,,devisha.tiwari@iet.edu
+Thu,15:00,16:00,LT-9,CS1226,5,BBA,Lecture,,devisha.tiwari@iet.edu
+Thu,12:00,13:00,LT-9,CS1131,3,A,Lecture,,ashish.jain@iet.edu
+Tue,11:00,12:00,LT-6,CS1131,3,A,Lecture,,ashish.jain@iet.edu
+Thu,14:00,15:00,LT-7,CS1131,3,A,Lecture,,ashish.jain@iet.edu
+Fri,12:00,13:00,LT-9,CS1131,3,B,Lecture,,ashish.jain@iet.edu
+Tue,09:00,10:00,LT-8,CS1131,3,B,Lecture,,ashish.jain@iet.edu
+Fri,15:00,16:00,LT-10,CS1131,3,B,Lecture,,ashish.jain@iet.edu
+Tue,09:00,10:00,LT-9,CS1131,3,C,Lecture,,satveer.singh@iet.edu
+Tue,10:00,11:00,LT-10,CS1131,3,C,Lecture,,satveer.singh@iet.edu
+Thu,10:00,11:00,LT-11,CS1131,3,C,Lecture,,satveer.singh@iet.edu
+Thu,09:00,10:00,LT-6,CS1222,5,ALL,Lecture,,satveer.singh@iet.edu
+Fri,10:00,11:00,LT-12,CS1222,5,ALL,Lecture,,satveer.singh@iet.edu
+Wed,11:00,12:00,LT-14,CS1222,5,ALL,Lecture,,satveer.singh@iet.edu
+Wed,12:00,13:00,LT-12,CS1222,5,ALL,Lecture,,satveer.singh@iet.edu
+Mon,12:00,13:00,LT-5,CS1222,7,ALL,Lecture,,satveer.singh@iet.edu
+Fri,12:00,13:00,LT-10,CS1222,7,ALL,Lecture,,satveer.singh@iet.edu
+Wed,16:00,17:00,LT-14,CS1222,7,ALL,Lecture,,satveer.singh@iet.edu
+Tue,09:00,10:00,LT-10,CS1131,3,D,Lecture,,anamika.satrawala@iet.edu
+Tue,14:00,15:00,LT-12,CS1131,3,D,Lecture,,anamika.satrawala@iet.edu
+Tue,11:00,12:00,LT-7,CS1131,3,D,Lecture,,anamika.satrawala@iet.edu
+Thu,12:00,13:00,LT-10,CS1131,3,E,Lecture,,anamika.satrawala@iet.edu
+Fri,15:00,16:00,LT-11,CS1131,3,E,Lecture,,anamika.satrawala@iet.edu
+Fri,09:00,10:00,LT-10,CS1131,3,E,Lecture,,anamika.satrawala@iet.edu
+Fri,11:00,12:00,LT-7,CS1131,3,F,Lecture,,sonali.vyas@iet.edu
+Wed,15:00,16:00,LT-7,CS1131,3,F,Lecture,,sonali.vyas@iet.edu
+Mon,12:00,13:00,LT-6,CS1131,3,F,Lecture,,sonali.vyas@iet.edu
+Thu,11:00,12:00,LT-8,CS1225,7,ALL,Lecture,,sonali.vyas@iet.edu
+Fri,16:00,17:00,LT-8,CS1225,7,ALL,Lecture,,sonali.vyas@iet.edu
+Fri,09:00,10:00,LT-11,CS1225,7,ALL,Lecture,,sonali.vyas@iet.edu
+Mon,09:00,10:00,LT-9,CS1225,7,ALL,Lecture,,sonali.vyas@iet.edu
+Fri,09:00,10:00,LT-12,CS1134,3,A,Lecture,,rohit.singh@iet.edu
+Thu,14:00,15:00,LT-8,CS1134,3,A,Lecture,,rohit.singh@iet.edu
+Mon,12:00,13:00,LT-7,CS1134,3,A,Lecture,,rohit.singh@iet.edu
+Fri,12:00,13:00,LT-11,CS1134,3,B,Lecture,,rohit.singh@iet.edu
+Tue,11:00,12:00,LT-8,CS1134,3,B,Lecture,,rohit.singh@iet.edu
+Tue,09:00,10:00,LT-11,CS1134,3,B,Lecture,,rohit.singh@iet.edu
+Mon,12:00,13:00,LT-8,CS1134,3,C,Lecture,,pranab.roy@iet.edu
+Mon,10:00,11:00,LT-6,CS1134,3,C,Lecture,,pranab.roy@iet.edu
+Fri,16:00,17:00,LT-9,CS1134,3,C,Lecture,,pranab.roy@iet.edu
+Wed,09:00,10:00,LT-12,CS1231,7,ALL,Lecture,,pranab.roy@iet.edu
+Mon,16:00,17:00,LT-9,CS1231,7,ALL,Lecture,,pranab.roy@iet.edu
+Fri,14:00,15:00,LT-8,CS1231,7,ALL,Lecture,,pranab.roy@iet.edu
+Wed,15:00,16:00,LT-8,CS1231,7,ALL,Lecture,,pranab.roy@iet.edu
+Tue,11:00,12:00,LT-9,CS1133,3,A,Lecture,,s.taruna@iet.edu
+Thu,10:00,11:00,LT-12,CS1133,3,A,Lecture,,s.taruna@iet.edu
+Wed,15:00,16:00,LT-9,CS1133,3,A,Lecture,,s.taruna@iet.edu
+Thu,15:00,16:00,LT-10,CS1133,3,B,Lecture,,s.taruna@iet.edu
+Tue,12:00,13:00,LT-9,CS1133,3,B,Lecture,,s.taruna@iet.edu
+Tue,14:00,15:00,LT-13,CS1133,3,B,Lecture,,s.taruna@iet.edu
+Wed,12:00,13:00,LT-13,CS1133,3,C,Lecture,,deepika.prakash@iet.edu
+Mon,12:00,13:00,LT-9,CS1133,3,C,Lecture,,deepika.prakash@iet.edu
+Tue,14:00,15:00,LT-14,CS1133,3,C,Lecture,,deepika.prakash@iet.edu
+Tue,12:00,13:00,LT-10,CS1233,5,ALL,Lecture,,deepika.prakash@iet.edu
+Tue,16:00,17:00,LT-5,CS1233,5,ALL,Lecture,,deepika.prakash@iet.edu
+Mon,14:00,15:00,LT-9,CS1233,5,ALL,Lecture,,deepika.prakash@iet.edu
+Thu,14:00,15:00,LT-9,CS1133,3,D,Lecture,,supriya.mishra@iet.edu
+Thu,12:00,13:00,LT-11,CS1133,3,D,Lecture,,supriya.mishra@iet.edu
+Fri,09:00,10:00,LT-13,CS1133,3,D,Lecture,,supriya.mishra@iet.edu
+Thu,10:00,11:00,LT-13,CS1133,3,E,Lecture,,supriya.mishra@iet.edu
+Thu,15:00,16:00,LT-11,CS1133,3,E,Lecture,,supriya.mishra@iet.edu
+Mon,14:00,15:00,LT-10,CS1133,3,E,Lecture,,supriya.mishra@iet.edu
+Thu,16:00,17:00,LT-6,CS1142,3,C,Lecture,,umesh.gupta@iet.edu
+Tue,11:00,12:00,LT-10,CS1142,3,C,Lecture,,umesh.gupta@iet.edu
+Tue,16:00,17:00,LT-6,CS1142,3,C,Lecture,,umesh.gupta@iet.edu
+Fri,11:00,12:00,LT-8,CS1235,7,ALL,Lecture,,umesh.gupta@iet.edu
+Fri,09:00,10:00,LT-14,CS1235,7,ALL,Lecture,,umesh.gupta@iet.edu
+Wed,14:00,15:00,LT-11,CS1235,7,ALL,Lecture,,umesh.gupta@iet.edu
+Fri,10:00,11:00,LT-13,CS1235,7,ALL,Lecture,,umesh.gupta@iet.edu
+Fri,11:00,12:00,LT-9,AS1109,1,J,Lecture,,nf2.maths@iet.edu
+Mon,14:00,15:00,LT-11,AS1109,1,J,Lecture,,nf2.maths@iet.edu
+Tue,12:00,13:00,LT-11,AS1109,1,J,Lecture,,nf2.maths@iet.edu
+Mon,16:00,17:00,LT-10,AS1109,1,J,Tutorial,,nf2.maths@iet.edu
+Thu,12:00,13:00,LT-12,AS1109,1,J,Tutorial,,nf2.maths@iet.edu
+Mon,10:00,11:00,LT-7,CS1142,5,ALL,Tutorial,A,nf2.maths@iet.edu
+Tue,09:00,10:00,LT-12,CS1142,5,ALL,Tutorial,B,nf2.maths@iet.edu
+Mon,11:00,12:00,LT-9,CS1142,5,ALL,Tutorial,C,nf2.maths@iet.edu
+Tue,15:00,16:00,LT-12,CS1142,5,ALL,Tutorial,D,nf2.maths@iet.edu
+Thu,14:00,15:00,LT-10,CS1142,5,ALL,Tutorial,E,nf2.maths@iet.edu
+Thu,16:00,17:00,LT-7,CS1142,5,ALL,Tutorial,F,nf2.maths@iet.edu
+Fri,15:00,16:00,LT-12,CC1103,3,A,Lecture,,afreen.gani.faridi@iet.edu
+Mon,16:00,17:00,LT-11,CC1103,3,A,Lecture,,afreen.gani.faridi@iet.edu
+Tue,15:00,16:00,LT-13,CC1103,3,A,Lecture,,afreen.gani.faridi@iet.edu
+Thu,09:00,10:00,LT-7,CC1103,3,B,Lecture,,afreen.gani.faridi@iet.edu
+Wed,09:00,10:00,LT-13,CC1103,3,B,Lecture,,afreen.gani.faridi@iet.edu
+Mon,11:00,12:00,LT-10,CC1103,3,B,Lecture,,afreen.gani.faridi@iet.edu
+Tue,09:00,10:00,LT-13,CC1103,3,C,Lecture,,afreen.gani.faridi@iet.edu
+Wed,14:00,15:00,LT-12,CC1103,3,C,Lecture,,afreen.gani.faridi@iet.edu
+Mon,12:00,13:00,LT-10,CC1103,3,C,Lecture,,afreen.gani.faridi@iet.edu
+Fri,10:00,11:00,LT-14,CC1103,3,D,Lecture,,afreen.gani.faridi@iet.edu
+Fri,14:00,15:00,LT-9,CC1103,3,D,Lecture,,afreen.gani.faridi@iet.edu
+Thu,16:00,17:00,LT-8,CC1103,3,D,Lecture,,afreen.gani.faridi@iet.edu
+Mon,14:00,15:00,LT-12,CC1103,3,E,Lecture,,afreen.gani.faridi@iet.edu
+Wed,10:00,11:00,LT-11,CC1103,3,E,Lecture,,afreen.gani.faridi@iet.edu
+Fri,12:00,13:00,LT-12,CC1103,3,E,Lecture,,afreen.gani.faridi@iet.edu
+Thu,09:00,10:00,LT-8,CC1103,3,F,Lecture,,shiva.singh@iet.edu
+Tue,09:00,10:00,LT-14,CC1103,3,F,Lecture,,shiva.singh@iet.edu
+Mon,12:00,13:00,LT-11,CC1103,3,F,Lecture,,shiva.singh@iet.edu
+Thu,14:00,15:00,LT-11,CS1142,5,A,Lecture,,jaya.gupta@iet.edu
+Mon,12:00,13:00,LT-12,CS1142,5,A,Lecture,,jaya.gupta@iet.edu
+Tue,10:00,11:00,LT-11,CS1142,5,A,Lecture,,jaya.gupta@iet.edu
+Wed,12:00,13:00,LT-14,CS1142,5,B,Lecture,,jaya.gupta@iet.edu
+Wed,15:00,16:00,LT-10,CS1142,5,B,Lecture,,jaya.gupta@iet.edu
+Tue,12:00,13:00,LT-12,CS1142,5,B,Lecture,,jaya.gupta@iet.edu
+Mon,09:00,10:00,LT-10,CS1142,5,A,Tutorial,,jaya.gupta@iet.edu
+Wed,09:00,10:00,LT-14,CS1142,5,A,Tutorial,,jaya.gupta@iet.edu
+Fri,16:00,17:00,LT-10,AS1203,5,ALL,Lecture,,jaya.gupta@iet.edu
+Tue,16:00,17:00,LT-7,AS1203,5,ALL,Lecture,,jaya.gupta@iet.edu
+Thu,16:00,17:00,LT-9,AS1203,5,ALL,Lecture,,jaya.gupta@iet.edu
+Tue,15:00,16:00,LT-14,AS1203,5,ALL,Lecture,,jaya.gupta@iet.edu
+Wed,10:00,11:00,LT-12,CS1142,5,C,Lecture,,richa.sharma@iet.edu
+Thu,14:00,15:00,LT-12,CS1142,5,C,Lecture,,richa.sharma@iet.edu
+Mon,10:00,11:00,LT-8,CS1142,5,C,Lecture,,richa.sharma@iet.edu
+Mon,16:00,17:00,LT-12,CS1142,5,D,Lecture,,richa.sharma@iet.edu
+Thu,09:00,10:00,LT-9,CS1142,5,D,Lecture,,richa.sharma@iet.edu
+Thu,15:00,16:00,LT-12,CS1142,5,D,Lecture,,richa.sharma@iet.edu
+Fri,11:00,12:00,LT-10,CS1142,5,C,Tutorial,,richa.sharma@iet.edu
+Mon,15:00,16:00,LT-7,CS1142,5,C,Tutorial,,richa.sharma@iet.edu
+Mon,12:00,13:00,LT-13,AS1204,7,ALL,Lecture,,richa.sharma@iet.edu
+Tue,11:00,12:00,LT-11,AS1204,7,ALL,Lecture,,richa.sharma@iet.edu
+Fri,15:00,16:00,LT-13,AS1204,7,ALL,Lecture,,richa.sharma@iet.edu
+Wed,15:00,16:00,LT-11,AS1204,7,ALL,Lecture,,richa.sharma@iet.edu
+Mon,11:00,12:00,LT-11,CS1228,5,ALL,Lecture,,gaurav.raj@iet.edu
+Thu,14:00,15:00,LT-13,CS1228,5,ALL,Lecture,,gaurav.raj@iet.edu
+Mon,10:00,11:00,LT-9,CS1228,5,ALL,Lecture,,gaurav.raj@iet.edu
+Thu,16:00,17:00,LT-10,CS1230,7,ALL,Lecture,,gaurav.raj@iet.edu
+Fri,15:00,16:00,LT-14,CS1230,7,ALL,Lecture,,gaurav.raj@iet.edu
+Mon,14:00,15:00,LT-13,CS1230,7,ALL,Lecture,,gaurav.raj@iet.edu
+Fri,11:00,12:00,LT-11,CS1230,7,ALL,Lecture,,gaurav.raj@iet.edu
+Tue,12:00,13:00,LT-13,CC1105,5,ALL,Lecture,,vijaylaksmi@iet.edu
+Thu,14:00,15:00,LT-14,CC1105,5,ALL,Lecture,,vijaylaksmi@iet.edu
+Wed,10:00,11:00,LT-13,CC1105,5,ALL,Lecture,,vijaylaksmi@iet.edu
+Thu,15:00,16:00,LT-13,CC1105,5,ALL,Lecture,,vijaylaksmi@iet.edu
+Mon,12:00,13:00,LT-14,CC1105,5,ALL,Lecture,,vijaylaksmi@iet.edu
+Mon,10:00,11:00,LT-10,CC1105,5,ALL,Lecture,,vijaylaksmi@iet.edu
+Mon,16:00,17:00,LT-13,CC1105,5,ALL,Lecture,,vijaylaksmi@iet.edu
+Thu,11:00,12:00,LT-9,CC1105,5,ALL,Lecture,,vijaylaksmi@iet.edu
+Thu,16:00,17:00,LT-11,CS1140,5,A,Lecture,,devendra.bhavsar@iet.edu
+Thu,15:00,16:00,LT-14,CS1140,5,A,Lecture,,devendra.bhavsar@iet.edu
+Fri,12:00,13:00,LT-13,CS1140,5,A,Lecture,,devendra.bhavsar@iet.edu
+Fri,14:00,15:00,LT-10,CS1140,5,B,Lecture,,devendra.bhavsar@iet.edu
+Mon,10:00,11:00,LT-11,CS1140,5,B,Lecture,,devendra.bhavsar@iet.edu
+Thu,10:00,11:00,LT-14,CS1140,5,B,Lecture,,devendra.bhavsar@iet.edu
+Wed,10:00,11:00,LT-14,CS1238,5,ALL,Lecture,,devendra.bhavsar@iet.edu
+Fri,11:00,12:00,LT-12,CS1238,5,ALL,Lecture,,devendra.bhavsar@iet.edu
+Fri,16:00,17:00,LT-11,CS1238,5,ALL,Lecture,,devendra.bhavsar@iet.edu
+Tue,11:00,12:00,LT-12,CS1238,5,ALL,Lecture,,devendra.bhavsar@iet.edu
+Tue,16:00,17:00,LT-8,CS1240,5,B,Lecture,,tapas.kumar@iet.edu
+Thu,12:00,13:00,LT-13,CS1240,5,B,Lecture,,tapas.kumar@iet.edu
+Mon,14:00,15:00,LT-14,CS1240,5,B,Lecture,,tapas.kumar@iet.edu
+Wed,15:00,16:00,LT-12,CS1232,7,ALL,Lecture,,kishtiz.verma@iet.edu
+Mon,16:00,17:00,LT-14,CS1232,7,ALL,Lecture,,kishtiz.verma@iet.edu
+Fri,14:00,15:00,LT-11,CS1232,7,ALL,Lecture,,kishtiz.verma@iet.edu
+Wed,14:00,15:00,LT-13,CS1232,7,ALL,Lecture,,kishtiz.verma@iet.edu
+Fri,16:00,17:00,LT-12,MG1201,7,ALL,Lecture,,sheetal.mundra@iet.edu
+Fri,11:00,12:00,LT-13,MG1201,7,ALL,Lecture,,sheetal.mundra@iet.edu
+Fri,14:00,15:00,LT-12,MG1201,7,ALL,Lecture,,sheetal.mundra@iet.edu
+Thu,12:00,13:00,LT-14,MG1201,7,ALL,Lecture,,sheetal.mundra@iet.edu
+Fri,11:00,12:00,LT-14,MG1101,3,ALL,Lecture,,neeti.kasliwal@iet.edu
+Fri,12:00,13:00,LT-14,MG1101,3,ALL,Lecture,,neeti.kasliwal@iet.edu
+Mon,09:00,10:00,LT-11,MG1101,3,ALL,Lecture,,neeti.kasliwal@iet.edu
+Tue,10:00,11:00,LT-12,MG1101,3,ALL,Lecture,,neeti.kasliwal@iet.edu
+Tue,12:00,13:00,LT-14,MG1101,3,ALL,Lecture,,neeti.kasliwal@iet.edu
+Thu,16:00,17:00,LT-12,MG1101,3,ALL,Lecture,,neeti.kasliwal@iet.edu
+Tue,11:00,12:00,LT-13,MG1101,3,ALL,Lecture,,neeti.kasliwal@iet.edu
+Wed,15:00,16:00,LT-13,MG1101,3,ALL,Lecture,,neeti.kasliwal@iet.edu
+Thu,09:00,10:00,LT-10,MG1101,3,ALL,Lecture,,neeti.kasliwal@iet.edu
+Tue,16:00,17:00,LT-9,MG1202,5,ALL,Lecture,,monika.soni@iet.edu
+Fri,16:00,17:00,LT-13,MG1202,5,ALL,Lecture,,monika.soni@iet.edu
+Thu,11:00,12:00,LT-10,MG1202,5,ALL,Lecture,,monika.soni@iet.edu
+Mon,09:00,10:00,LT-12,MG1202,5,ALL,Lecture,,monika.soni@iet.edu

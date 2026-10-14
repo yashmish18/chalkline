@@ -17,9 +17,4 @@ public interface DeadlineAssignmentRepository extends JpaRepository<DeadlineAssi
 
     @Query("SELECT da FROM DeadlineAssignment da JOIN FETCH da.deadline d WHERE da.deadline.id = :deadlineId")
     List<DeadlineAssignment> findByDeadlineId(@Param("deadlineId") Long deadlineId);
-
-    Optional<DeadlineAssignment> findByDeadlineIdAndFacultyId(Long deadlineId, Long facultyId);
-
-    @Query("SELECT da FROM DeadlineAssignment da JOIN FETCH da.deadline d WHERE da.id = :id AND da.facultyId = :facultyId")
-    Optional<DeadlineAssignment> findByIdAndFacultyId(@Param("id") Long id, @Param("facultyId") Long facultyId);
 }

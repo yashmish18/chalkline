@@ -2,9 +2,13 @@ package com.iet.dashboard.notifications.service;
 
 import com.iet.dashboard.directory.service.FacultyService;
 import com.iet.dashboard.directory.web.FacultyDto;
+import com.iet.dashboard.identity.domain.Role;
+import com.iet.dashboard.identity.service.UserService;
+import com.iet.dashboard.identity.web.UserDto;
 import com.iet.dashboard.notifications.domain.NotificationType;
 import com.iet.dashboard.shared.events.DeadlineAssignedEvent;
 import com.iet.dashboard.shared.events.SubmissionReviewedEvent;
+import com.iet.dashboard.shared.events.SubmissionSubmittedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
@@ -12,6 +16,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Component
@@ -21,10 +26,16 @@ public class NotificationEventListener {
 
     private final NotificationService notificationService;
     private final FacultyService facultyService;
+    private final UserService userService;
 
-    public NotificationEventListener(NotificationService notificationService, FacultyService facultyService) {
+    public NotificationEventListener(
+            NotificationService notificationService,
+            FacultyService facultyService,
+            UserService userService
+    ) {
         this.notificationService = notificationService;
         this.facultyService = facultyService;
+        this.userService = userService;
     }
 
     @Async
@@ -47,6 +58,46 @@ public class NotificationEventListener {
                 }
             } catch (Exception e) {
                 log.warn("Failed to notify faculty #{} for deadline {}: {}", facultyId, event.deadlineId(), e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Faculty upload or resubmission — fan out to every coordinator so review never waits on
+     * the coordinator opening the tracking screen. In-app and email, mirroring the
+     * deadline-assigned journey in the opposite direction.
+     */
+    @Async
+    @EventListener
+    public void onSubmissionSubmitted(SubmissionSubmittedEvent event) {
+        log.info("Processing SubmissionSubmittedEvent for deadline '{}' (v{})", event.deadlineTitle(), event.version());
+
+        List<UserDto> coordinators;
+        try {
+            coordinators = userService.findUsersByRole(Role.COORDINATOR);
+        } catch (Exception e) {
+            log.warn("Could not resolve coordinators for submission {}: {}", event.submissionId(), e.getMessage());
+            return;
+        }
+
+        String title = (event.late() ? "Late Submission: " : "New Submission: ") + event.deadlineTitle();
+        String message = event.facultyName() + " uploaded version " + event.version()
+                + (event.late() ? " after the due date" : "")
+                + " for '" + event.deadlineTitle() + "'.";
+
+        for (UserDto coordinator : coordinators) {
+            try {
+                notificationService.sendNotification(
+                        coordinator.id(),
+                        title,
+                        message,
+                        NotificationType.SUBMISSION_RECEIVED,
+                        "/compliance",
+                        true
+                );
+            } catch (Exception e) {
+                log.warn("Failed to notify coordinator #{} about submission {}: {}",
+                        coordinator.id(), event.submissionId(), e.getMessage());
             }
         }
     }

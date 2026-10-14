@@ -11,7 +11,8 @@ spring:
   application:
     name: faculty-dashboard
   profiles:
-    active: dev
+    # Local runs default to dev; a server sets SPRING_PROFILES_ACTIVE=prod.
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/iet_dashboard}
     username: ${SPRING_DATASOURCE_USERNAME:iet_user}
@@ -45,6 +46,33 @@ spring:
             enable: false
 
 app:
+  # Where people open the app (the Vercel domain in production). Used in emailed links.
+  public-url: ${APP_PUBLIC_URL:http://localhost:5173}
+  # Used when an allocation sheet row has no email: "Dr. S Taruna" -> s.taruna@<domain>.
+  email-domain: ${APP_EMAIL_DOMAIN:jklu.edu.in}
+  mail:
+    from: ${APP_MAIL_FROM:${SPRING_MAIL_USERNAME:no-reply@jklu.edu.in}}
+  coordinator:
+    # Optional first coordinator(s), comma-separated. They are sent a verification link on startup
+    # and become coordinator only after verifying and choosing a coordinator password.
+    email: ${APP_COORDINATOR_EMAIL:}
+    name: ${APP_COORDINATOR_NAME:Coordinator}
+  institution:
+    name: ${APP_INSTITUTION_NAME:Institute of Engineering & Technology}
+  # Every switch below defaults to the safe production value. application-dev.yml turns the
+  # developer conveniences on.
+  auth:
+    # Password-less sign-in by email, the bypass key and the user switcher.
+    dev-mode: false
+    bypass-key: ${BYPASS_KEY:}
+    bypass-email: ${BYPASS_EMAIL:coordinator@iet.edu}
+    # Microsoft accounts outside these domains are refused (comma-separated; empty = any).
+    allowed-email-domains: ${APP_ALLOWED_EMAIL_DOMAINS:}
+  admin:
+    # "Delete all data", "Reset activity" and "Delete all faculty".
+    destructive-actions: false
+  security:
+    csrf: true
   storage:
     upload-dir: ${STORAGE_UPLOAD_DIR:./data/uploads}
   notifications:

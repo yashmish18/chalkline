@@ -55,6 +55,14 @@ public class SubmissionController {
         return ResponseEntity.ok(submissionService.getSubmissionsForDeadline(deadlineId));
     }
 
+    @GetMapping("/submissions")
+    @PreAuthorize("hasRole('COORDINATOR')")
+    public ResponseEntity<List<SubmissionOverviewDto>> getAllSubmissions(
+            @RequestParam(required = false) String status
+    ) {
+        return ResponseEntity.ok(submissionService.getAllSubmissions(status));
+    }
+
     @GetMapping("/submission-files/{fileId}/download")
     public ResponseEntity<Resource> downloadFile(@PathVariable Long fileId) {
         SubmissionFileDto meta = submissionService.getFileMetadata(fileId);

@@ -1,5 +1,6 @@
 package com.iet.dashboard.directory.service;
 
+import com.iet.dashboard.directory.domain.Department;
 import com.iet.dashboard.directory.domain.Faculty;
 import com.iet.dashboard.directory.domain.Skill;
 import com.iet.dashboard.directory.repo.FacultyRepository;
@@ -36,18 +37,27 @@ class FacultyServiceTest {
     @Mock
     private UserService userService;
 
+    @Mock
+    private com.iet.dashboard.directory.repo.DepartmentRepository departmentRepository;
+
+    @Mock
+    private com.iet.dashboard.identity.repo.AppUserRepository appUserRepository;
+
+    @Mock
+    private com.iet.dashboard.deadlines.repo.DeadlineRepository deadlineRepository;
+
     @InjectMocks
     private FacultyServiceImpl facultyService;
 
     @Test
     void testGetAllFaculty_NoFilter_ReturnsAll() {
-        Faculty faculty = new Faculty(2L, "Dr. Amit", "Assoc Prof", "PhD", "IT");
+        Faculty faculty = new Faculty(2L, "Dr. Amit", "Assoc Prof", "PhD", new com.iet.dashboard.directory.domain.Department("IT", "Information Technology"));
         faculty.setId(1L);
         faculty.setSkills(Collections.singleton(new Skill("Networks", "Systems")));
 
         when(facultyRepository.findAllWithSkills()).thenReturn(List.of(faculty));
 
-        List<FacultyDto> result = facultyService.getAllFaculty(null);
+        List<FacultyDto> result = facultyService.getAllFaculty(null, null);
 
         assertEquals(1, result.size());
         assertEquals("Dr. Amit", result.get(0).name());
@@ -56,12 +66,12 @@ class FacultyServiceTest {
 
     @Test
     void testGetAllFaculty_WithSkillFilter_ReturnsFiltered() {
-        Faculty faculty = new Faculty(2L, "Dr. Amit", "Assoc Prof", "PhD", "IT");
+        Faculty faculty = new Faculty(2L, "Dr. Amit", "Assoc Prof", "PhD", new com.iet.dashboard.directory.domain.Department("IT", "Information Technology"));
         faculty.setId(1L);
 
         when(facultyRepository.findBySkillName("Networks")).thenReturn(List.of(faculty));
 
-        List<FacultyDto> result = facultyService.getAllFaculty("Networks");
+        List<FacultyDto> result = facultyService.getAllFaculty("Networks", null);
 
         assertEquals(1, result.size());
         assertEquals("Dr. Amit", result.get(0).name());
@@ -69,7 +79,7 @@ class FacultyServiceTest {
 
     @Test
     void testGetFacultyById_Found() {
-        Faculty faculty = new Faculty(2L, "Dr. Amit", "Assoc Prof", "PhD", "IT");
+        Faculty faculty = new Faculty(2L, "Dr. Amit", "Assoc Prof", "PhD", new com.iet.dashboard.directory.domain.Department("IT", "Information Technology"));
         faculty.setId(1L);
 
         when(facultyRepository.findByIdWithSkills(1L)).thenReturn(Optional.of(faculty));
@@ -97,7 +107,9 @@ class FacultyServiceTest {
         when(userService.createUser("new@iet.edu", "Dr. New", Role.FACULTY))
                 .thenReturn(new UserDto(10L, "new@iet.edu", "Dr. New", "FACULTY"));
 
-        Faculty savedFaculty = new Faculty(10L, "Dr. New", "Assistant Professor", "PhD", "IT");
+        var it = new com.iet.dashboard.directory.domain.Department("IT", "Information Technology");
+        when(departmentRepository.findByCodeIgnoreCase("IT")).thenReturn(Optional.of(it));
+        Faculty savedFaculty = new Faculty(10L, "Dr. New", "Assistant Professor", "PhD", it);
         savedFaculty.setId(5L);
         when(facultyRepository.save(any(Faculty.class))).thenReturn(savedFaculty);
 
@@ -110,7 +122,7 @@ class FacultyServiceTest {
 
     @Test
     void testUpdateFacultySkillsByNames_NormalizesAndCreatesMissing() {
-        Faculty faculty = new Faculty(2L, "Dr. Amit", "Assoc Prof", "PhD", "IT");
+        Faculty faculty = new Faculty(2L, "Dr. Amit", "Assoc Prof", "PhD", new com.iet.dashboard.directory.domain.Department("IT", "Information Technology"));
         faculty.setId(1L);
 
         when(facultyRepository.findByIdWithSkills(1L)).thenReturn(Optional.of(faculty));
@@ -133,8 +145,95 @@ class FacultyServiceTest {
 
     @Test
     void testDeleteFaculty_Success() {
-        when(facultyRepository.existsById(10L)).thenReturn(true);
+        Faculty faculty = new Faculty(99L, "Dr. Amit", "Professor", "PhD",
+                new Department("IT", "Information Technology"));
+        faculty.setId(10L);
+        when(facultyRepository.findById(10L)).thenReturn(Optional.of(faculty));
+        when(userService.findUsersByRole(Role.COORDINATOR))
+                .thenReturn(List.of(new UserDto(1L, "coordinator@iet.edu", "Coordinator", "COORDINATOR")));
+
         facultyService.deleteFaculty(10L);
+
         verify(facultyRepository).deleteById(10L);
+        verify(deadlineRepository).deleteByCreatedByIn(List.of(99L));
+        verify(appUserRepository).deleteById(99L);
+    }
+
+    @Test
+    void testDeleteFaculty_CoordinatorProfile_Refused() {
+        Faculty coordinator = new Faculty(1L, "Coordinator", "Coordinator", "",
+                new Department("IT", "Information Technology"));
+        coordinator.setId(1L);
+        when(facultyRepository.findById(1L)).thenReturn(Optional.of(coordinator));
+        when(userService.findUsersByRole(Role.COORDINATOR))
+                .thenReturn(List.of(new UserDto(1L, "coordinator@iet.edu", "Coordinator", "COORDINATOR")));
+
+        assertThrows(com.iet.dashboard.shared.error.ForbiddenException.class, () -> facultyService.deleteFaculty(1L));
+        verify(facultyRepository, never()).deleteById(any());
+        verify(appUserRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void testDeleteAllFaculty_KeepsCoordinatorProfile() {
+        Department department = new Department("IT", "Information Technology");
+        Faculty coordinator = new Faculty(1L, "Coordinator", "Coordinator", "", department);
+        coordinator.setId(1L);
+        Faculty first = new Faculty(2L, "Dr. Amit Sinhal", "Professor", "PhD", department);
+        first.setId(2L);
+        Faculty second = new Faculty(3L, "Dr. Surbhi Chhabra", "Professor", "PhD", department);
+        second.setId(3L);
+
+        when(userService.findUsersByRole(Role.COORDINATOR))
+                .thenReturn(List.of(new UserDto(1L, "coordinator@iet.edu", "Coordinator", "COORDINATOR")));
+        when(facultyRepository.findAll()).thenReturn(List.of(coordinator, first, second));
+
+        int deleted = facultyService.deleteAllFaculty();
+
+        assertEquals(2, deleted);
+        @SuppressWarnings("unchecked")
+        var captor = org.mockito.ArgumentCaptor.forClass(List.class);
+        verify(facultyRepository).deleteAllInBatch(captor.capture());
+        List<Faculty> removed = captor.getValue();
+        assertEquals(2, removed.size());
+        assertTrue(removed.stream().noneMatch(f -> f.getUserId().equals(1L)), "the coordinator's own profile must survive");
+    }
+
+    @Test
+    void testDeleteAllFaculty_RemovesLinkedLogins_KeepsCoordinatorAccount() {
+        when(userService.findUsersByRole(Role.COORDINATOR))
+                .thenReturn(List.of(new UserDto(1L, "coordinator@iet.edu", "Coordinator", "COORDINATOR")));
+        Department department = new Department("IT", "Information Technology");
+        Faculty coordinator = new Faculty(1L, "Coordinator", "Coordinator", "", department);
+        coordinator.setId(1L);
+        Faculty staff = new Faculty(7L, "Dr. Amit Sinhal", "Professor", "PhD", department);
+        staff.setId(2L);
+        when(facultyRepository.findAll()).thenReturn(List.of(coordinator, staff));
+
+        int deleted = facultyService.deleteAllFaculty();
+
+        assertEquals(1, deleted);
+        // The creator's deadlines would block the account delete (NO ACTION FK), so they go first.
+        verify(deadlineRepository).deleteByCreatedByIn(List.of(7L));
+        @SuppressWarnings("unchecked")
+        var captor = org.mockito.ArgumentCaptor.forClass(List.class);
+        verify(facultyRepository).deleteAllInBatch(captor.capture());
+        List<Faculty> removed = captor.getValue();
+        assertEquals(1, removed.size());
+        assertEquals(7L, removed.get(0).getUserId());
+        // The sign-in account is removed with the profile — but never the coordinator's.
+        verify(appUserRepository).deleteAllById(List.of(7L));
+    }
+
+    @Test
+    void testDeleteAllFaculty_NoDeleteWhenOnlyCoordinator() {
+        when(userService.findUsersByRole(Role.COORDINATOR))
+                .thenReturn(List.of(new UserDto(1L, "coordinator@iet.edu", "Coordinator", "COORDINATOR")));
+        Faculty coordinator = new Faculty(1L, "Coordinator", "Coordinator", "",
+                new Department("IT", "Information Technology"));
+        coordinator.setId(1L);
+        when(facultyRepository.findAll()).thenReturn(List.of(coordinator));
+
+        assertEquals(0, facultyService.deleteAllFaculty());
+        verify(facultyRepository, never()).deleteAllInBatch(any());
     }
 }

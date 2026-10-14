@@ -36,6 +36,10 @@ public class TimetableSlot {
     @Column(name = "sub_section", nullable = false, length = 50)
     private String subSection = "ALL";
 
+    /** When the slot was uploaded; logging is expected only from this day on. */
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private java.time.Instant createdAt = java.time.Instant.now();
+
     public TimetableSlot() {
     }
 
@@ -129,5 +133,9 @@ public class TimetableSlot {
 
     public void setSubSection(String subSection) {
         this.subSection = subSection;
+    }
+
+    public java.time.Instant getCreatedAt() {
+        return createdAt;
     }
 }

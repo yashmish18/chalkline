@@ -2,20 +2,343 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =========================================================================
+   "Ink & Paper" — DESIGN.md §1.
+
+   Off-white paper, near-black ink, one deep-teal accent. Hierarchy comes from
+   type, spacing and 1px hairlines, not from colour or shadow. No gradients.
+
+     --accent   deep teal — active navigation, links, focus, selection, data
+     ink        primary buttons are solid ink, not accent
+     semantic   ok / warn / bad are used only for status, always tinted
+   ========================================================================= */
 :root {
   color-scheme: light;
+
+  /* Paper & surfaces */
+  --paper: #fafaf7;
+  --canvas: #fafaf7;
+  --surface-1: #f6f5f1; /* sidebar */
+  --surface-2: #ffffff; /* cards, tables, modals */
+  --surface-3: #f6f5f1; /* table heads, insets */
+  --surface-4: #efeee9; /* hover, tracks, chips */
+  --surface-5: #e7e5df; /* strong fills */
+
+  /* Hairlines */
+  --hairline: #e6e4dd;
+  --hairline-soft: #efeee9;
+  --hairline-strong: #d6d3ca;
+  --hairline-tertiary: #bdb9ae;
+
+  /* Ink */
+  --ink: #16181d;
+  --ink-hover: #2a2d33;
+  --ink-muted: #3a3d44;
+  --ink-subtle: #6b6f76;
+  --ink-tertiary: #8a8e95;
+  --ink-disabled: #b4b7bc;
+
+  /* Accent — deep teal */
+  --accent: #0f5c5c;
+  --accent-hover: #0b4747;
+  --accent-soft: rgba(15, 92, 92, 0.08);
+  --accent-softer: rgba(15, 92, 92, 0.14);
+  --accent-text: #0f5c5c;
+  --accent-line: rgba(15, 92, 92, 0.32);
+  --accent-ring: rgba(15, 92, 92, 0.3);
+
+  /* Semantic */
+  --success: #2e7d4f;
+  --success-text: #24663f;
+  --success-soft: rgba(46, 125, 79, 0.1);
+  --success-softer: rgba(46, 125, 79, 0.17);
+  --success-line: rgba(46, 125, 79, 0.3);
+
+  --warn: #b7791f;
+  --warn-text: #8a5a14;
+  --warn-soft: rgba(183, 121, 31, 0.11);
+  --warn-softer: rgba(183, 121, 31, 0.19);
+  --warn-line: rgba(183, 121, 31, 0.34);
+
+  --danger: #b42318;
+  --danger-text: #a01f15;
+  --danger-soft: rgba(180, 35, 24, 0.08);
+  --danger-softer: rgba(180, 35, 24, 0.15);
+  --danger-line: rgba(180, 35, 24, 0.3);
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Newsreader', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
 }
 
 body {
   margin: 0;
   padding: 0;
-  background-color: #F8FAFC;
-  color: #0F172A;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Accessible Linear focus visible outline */
 :focus-visible {
-  outline: 2px solid #5E6AD2;
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+::selection {
+  background: var(--accent-softer);
+  color: var(--ink);
+}
+
+* {
+  scrollbar-color: var(--hairline-strong) transparent;
+}
+
+/* =========================================================================
+   Primitives for freshly authored screens
+   ========================================================================= */
+@layer components {
+  .font-display {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    letter-spacing: -0.01em;
+  }
+
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-subtle);
+  }
+
+  .card {
+    background: var(--surface-2);
+    border: 1px solid var(--hairline);
+    border-radius: 10px;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--hairline);
+    background: var(--surface-3);
+    color: var(--ink-muted);
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 18px;
+    white-space: nowrap;
+  }
+  .chip-info { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent-text); }
+  .chip-ok { background: var(--success-soft); border-color: var(--success-line); color: var(--success-text); }
+  .chip-warn { background: var(--warn-soft); border-color: var(--warn-line); color: var(--warn-text); }
+  .chip-bad { background: var(--danger-soft); border-color: var(--danger-line); color: var(--danger-text); }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid var(--hairline-strong);
+    background: var(--surface-2);
+    color: var(--ink);
+    transition: background-color 120ms, border-color 120ms;
+  }
+  .btn:hover { background: var(--surface-3); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .btn-primary:hover { background: var(--ink-hover); }
+  .btn-quiet { border-color: transparent; background: transparent; color: var(--ink-muted); }
+  .btn-quiet:hover { background: var(--surface-4); color: var(--ink); }
+
+  .field {
+    width: 100%;
+    height: 40px;
+    padding: 0 12px;
+    border-radius: 7px;
+    border: 1px solid var(--hairline-strong);
+    background: var(--surface-2);
+    color: var(--ink);
+    font-size: 14px;
+  }
+  .field:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+  .bar-track { height: 4px; border-radius: 999px; background: var(--surface-4); overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; }
+}
+
+/* =========================================================================
+   Legacy utility → token remap
+   The view layer was authored against Tailwind's light neutrals (bg-white,
+   text-slate-900, …). Each one maps onto the tokens above in this single
+   auditable block, after @tailwind utilities so it wins at equal specificity.
+   New screens should use the primitives above instead.
+   ========================================================================= */
+
+/* Shadows: the system is flat; hairlines carry structure. */
+.shadow-2xs, .shadow-xs, .shadow-sm { box-shadow: 0 1px 0 rgba(22, 24, 29, 0.03); }
+.shadow, .shadow-md { box-shadow: 0 1px 2px rgba(22, 24, 29, 0.05); }
+.shadow-lg, .shadow-xl, .shadow-2xl { box-shadow: 0 12px 32px -12px rgba(22, 24, 29, 0.18), 0 0 0 1px var(--hairline); }
+
+/* -- Canvas & surfaces ------------------------------------------------ */
+.bg-white { background-color: var(--surface-2); }
+.bg-white\/90 { background-color: rgba(250, 250, 247, 0.9); }
+.bg-white\/80 { background-color: rgba(255, 255, 255, 0.85); }
+.bg-white\/60 { background-color: rgba(255, 255, 255, 0.75); }
+.bg-white\/20 { background-color: rgba(22, 24, 29, 0.08); }
+.bg-white\/15 { background-color: rgba(22, 24, 29, 0.1); }
+.bg-white\/10 { background-color: rgba(22, 24, 29, 0.06); }
+.bg-white\/5 { background-color: rgba(22, 24, 29, 0.04); }
+.bg-slate-50 { background-color: var(--surface-3); }
+.bg-slate-50\/70 { background-color: rgba(246, 245, 241, 0.7); }
+.bg-slate-50\/60 { background-color: rgba(246, 245, 241, 0.6); }
+.bg-slate-50\/50 { background-color: rgba(246, 245, 241, 0.5); }
+.bg-slate-100 { background-color: var(--surface-4); }
+.bg-slate-100\/80 { background-color: rgba(239, 238, 233, 0.8); }
+.bg-slate-200 { background-color: var(--surface-5); }
+.bg-slate-300 { background-color: var(--hairline-strong); }
+.bg-slate-800 { background-color: var(--ink-hover); }
+.bg-slate-900 { background-color: var(--ink); }
+
+.bg-slate-900\/40 { background-color: rgba(22, 24, 29, 0.38); }
+.bg-slate-900\/50 { background-color: rgba(22, 24, 29, 0.46); }
+
+/* -- Hairlines & dividers --------------------------------------------- */
+.border-border { border-color: var(--hairline); }
+.border-slate-100 { border-color: var(--hairline-soft); }
+.border-slate-200 { border-color: var(--hairline); }
+.border-slate-200\/80 { border-color: rgba(230, 228, 221, 0.8); }
+.border-slate-300 { border-color: var(--hairline-strong); }
+.border-slate-400 { border-color: var(--hairline-tertiary); }
+.border-slate-900 { border-color: var(--ink); }
+.border-transparent { border-color: transparent; }
+.divide-border > :not([hidden]) ~ :not([hidden]) { border-color: var(--hairline-soft); }
+.divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: var(--hairline-soft); }
+
+/* -- Ink scale -------------------------------------------------------- */
+.text-slate-900 { color: var(--ink); }
+.text-slate-800 { color: #25282e; }
+.text-slate-700 { color: var(--ink-muted); }
+.text-slate-600 { color: #4e525a; }
+.text-slate-500 { color: var(--ink-subtle); }
+.text-slate-400 { color: var(--ink-tertiary); }
+.text-slate-300 { color: var(--ink-disabled); }
+
+/* -- Informational (was blue / purple / indigo / teal) → accent ------- */
+.text-blue-600, .text-blue-700, .text-blue-800,
+.text-indigo-700, .text-purple-600, .text-purple-700, .text-teal-700 { color: var(--accent-text); }
+.bg-blue-50, .bg-indigo-50, .bg-purple-50, .bg-teal-50 { background-color: var(--accent-soft); }
+.bg-blue-100 { background-color: var(--accent-softer); }
+.bg-blue-600, .bg-purple-600 { background-color: var(--accent); }
+.border-blue-200, .border-blue-300, .border-indigo-200, .border-purple-200, .border-teal-200 { border-color: var(--accent-line); }
+
+.ring-slate-900 { --tw-ring-color: var(--accent); }
+.ring-slate-900\/20 { --tw-ring-color: var(--accent-ring); }
+
+/* -- Success ---------------------------------------------------------- */
+.text-emerald-500, .text-emerald-600, .text-emerald-700, .text-emerald-800 { color: var(--success-text); }
+.text-emerald-900 { color: #1b4f31; }
+.bg-emerald-50 { background-color: var(--success-soft); }
+.bg-emerald-50\/10 { background-color: rgba(46, 125, 79, 0.06); }
+.bg-emerald-100 { background-color: var(--success-softer); }
+.bg-emerald-100\/80 { background-color: rgba(46, 125, 79, 0.15); }
+.bg-emerald-500, .bg-emerald-600 { background-color: var(--success); }
+.border-emerald-200, .border-emerald-300 { border-color: var(--success-line); }
+
+/* -- Warning ---------------------------------------------------------- */
+.text-amber-500, .text-amber-600, .text-amber-700, .text-amber-800, .text-amber-900 { color: var(--warn-text); }
+.bg-amber-50 { background-color: var(--warn-soft); }
+.bg-amber-100 { background-color: var(--warn-softer); }
+.bg-amber-500 { background-color: var(--warn); }
+.border-amber-200, .border-amber-300 { border-color: var(--warn-line); }
+
+/* -- Danger ----------------------------------------------------------- */
+.text-rose-500, .text-rose-600, .text-rose-700 { color: var(--danger-text); }
+.text-rose-800 { color: #851a12; }
+.text-rose-900, .text-rose-950 { color: #6d160f; }
+.bg-rose-50 { background-color: var(--danger-soft); }
+.bg-rose-100 { background-color: var(--danger-softer); }
+.bg-rose-600 { background-color: var(--danger); }
+.border-rose-200, .border-rose-300 { border-color: var(--danger-line); }
+
+/* -- Interactive states ----------------------------------------------- */
+.hover\:bg-slate-50:hover { background-color: var(--surface-3); }
+.hover\:bg-slate-50\/70:hover { background-color: rgba(246, 245, 241, 0.7); }
+.hover\:bg-slate-50\/50:hover { background-color: rgba(246, 245, 241, 0.5); }
+.hover\:bg-slate-50\/80:hover { background-color: rgba(246, 245, 241, 0.8); }
+.hover\:bg-slate-100:hover { background-color: var(--surface-4); }
+.hover\:bg-slate-100\/80:hover { background-color: rgba(239, 238, 233, 0.8); }
+.hover\:bg-slate-200:hover { background-color: var(--surface-5); }
+.hover\:bg-slate-200\/60:hover { background-color: rgba(231, 229, 223, 0.6); }
+.hover\:bg-slate-300:hover { background-color: var(--hairline-strong); }
+.hover\:bg-slate-800:hover { background-color: var(--ink-hover); }
+.hover\:bg-slate-900:hover { background-color: var(--ink); }
+.hover\:bg-white:hover { background-color: var(--surface-3); }
+.hover\:bg-white\/80:hover { background-color: rgba(22, 24, 29, 0.05); }
+.hover\:bg-white\/60:hover { background-color: rgba(22, 24, 29, 0.04); }
+.hover\:bg-white\/10:hover { background-color: rgba(22, 24, 29, 0.06); }
+.hover\:bg-white\/5:hover { background-color: rgba(22, 24, 29, 0.04); }
+.hover\:bg-rose-50:hover { background-color: var(--danger-soft); }
+.hover\:bg-rose-100:hover { background-color: var(--danger-softer); }
+.hover\:bg-rose-700:hover { background-color: #8f1c13; }
+.hover\:bg-emerald-50:hover { background-color: var(--success-soft); }
+.hover\:bg-emerald-700:hover { background-color: #24663f; }
+.hover\:bg-blue-50:hover { background-color: var(--accent-soft); }
+.hover\:bg-blue-100:hover { background-color: var(--accent-softer); }
+
+.hover\:text-slate-900:hover { color: var(--ink); }
+.hover\:text-slate-800:hover { color: #25282e; }
+.hover\:text-slate-700:hover { color: var(--ink-muted); }
+.hover\:text-slate-600:hover { color: #4e525a; }
+.hover\:text-rose-600:hover { color: var(--danger-text); }
+.hover\:text-rose-950:hover { color: #6d160f; }
+.hover\:text-emerald-900:hover { color: #1b4f31; }
+.hover\:text-blue-700:hover { color: var(--accent-hover); }
+
+.hover\:border-slate-300:hover { border-color: var(--hairline-strong); }
+.hover\:border-slate-400:hover { border-color: var(--hairline-tertiary); }
+.hover\:border-slate-900:hover { border-color: var(--ink); }
+
+.focus\:bg-white:focus { background-color: var(--surface-2); }
+.focus\:border-slate-900:focus { border-color: var(--accent); }
+.focus\:ring-slate-900:focus { --tw-ring-color: var(--accent-ring); }
+.focus\:ring-slate-900\/20:focus { --tw-ring-color: var(--accent-ring); }
+
+input[type='date'],
+input[type='time'] {
+  color-scheme: light;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--ink-tertiary);
+}
+
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Printing the semester report: A4, paper white, no app chrome. */
+@page {
+  size: A4;
+  margin: 16mm 14mm;
+}
+@media print {
+  body { background: #fff; }
 }

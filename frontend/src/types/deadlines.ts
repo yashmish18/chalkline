@@ -1,4 +1,4 @@
-export type DeadlineType = 'COURSE_FILE' | 'EVALUATION' | 'MARKS_UPLOAD' | 'SYLLABUS_REPORT' | 'OTHER';
+export type DeadlineType = 'COURSE_FILE' | 'EVALUATION' | 'MARKS_UPLOAD' | 'SYLLABUS_REPORT' | 'CONTINUOUS_ASSESSMENT' | 'MID_SEM_QUESTION_BANK' | 'REMEDIAL_PLAN' | 'OTHER';
 
 export interface DeadlineDto {
   id: number;

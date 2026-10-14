@@ -1,0 +1,114 @@
+# Render Blueprint: the Spring Boot backend (Docker) and its PostgreSQL database.
+# The React frontend is hosted on Vercel (frontend/vercel.json), which proxies /api, /oauth2,
+# /login/oauth2 and /actuator/health here so the browser only ever talks to the Vercel domain.
+# Step-by-step setup: DEPLOY.md, "Hosting on Vercel + Render".
+#
+# Secrets are never written here: every `sync: false` variable is asked for in the Render dashboard
+# when the Blueprint is first applied (and can be edited later under the service's Environment tab).
+
+databases:
+  - name: faculty-dashboard-db
+    databaseName: iet_dashboard
+    user: iet_dashboard
+    region: singapore            # keep the same region as the web service (internal networking)
+    postgresMajorVersion: "16"
+    # Paid plan: a free Render database expires 30 days after creation. Use `plan: free` only to try it out.
+    plan: basic-256mb
+    ipAllowList: []              # no access from the internet; only Render services in the same region
+
+services:
+  - type: web
+    name: faculty-dashboard-api
+    runtime: docker
+    region: singapore
+    # A persistent disk needs a paid instance type. On `plan: free` remove the `disk:` block below; uploaded
+    # files then live on the container's ephemeral filesystem and are LOST on every deploy, restart or
+    # spin-down (free services sleep after 15 minutes without traffic).
+    plan: starter
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    healthCheckPath: /actuator/health
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - backend/**
+    disk:
+      name: uploads
+      mountPath: /data/uploads   # = app.storage.upload-dir (STORAGE_UPLOAD_DIR, set in the Dockerfile)
+      sizeGB: 1
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      # The app listens on $PORT (server.port in application-prod.yml). Pinned to 8080 so it matches the
+      # port the Dockerfile exposes and health-checks.
+      - key: PORT
+        value: "8080"
+      # Sized for a 512 MB instance: cap the heap, use the low-overhead serial GC, keep thread stacks
+      # and the code cache small, and exit (so Render restarts the service) instead of limping on after an OOM.
+      - key: JAVA_OPTS
+        value: >-
+          -XX:MaxRAMPercentage=60 -XX:+UseSerialGC -Xss512k -XX:ReservedCodeCacheSize=64m
+          -XX:MaxMetaspaceSize=160m -XX:+ExitOnOutOfMemoryError
+      - key: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
+        value: "5"
+
+      # Database. Render's connectionString is postgres://user:pass@host:port/db, which JDBC does not accept,
+      # so application-prod.yml assembles jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME} from the parts
+      # below (SPRING_DATASOURCE_URL is left unset; set it only to override with a full JDBC URL).
+      - key: DB_HOST
+        fromDatabase:
+          name: faculty-dashboard-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: faculty-dashboard-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: faculty-dashboard-db
+          property: database
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: faculty-dashboard-db
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: faculty-dashboard-db
+          property: password
+
+      # Public address of the site (the Vercel domain), e.g. https://faculty-dashboard.vercel.app — no
+      # trailing slash. Builds the Entra redirect URI https://<vercel-domain>/login/oauth2/code/entra.
+      # Required here: Vercel's proxy is not relied on to forward the original host.
+      - key: APP_PUBLIC_URL
+        sync: false
+
+      # Microsoft Entra ID app registration.
+      - key: ENTRA_TENANT_ID
+        sync: false
+      - key: ENTRA_CLIENT_ID
+        sync: false
+      - key: ENTRA_CLIENT_SECRET
+        sync: false
+
+      # First coordinator(s), comma-separated. Each is emailed a one-time activation link and sets a
+      # coordinator password. Later coordinators come from the allocation sheet's Role column.
+      - key: APP_COORDINATOR_EMAIL
+        sync: false
+      - key: APP_EMAIL_DOMAIN
+        value: jklu.edu.in
+      - key: APP_ALLOWED_EMAIL_DOMAINS
+        value: jklu.edu.in
+      - key: APP_COORDINATOR_NAME
+        value: Coordinator
+      - key: APP_INSTITUTION_NAME
+        value: Institute of Engineering & Technology
+
+      # Outgoing email for reminders.
+      - key: SPRING_MAIL_HOST
+        value: smtp.office365.com
+      - key: SPRING_MAIL_PORT
+        value: "587"
+      - key: SPRING_MAIL_USERNAME
+        sync: false
+      - key: SPRING_MAIL_PASSWORD
+        sync: false

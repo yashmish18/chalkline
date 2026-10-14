@@ -14,9 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -25,10 +27,7 @@ public class PacingCalculationServiceImpl implements PacingCalculationService {
     private final AcademicsService academicsService;
     private final TeachingSessionRepository sessionRepository;
 
-    public PacingCalculationServiceImpl(
-            AcademicsService academicsService,
-            TeachingSessionRepository sessionRepository
-    ) {
+    public PacingCalculationServiceImpl(AcademicsService academicsService, TeachingSessionRepository sessionRepository) {
         this.academicsService = academicsService;
         this.sessionRepository = sessionRepository;
     }
@@ -38,43 +37,21 @@ public class PacingCalculationServiceImpl implements PacingCalculationService {
         if (facultyId == null) {
             return List.of();
         }
-
-        List<TeachingAssignmentDto> assignments = academicsService.getTeachingAssignmentsForFaculty(facultyId);
         List<CourseProgressDto> result = new ArrayList<>();
-
-        for (TeachingAssignmentDto assignment : assignments) {
+        for (TeachingAssignmentDto assignment : academicsService.getTeachingAssignmentsForFaculty(facultyId)) {
             if (assignment.offering() == null) {
                 continue;
             }
-            CourseProgressDto baseProgress = calculateProgressForOffering(assignment.offering().id(), facultyId, false);
-            // Enrich with exact assignment component (THEORY or LAB) and subSection
+            CourseProgressDto base = calculateProgressForOffering(assignment.offering().id(), facultyId, false);
             result.add(new CourseProgressDto(
-                    baseProgress.offeringId(),
-                    baseProgress.courseId(),
-                    baseProgress.courseCode(),
-                    baseProgress.courseName(),
-                    baseProgress.section(),
-                    assignment.component(),
-                    baseProgress.credits(),
-                    baseProgress.termName(),
-                    baseProgress.currentWeek(),
-                    baseProgress.totalTopics(),
-                    baseProgress.coveredTopics(),
-                    baseProgress.coveragePercentage(),
-                    baseProgress.expectedTopicsByCurrentWeek(),
-                    baseProgress.topicDelta(),
-                    baseProgress.pacingStatus(),
-                    baseProgress.pacingLabel(),
-                    baseProgress.totalSessions(),
-                    baseProgress.heldSessions(),
-                    baseProgress.conductRatePercentage(),
-                    baseProgress.topics(),
-                    baseProgress.ltp(),
+                    base.offeringId(), base.courseId(), base.courseCode(), base.courseName(), base.section(),
+                    assignment.component(), base.credits(), base.termName(), base.currentWeek(), base.totalTopics(),
+                    base.coveredTopics(), base.coveragePercentage(), base.expectedTopicsByCurrentWeek(), base.topicDelta(),
+                    base.pacingStatus(), base.pacingLabel(), base.totalSessions(), base.heldSessions(),
+                    base.conductRatePercentage(), base.topics(), base.ltp(),
                     assignment.subSection() != null ? assignment.subSection() : "ALL",
-                    baseProgress.courseDescription()
-            ));
+                    base.courseDescription()));
         }
-
         return result;
     }
 
@@ -83,80 +60,105 @@ public class PacingCalculationServiceImpl implements PacingCalculationService {
         if (!isCoordinator && facultyId != null) {
             academicsService.assertFacultyAssignedToOffering(facultyId, offeringId);
         }
-
         CourseOfferingDto offering = academicsService.getOfferingById(offeringId);
-        AcademicTermDto activeTerm = academicsService.getActiveTerm();
+        AcademicTermDto term = academicsService.getActiveTerm();
+        return progress(offering, term,
+                academicsService.getSyllabusForCourse(offering.course().id()),
+                sessionRepository.findCoveredTopicIdsForOffering(offeringId),
+                sessionRepository.countTotalSessionsForOffering(offeringId),
+                sessionRepository.countByOfferingIdAndStatus(offeringId, SessionStatus.HELD));
+    }
 
-        // Calculate academic term week (clamped to 1..16)
-        int currentWeek = 11;
-        if (activeTerm != null && activeTerm.startDate() != null) {
-            long days = ChronoUnit.DAYS.between(activeTerm.startDate(), LocalDate.now());
-            currentWeek = Math.max(1, Math.min(16, (int) (days / 7) + 1));
+    @Override
+    public Map<Long, CourseProgressDto> calculateProgressForOfferings(List<CourseOfferingDto> offerings) {
+        AcademicTermDto term = academicsService.getActiveTerm();
+        Map<Long, List<SyllabusTopicDto>> syllabus = academicsService.getSyllabusByCourse();
+
+        Map<Long, Set<Long>> covered = new HashMap<>();
+        for (Object[] pair : sessionRepository.findAllCoveredTopicPairs()) {
+            covered.computeIfAbsent((Long) pair[0], k -> new HashSet<>()).add((Long) pair[1]);
+        }
+        Map<Long, long[]> counts = new HashMap<>(); // [total, held]
+        for (Object[] row : sessionRepository.countAllByOfferingAndStatus()) {
+            long[] c = counts.computeIfAbsent((Long) row[0], k -> new long[2]);
+            long n = (Long) row[2];
+            c[0] += n;
+            if (row[1] == SessionStatus.HELD) {
+                c[1] += n;
+            }
         }
 
-        List<SyllabusTopicDto> allTopics = academicsService.getSyllabusForCourse(offering.course().id());
-        Set<Long> coveredTopicIds = sessionRepository.findCoveredTopicIdsForOffering(offeringId);
+        Map<Long, CourseProgressDto> result = new HashMap<>();
+        for (CourseOfferingDto offering : offerings) {
+            long[] c = counts.getOrDefault(offering.id(), new long[2]);
+            result.put(offering.id(), progress(offering, term,
+                    syllabus.getOrDefault(offering.course().id(), List.of()),
+                    covered.getOrDefault(offering.id(), Set.of()), c[0], c[1]));
+        }
+        return result;
+    }
 
-        int totalTopics = allTopics.size();
-        int coveredTopics = coveredTopicIds.size();
-        int coveragePercentage = totalTopics > 0 ? (int) Math.round((coveredTopics * 100.0) / totalTopics) : 0;
+    /** Teaching week of the active term, 1..16. Without an active term nothing is "due" yet. */
+    static int currentWeek(AcademicTermDto term) {
+        if (term == null || term.startDate() == null) {
+            return 1;
+        }
+        long days = ChronoUnit.DAYS.between(term.startDate(), LocalDate.now());
+        return Math.max(1, Math.min(16, (int) (days / 7) + 1));
+    }
 
-        final int finalCurrentWeek = currentWeek;
-        int expectedTopics = (int) allTopics.stream().filter(t -> t.targetWeek() <= finalCurrentWeek).count();
+    private static CourseProgressDto progress(CourseOfferingDto offering, AcademicTermDto term, List<SyllabusTopicDto> topics,
+                                              Set<Long> coveredIds, long totalSessions, long heldSessions) {
+        int week = currentWeek(term);
+        int total = topics.size();
+        int covered = (int) topics.stream().filter(t -> coveredIds.contains(t.id())).count();
+        int coverage = total > 0 ? (int) Math.round(covered * 100.0 / total) : 0;
+        int expected = (int) topics.stream().filter(t -> t.targetWeek() <= week).count();
+        int delta = covered - expected;
 
-        int topicDelta = coveredTopics - expectedTopics;
-        String pacingStatus;
-        String pacingLabel;
-
-        if (allTopics.isEmpty()) {
-            pacingStatus = "ON_TRACK";
-            pacingLabel = "No syllabus configured";
-        } else if (topicDelta > 0) {
-            pacingStatus = "AHEAD";
-            pacingLabel = "Ahead by " + topicDelta + " topic" + (topicDelta > 1 ? "s" : "");
-        } else if (topicDelta == 0) {
-            pacingStatus = "ON_TRACK";
-            pacingLabel = "On Track (Week " + currentWeek + ")";
+        String status;
+        String label;
+        if (topics.isEmpty()) {
+            status = "ON_TRACK";
+            label = "No syllabus configured";
+        } else if (delta > 0) {
+            status = "AHEAD";
+            label = "Ahead by " + delta + " topic" + (delta > 1 ? "s" : "");
+        } else if (delta == 0) {
+            status = "ON_TRACK";
+            label = "On Track (Week " + week + ")";
         } else {
-            pacingStatus = "BEHIND";
-            int behindCount = Math.abs(topicDelta);
-            pacingLabel = "Behind by " + behindCount + " topic" + (behindCount > 1 ? "s" : "");
+            status = "BEHIND";
+            label = "Behind by " + -delta + " topic" + (delta < -1 ? "s" : "");
         }
 
-        long totalSessions = sessionRepository.countTotalSessionsForOffering(offeringId);
-        long heldSessions = sessionRepository.countByOfferingIdAndStatus(offeringId, SessionStatus.HELD);
-        int conductRatePercentage = totalSessions > 0
-                ? (int) Math.round((heldSessions * 100.0) / totalSessions)
-                : 100;
-
-        List<SyllabusTopicProgressDto> topicProgressList = allTopics.stream()
-                .map(t -> SyllabusTopicProgressDto.fromTopic(t, coveredTopicIds.contains(t.id())))
-                .collect(Collectors.toList());
+        List<SyllabusTopicProgressDto> topicProgress = topics.stream()
+                .map(t -> SyllabusTopicProgressDto.fromTopic(t, coveredIds.contains(t.id())))
+                .toList();
 
         return new CourseProgressDto(
                 offering.id(),
                 offering.course().id(),
                 offering.course().code(),
                 offering.course().name(),
-                "Sec " + offering.section(),
-                "THEORY",
+                offering.section(),
+                "LECTURE",
                 offering.course().credits(),
-                activeTerm != null ? activeTerm.name() : offering.termName(),
-                currentWeek,
-                totalTopics,
-                coveredTopics,
-                coveragePercentage,
-                expectedTopics,
-                topicDelta,
-                pacingStatus,
-                pacingLabel,
+                term != null ? term.name() : offering.termName(),
+                week,
+                total,
+                covered,
+                coverage,
+                expected,
+                delta,
+                status,
+                label,
                 totalSessions,
                 heldSessions,
-                conductRatePercentage,
-                topicProgressList,
-                offering.course().ltp() != null ? offering.course().ltp() : "3-0-0",
+                totalSessions > 0 ? (int) Math.round(heldSessions * 100.0 / totalSessions) : 0,
+                topicProgress,
+                offering.course().ltp() != null ? offering.course().ltp() : "",
                 "ALL",
-                offering.course().description()
-        );
+                offering.course().description());
     }
 }

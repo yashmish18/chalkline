@@ -27,6 +27,16 @@ public class AppUser {
     @Column(name = "active", nullable = false)
     private boolean active = true;
 
+    /** BCrypt hash of the coordinator password; null until the person completes coordinator setup. */
+    @Column(name = "coordinator_password_hash", length = 100)
+    private String coordinatorPasswordHash;
+
+    @Column(name = "coordinator_failed_attempts", nullable = false)
+    private int coordinatorFailedAttempts;
+
+    @Column(name = "coordinator_locked_until")
+    private Instant coordinatorLockedUntil;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -96,6 +106,30 @@ public class AppUser {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public String getCoordinatorPasswordHash() {
+        return coordinatorPasswordHash;
+    }
+
+    public void setCoordinatorPasswordHash(String coordinatorPasswordHash) {
+        this.coordinatorPasswordHash = coordinatorPasswordHash;
+    }
+
+    public int getCoordinatorFailedAttempts() {
+        return coordinatorFailedAttempts;
+    }
+
+    public void setCoordinatorFailedAttempts(int coordinatorFailedAttempts) {
+        this.coordinatorFailedAttempts = coordinatorFailedAttempts;
+    }
+
+    public Instant getCoordinatorLockedUntil() {
+        return coordinatorLockedUntil;
+    }
+
+    public void setCoordinatorLockedUntil(Instant coordinatorLockedUntil) {
+        this.coordinatorLockedUntil = coordinatorLockedUntil;
     }
 
     public Instant getCreatedAt() {

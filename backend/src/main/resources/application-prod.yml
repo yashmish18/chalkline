@@ -1,0 +1,84 @@
+# Production. Every secret comes from the environment; there are no defaults to fall back on.
+server:
+  # Hosts such as Render tell the app which port to listen on through $PORT.
+  port: ${PORT:8080}
+  forward-headers-strategy: framework   # behind the nginx reverse proxy (X-Forwarded-*)
+  tomcat:
+    # Send "Location: /" instead of an absolute URL, so the redirect after sign-in always lands on the
+    # host the browser used (the Vercel domain when Vercel proxies to Render), whatever the proxy forwards.
+    use-relative-redirects: true
+  servlet:
+    session:
+      timeout: 8h
+      cookie:
+        secure: true
+        http-only: true
+        same-site: lax
+
+spring:
+  datasource:
+    # Either a full JDBC URL, or DB_HOST / DB_PORT / DB_NAME (Render Blueprint, see render.yaml).
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+  mail:
+    host: ${SPRING_MAIL_HOST}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${SPRING_MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${SPRING_MAIL_STARTTLS:true}
+  security:
+    oauth2:
+      client:
+        registration:
+          entra:
+            client-id: ${ENTRA_CLIENT_ID}
+            client-secret: ${ENTRA_CLIENT_SECRET}
+            scope: openid,profile,email
+            # APP_PUBLIC_URL (e.g. https://your-app.vercel.app, no trailing slash) pins the public host
+            # when a proxy does not pass X-Forwarded-Host reliably; otherwise the request's host is used.
+            redirect-uri: "${APP_PUBLIC_URL:{baseUrl}}/login/oauth2/code/{registrationId}"
+        provider:
+          entra:
+            issuer-uri: https://login.microsoftonline.com/${ENTRA_TENANT_ID}/v2.0
+            user-name-attribute: preferred_username
+
+app:
+  auth:
+    dev-mode: false
+    bypass-key: ""
+    allowed-email-domains: ${APP_ALLOWED_EMAIL_DOMAINS:jklu.edu.in}
+  admin:
+    destructive-actions: false
+  security:
+    csrf: true
+  storage:
+    upload-dir: ${STORAGE_UPLOAD_DIR:/data/uploads}
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+management:
+  health:
+    mail:
+      enabled: false   # a mail outage must not mark the app unhealthy (Render would stop routing to it)
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    root: INFO
+    org.hibernate.SQL: WARN

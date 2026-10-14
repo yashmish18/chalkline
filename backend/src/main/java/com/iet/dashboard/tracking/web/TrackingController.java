@@ -37,6 +37,11 @@ public class TrackingController {
         return ResponseEntity.ok(trackingService.getFacultyComplianceSummary());
     }
 
+    @GetMapping("/faculty/{facultyId}/profile")
+    public ResponseEntity<FacultyProfileDto> getFacultyProfile(@PathVariable Long facultyId) {
+        return ResponseEntity.ok(trackingService.getFacultyProfile(facultyId));
+    }
+
     @GetMapping("/tracking/overview-summary")
     public ResponseEntity<OverviewSummaryDto> getOverviewSummary() {
         return ResponseEntity.ok(trackingService.getOverviewSummary());
@@ -47,10 +52,11 @@ public class TrackingController {
         return ResponseEntity.ok(trackingService.getComplianceMatrix());
     }
 
-    @GetMapping("/tracking/audit-logs")
-    public ResponseEntity<List<AuditLogDto>> getAuditLogs(@RequestParam(defaultValue = "20") int limit) {
-        return ResponseEntity.ok(trackingService.getRecentAuditLogs(limit));
+    @GetMapping("/tracking/irregularities-audit")
+    public ResponseEntity<IrregularityAuditDto> getIrregularitiesAudit() {
+        return ResponseEntity.ok(trackingService.getIrregularitiesAudit());
     }
+
 
     @GetMapping("/reports/submissions/export")
     public ResponseEntity<byte[]> exportSubmissionsReport() throws IOException {

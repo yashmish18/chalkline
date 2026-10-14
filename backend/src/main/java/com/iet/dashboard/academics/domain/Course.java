@@ -37,6 +37,14 @@ public class Course {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    /** CORE, DEPARTMENT_ELECTIVE or OPEN_ELECTIVE. */
+    @Column(name = "category", nullable = false, length = 40)
+    private String category = "CORE";
+
+    /** Owning department (reference data); null only for rows predating the slice. */
+    @Column(name = "department_id")
+    private Long departmentId;
+
     public Course() {
     }
 
@@ -66,6 +74,14 @@ public class Course {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = (category != null && !category.isBlank()) ? category : "CORE";
     }
 
     public String getCode() {
@@ -138,5 +154,13 @@ public class Course {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Long getDepartmentId() {
+        return departmentId;
+    }
+
+    public void setDepartmentId(Long departmentId) {
+        this.departmentId = departmentId;
     }
 }

@@ -2,8 +2,11 @@ package com.iet.dashboard.academics.web;
 
 import com.iet.dashboard.academics.domain.AcademicDocumentCategory;
 import com.iet.dashboard.academics.service.AcademicDocumentService;
+import com.iet.dashboard.academics.service.AcademicsService;
+import com.iet.dashboard.directory.service.FacultyService;
 import com.iet.dashboard.identity.service.UserService;
 import com.iet.dashboard.identity.web.UserDto;
+import com.iet.dashboard.shared.error.ForbiddenException;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -23,10 +26,19 @@ public class AcademicDocumentController {
 
     private final AcademicDocumentService documentService;
     private final UserService userService;
+    private final FacultyService facultyService;
+    private final AcademicsService academicsService;
 
-    public AcademicDocumentController(AcademicDocumentService documentService, UserService userService) {
+    public AcademicDocumentController(
+            AcademicDocumentService documentService,
+            UserService userService,
+            FacultyService facultyService,
+            AcademicsService academicsService
+    ) {
         this.documentService = documentService;
         this.userService = userService;
+        this.facultyService = facultyService;
+        this.academicsService = academicsService;
     }
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -40,6 +52,13 @@ public class AcademicDocumentController {
             @RequestParam(value = "courseId", required = false) Long courseId
     ) {
         UserDto currentUser = userService.getCurrentUser();
+
+        // Server-side ownership: faculty may only upload course documents for a course they
+        // actually teach. Coordinators manage every course.
+        if (courseId != null && "FACULTY".equals(currentUser.role())) {
+            assertFacultyTeachesCourse(currentUser, courseId);
+        }
+
         AcademicDocumentDto result = documentService.uploadDocument(
                 file,
                 category,
@@ -51,6 +70,19 @@ public class AcademicDocumentController {
                 currentUser.name()
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
+    }
+
+    private void assertFacultyTeachesCourse(UserDto currentUser, Long courseId) {
+        Long facultyId = facultyService.getFacultyByUserId(currentUser.id())
+                .orElseThrow(() -> new ForbiddenException("Faculty profile not found for current user"))
+                .id();
+        boolean teachesCourse = academicsService.getTeachingAssignmentsForFaculty(facultyId).stream()
+                .anyMatch(assignment -> assignment.offering() != null
+                        && assignment.offering().course() != null
+                        && assignment.offering().course().id().equals(courseId));
+        if (!teachesCourse) {
+            throw new ForbiddenException("You can only upload course documents for a course you teach");
+        }
     }
 
     @GetMapping

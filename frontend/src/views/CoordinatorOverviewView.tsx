@@ -1,26 +1,53 @@
-import { useState, useEffect, useCallback } from 'react';
-import { OverviewSummaryDto, ComplianceMatrixDto } from '../types/tracking';
-import {
-  TrendingUp,
-  Clock,
-  AlertTriangle,
-  CheckCircle2,
-  BellRing,
-  RefreshCw,
-  BarChart3,
-  LineChart as LineChartIcon,
-  Table as TableIcon,
-  ShieldAlert,
-  Send
-} from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { OverviewSummaryDto, ComplianceMatrixDto, FacultyPerformanceStatus } from '../types/tracking';
+import { RefreshCw, Check, AlertTriangle, CheckCircle2, Settings2 } from 'lucide-react';
+import { sectionLabel } from '../lib/labels';
+import { SemesterSettingsModal } from '../components/SemesterSettingsModal';
+import { CourseReportBody, FacultyReportBody, ReportPanel } from '../components/ReportPanels';
+import { CriticalCasesTable, MismatchTable } from '../components/ReportParts';
+import type { CriticalCase, SemesterReport } from '../types/reports';
+
+type Tab = 'performance' | 'cases' | 'mismatches' | 'milestones';
+type RankingItem = OverviewSummaryDto['worstFirstCoverage'][number];
+type FacultyRow = OverviewSummaryDto['facultyPerformance'][number];
+
+/** One colour per faculty status, shared by the status chart, its legend and the table chips. */
+const STATUS: Record<FacultyPerformanceStatus, { label: string; color: string; chip: string }> = {
+  NOT_LOGGING: { label: 'Not logging', color: 'var(--danger)', chip: 'chip chip-bad' },
+  BEHIND: { label: 'Behind pace', color: 'var(--warn)', chip: 'chip chip-warn' },
+  ON_TRACK: { label: 'On track', color: 'var(--accent)', chip: 'chip chip-ok' },
+  NO_TIMETABLE: { label: 'No timetable', color: 'var(--hairline-tertiary)', chip: 'chip' },
+  NO_DATA: { label: 'Nothing due yet', color: 'var(--surface-5)', chip: 'chip' },
+  NOT_STARTED: { label: 'Semester not started', color: 'var(--surface-5)', chip: 'chip' },
+};
+const STATUS_ORDER: FacultyPerformanceStatus[] = ['NOT_LOGGING', 'BEHIND', 'ON_TRACK', 'NO_TIMETABLE', 'NO_DATA', 'NOT_STARTED'];
+
+function lastLog(days: number | null): string {
+  if (days === null) return 'Never';
+  if (days <= 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  return `${days} days ago`;
+}
+
+function formatDate(iso: string | null): string {
+  return iso ? new Date(`${iso}T00:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '';
+}
 
 export function CoordinatorOverviewView() {
+  const [tab, setTab] = useState<Tab>('performance');
   const [summary, setSummary] = useState<OverviewSummaryDto | null>(null);
   const [matrix, setMatrix] = useState<ComplianceMatrixDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [remindToast, setRemindToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
   const [remindingId, setRemindingId] = useState<string | null>(null);
+  const [showAllSections, setShowAllSections] = useState(false);
+  const [openFacultyId, setOpenFacultyId] = useState<number | null>(null);
+  const [editingTerm, setEditingTerm] = useState(false);
+  const [report, setReport] = useState<SemesterReport | null>(null);
+  const [openCourse, setOpenCourse] = useState<string | null>(null);
+  const [showAllFaculty, setShowAllFaculty] = useState(false);
+  const [cohortFilter, setCohortFilter] = useState<number | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -28,21 +55,17 @@ export function CoordinatorOverviewView() {
     try {
       const [sumRes, matRes] = await Promise.all([
         fetch('/api/tracking/overview-summary', { credentials: 'include' }),
-        fetch('/api/tracking/compliance-matrix', { credentials: 'include' })
+        fetch('/api/tracking/compliance-matrix', { credentials: 'include' }),
       ]);
-
-      if (!sumRes.ok || !matRes.ok) {
-        throw new Error('Failed to fetch coordinator overview data');
-      }
-
-      const sumData: OverviewSummaryDto = await sumRes.json();
-      const matData: ComplianceMatrixDto = await matRes.json();
-
-      setSummary(sumData);
-      setMatrix(matData);
+      if (!sumRes.ok) throw new Error('Could not load the overview. Check that the backend is running.');
+      setSummary(await sumRes.json());
+      setMatrix(matRes.ok ? await matRes.json() : null);
+      fetch('/api/reports/semester', { credentials: 'include' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then(setReport)
+        .catch(() => setReport(null));
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error connecting to analytics service';
-      setError(msg);
+      setError(err instanceof Error ? err.message : 'Could not load the overview.');
     } finally {
       setLoading(false);
     }
@@ -52,427 +75,276 @@ export function CoordinatorOverviewView() {
     fetchData();
   }, [fetchData]);
 
-  const handleRemindFaculty = async (item: OverviewSummaryDto['needsAttention'][0]) => {
-    if (!item.facultyId) {
-      alert('No faculty member linked to this item');
-      return;
-    }
-
-    setRemindingId(item.id);
+  const remind = async (c: CriticalCase) => {
+    if (!c.facultyId) return;
+    setRemindingId(c.ref);
     try {
       const res = await fetch('/api/notifications/remind-faculty', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          facultyId: item.facultyId,
-          title: `Action Required: ${item.title}`,
-          message: `The Department Coordinator has requested your attention: ${item.subtitle}. Please log today's session or complete the required submission.`
-        })
+          facultyId: c.facultyId,
+          title: `Action required: ${c.category} (${c.entity})`,
+          message: `${c.description}. ${c.requiredAction}`,
+        }),
       });
-
-      if (!res.ok) {
-        throw new Error('Failed to dispatch reminder');
-      }
-
-      setRemindToast(`Official reminder dispatched to ${item.facultyName} via in-app alert & email.`);
-      setTimeout(() => setRemindToast(null), 5000);
+      if (!res.ok) throw new Error('Reminder could not be sent.');
+      setToast(`Reminder sent to ${c.facultyName} (in-app and email).`);
+      setTimeout(() => setToast(null), 4000);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to send reminder';
-      alert(msg);
+      setToast(err instanceof Error ? err.message : 'Reminder could not be sent.');
     } finally {
       setRemindingId(null);
     }
   };
 
-  // SVG Chart Helper for Conduct Trajectory
-  const renderConductLineChart = (trajectory: OverviewSummaryDto['conductTrajectory']) => {
-    if (!trajectory || trajectory.length === 0) return null;
-
-    const width = 500;
-    const height = 160;
-    const padding = 28;
-
-    const minX = 1;
-    const maxX = Math.max(11, trajectory.length);
-    const minY = 60; // Conduct rate floor for visual sensitivity
-    const maxY = 100;
-
-    const getX = (week: number) => padding + ((week - minX) / (maxX - minX)) * (width - 2 * padding);
-    const getY = (rate: number) => height - padding - ((rate - minY) / (maxY - minY)) * (height - 2 * padding);
-
-    const points = trajectory.map((p) => `${getX(p.weekNumber)},${getY(p.conductRate)}`).join(' ');
-
-    return (
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-44 overflow-visible">
-        {/* Horizontal Guide Lines */}
-        {[70, 80, 90, 100].map((level) => {
-          const y = getY(level);
-          return (
-            <g key={level}>
-              <line x1={padding} y1={y} x2={width - padding} y2={y} stroke="#E2E8F0" strokeDasharray="3 3" />
-              <text x={padding - 6} y={y + 3} textAnchor="end" fontSize="9" fill="#94A3B8" fontWeight="600">
-                {level}%
-              </text>
-            </g>
-          );
-        })}
-
-        {/* Shaded Area under Curve */}
-        <polygon
-          points={`${getX(minX)},${height - padding} ${points} ${getX(trajectory[trajectory.length - 1].weekNumber)},${height - padding}`}
-          fill="url(#conductGradient)"
-          opacity="0.25"
-        />
-
-        {/* Gradient Def */}
-        <defs>
-          <linearGradient id="conductGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#2563EB" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#2563EB" stopOpacity="0.0" />
-          </linearGradient>
-        </defs>
-
-        {/* Trend Polyline */}
-        <polyline fill="none" stroke="#2563EB" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" points={points} />
-
-        {/* Data Points */}
-        {trajectory.map((p) => {
-          const cx = getX(p.weekNumber);
-          const cy = getY(p.conductRate);
-          return (
-            <g key={p.weekNumber} className="group">
-              <circle
-                cx={cx}
-                cy={cy}
-                r="3.5"
-                fill={p.conductRate < 85 ? '#DC2626' : '#2563EB'}
-                stroke="#FFFFFF"
-                strokeWidth="1.5"
-                className="transition-all hover:r-5 cursor-pointer"
-              />
-              <text
-                x={cx}
-                y={height - padding + 14}
-                textAnchor="middle"
-                fontSize="9"
-                fill="#64748B"
-                fontWeight="500"
-              >
-                W{p.weekNumber}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-    );
-  };
+  const rawRanking = summary?.worstFirstCoverage ?? [];
+  const ranking = useMemo(() => {
+    if (cohortFilter === null) return rawRanking;
+    return rawRanking.filter((r) => (r.yearOfStudy || Math.max(1, Math.floor((r.semester + 1) / 2))) === cohortFilter);
+  }, [rawRanking, cohortFilter]);
+  const behind = useMemo(() => ranking.filter((r) => r.syllabusConfigured && r.pacingStatus === 'BEHIND'), [ranking]);
+  const term = summary?.term;
+  const kpis = summary?.kpis;
+  const dash = loading ? '…' : '—';
 
   return (
-    <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="bg-white rounded-lg border border-border p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-bold text-primary tracking-wide uppercase font-sans">
-            <BarChart3 className="w-4 h-4" />
-            Academic Operations — Overview
-          </div>
-          <h1 className="font-sans text-2xl font-bold text-slate-900 mt-1">
-            Overview Dashboard
-          </h1>
-          <p className="text-xs text-slate-600 mt-1">
-            Read-and-review surface derived dynamically from faculty daily class logs. Zero typed numbers.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={fetchData}
-            className="p-2 border border-border rounded-md hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-colors"
-            title="Refresh analytics"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-primary' : ''}`} />
-          </button>
-          <div className="px-3.5 py-1.5 rounded-md bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700">
-            Active Term: <span className="text-primary font-bold">Semester 1 (2026-27)</span>
-          </div>
-        </div>
-      </div>
-
-      {remindToast && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-md flex items-center justify-between animate-in fade-in duration-150">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span>{remindToast}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setRemindToast(null)}
-            className="text-emerald-600 hover:text-emerald-900 font-bold"
-          >
-            ×
-          </button>
-        </div>
-      )}
-
-      {error && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-900 px-4 py-3 rounded-lg text-xs font-medium flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-            <span>{error}</span>
-          </div>
-          <button type="button" onClick={fetchData} className="font-bold underline text-rose-800 hover:text-rose-950 ml-4">
-            Retry
-          </button>
-        </div>
-      )}
-
-      {/* 1 Row of 4 KPI Numbers */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* KPI 1 */}
-        <div className="bg-white rounded-lg border border-border p-5 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-semibold uppercase tracking-wider">Avg Syllabus Coverage</span>
-            <TrendingUp className="w-4 h-4 text-primary" />
-          </div>
-          <div className="text-2xl font-bold font-sans text-slate-900 mt-2">
-            {loading ? '—' : `${summary?.kpis.averageCoveragePercentage ?? 0}%`}
-          </div>
-          <p className="text-xs text-slate-500 mt-1">Derived from verified class topics</p>
-          <div className="w-full bg-slate-100 rounded-full h-1.5 mt-3 overflow-hidden">
-            <div
-              className="bg-primary h-1.5 rounded-full transition-all duration-500"
-              style={{ width: `${summary?.kpis.averageCoveragePercentage ?? 0}%` }}
-            />
-          </div>
-        </div>
-
-        {/* KPI 2 */}
-        <div className="bg-white rounded-lg border border-border p-5 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-semibold uppercase tracking-wider">Avg Conduct Rate</span>
-            <Clock className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div className="text-2xl font-bold font-sans text-slate-900 mt-2">
-            {loading ? '—' : `${summary?.kpis.averageConductRatePercentage ?? 0}%`}
-          </div>
-          <p className="text-xs text-slate-500 mt-1">Held vs scheduled teaching sessions</p>
-          <div className="w-full bg-slate-100 rounded-full h-1.5 mt-3 overflow-hidden">
-            <div
-              className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500"
-              style={{ width: `${summary?.kpis.averageConductRatePercentage ?? 0}%` }}
-            />
-          </div>
-        </div>
-
-        {/* KPI 3 */}
-        <div className="bg-white rounded-lg border border-border p-5 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-semibold uppercase tracking-wider">Courses Lagging Behind</span>
-            <AlertTriangle className="w-4 h-4 text-amber-500" />
-          </div>
-          <div className="text-2xl font-bold font-sans text-slate-900 mt-2">
-            {loading ? '—' : summary?.kpis.coursesBehindPacing ?? 0}
-          </div>
-          <p className="text-xs text-slate-500 mt-1">Below target weekly topic pacing</p>
-          <div className="mt-3">
-            {(summary?.kpis.coursesBehindPacing ?? 0) > 0 ? (
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                Remedial Action Recommended
+    <div className="space-y-10">
+      {/* Semester line + tabs */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-3 text-[14px]">
+          {term?.name ? (
+            <>
+              <span className="font-medium">{term.name}</span>
+              <span className="text-[var(--ink-subtle)] num">
+                {term.started ? `Week ${term.currentWeek} of ${term.totalWeeks}` : `Starts ${formatDate(term.startDate)}`}
+                {' · '}
+                {formatDate(term.startDate)} – {formatDate(term.endDate)}
               </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                All Courses On Track
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* KPI 4 */}
-        <div className="bg-white rounded-lg border border-border p-5 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-semibold uppercase tracking-wider">Actionable Anomalies</span>
-            <ShieldAlert className="w-4 h-4 text-rose-500" />
-          </div>
-          <div className="text-2xl font-bold font-sans text-slate-900 mt-2">
-            {loading ? '—' : summary?.kpis.needsAttentionCount ?? 0}
-          </div>
-          <p className="text-xs text-slate-500 mt-1">Pending items in Needs Attention</p>
-          <div className="mt-3">
-            {(summary?.kpis.needsAttentionCount ?? 0) > 0 ? (
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
-                Action Required
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
-                Zero Escalations
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Visuals Grid: 2 Columns (Worst-First Bar Chart & Weekly Conduct Trajectory) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Visual 1: Worst-First Coverage Bar Chart */}
-        <div className="bg-white rounded-lg border border-border p-5 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-border">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-primary" />
-              <h2 className="font-sans text-sm font-bold text-slate-900 uppercase tracking-wider">
-                Syllabus Coverage (Worst First)
-              </h2>
-            </div>
-            <span className="text-[11px] text-slate-500 font-medium">Actual vs Target</span>
-          </div>
-
-          {loading ? (
-            <div className="p-8 text-center text-xs text-slate-500">Loading course coverage ranking...</div>
-          ) : summary?.worstFirstCoverage.length === 0 ? (
-            <div className="p-8 text-center text-xs text-slate-500">No active course offerings found.</div>
+            </>
           ) : (
-            <div className="space-y-3.5">
-              {summary?.worstFirstCoverage.map((item) => (
-                <div key={item.offeringId} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <div>
-                      <span className="font-bold text-slate-900">{item.courseCode}</span>
-                      <span className="text-slate-500 ml-1.5">({item.section})</span>
-                      <span className="text-[11px] text-slate-500 ml-2">— {item.facultyName}</span>
-                    </div>
+            <span className="text-[var(--warn-text)]">No semester set — set the dates so pacing and logging can be measured.</span>
+          )}
+          <button type="button" onClick={() => setEditingTerm(true)} className="btn btn-quiet h-7 px-2 text-[12px]">
+            <Settings2 className="w-3.5 h-3.5" /> Semester
+          </button>
+        </div>
+        <div className="flex items-center gap-2">
+          <div role="tablist" className="inline-flex rounded-lg border border-[var(--hairline)] bg-white p-0.5 text-[13px]">
+            {([
+              ['performance', 'Performance'],
+              ['cases', `Cases${report ? ` · ${report.criticalCases.length}` : ''}`],
+              ['mismatches', `Mismatches${report ? ` · ${report.mismatches.length}` : ''}`],
+              ['milestones', 'Milestones'],
+            ] as const).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={tab === id}
+                onClick={() => setTab(id)}
+                className={`px-3 h-7 rounded-md ${tab === id ? 'bg-[var(--ink)] text-white' : 'text-[var(--ink-muted)] hover:text-[var(--ink)]'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <button type="button" onClick={fetchData} className="btn w-8 px-0" aria-label="Refresh">
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      </div>
 
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                          item.pacingStatus === 'BEHIND'
-                            ? 'bg-rose-100 text-rose-800'
-                            : 'bg-emerald-100 text-emerald-800'
-                        }`}
-                      >
-                        {item.coveragePercentage}% ({item.coveredTopics}/{item.totalTopics})
-                      </span>
-                    </div>
-                  </div>
+      {toast && (
+        <div role="status" className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-[13px] text-emerald-800">
+          <CheckCircle2 className="w-4 h-4" /> {toast}
+        </div>
+      )}
+      {error && (
+        <div role="alert" className="flex items-center justify-between rounded-lg border border-rose-200 bg-rose-50 px-4 py-2.5 text-[13px] text-rose-800">
+          <span className="inline-flex items-center gap-2"><AlertTriangle className="w-4 h-4" /> {error}</span>
+          <button type="button" onClick={fetchData} className="font-medium underline">Retry</button>
+        </div>
+      )}
 
-                  {/* Dual Bar: Actual (Foreground) vs Expected Target (Background) */}
-                  <div className="w-full bg-slate-100 rounded-full h-2 relative overflow-hidden">
-                    <div
-                      className="absolute top-0 bottom-0 bg-slate-300 opacity-60 rounded-full"
-                      style={{ width: `${Math.min(item.expectedPercentage, 100)}%` }}
-                      title={`Target Expected: ${item.expectedPercentage}%`}
-                    ></div>
-                    <div
-                      className={`h-full rounded-full relative ${
-                        item.coveragePercentage < 60 ? 'bg-amber-500' : 'bg-primary'
-                      }`}
-                      style={{ width: `${Math.min(item.coveragePercentage, 100)}%` }}
-                    ></div>
-                  </div>
-                </div>
+      {tab === 'performance' && (
+        <>
+          {/* Four numbers, lots of air */}
+          <section className="grid grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-8">
+            <BigNumber
+              label="Classes logged"
+              value={kpis?.loggingRatePercentage != null ? `${kpis.loggingRatePercentage}%` : dash}
+              note={kpis?.loggingRatePercentage != null ? 'of classes the timetable scheduled so far' : 'measured once a timetable is uploaded'}
+            />
+            <BigNumber
+              label="Syllabus covered"
+              value={kpis?.averageCoveragePercentage != null ? `${kpis.averageCoveragePercentage}%` : dash}
+              note={kpis?.averageCoveragePercentage != null ? 'average across paced sections' : 'measured once syllabi are loaded'}
+            />
+            <BigNumber
+              label="Sections behind plan"
+              value={kpis ? String(kpis.coursesBehindPacing) : dash}
+              note={`of ${ranking.length} sections`}
+              tone={kpis && kpis.coursesBehindPacing > 0 ? 'warn' : undefined}
+            />
+            <BigNumber
+              label="Course seats"
+              value={kpis?.totalStudents ? kpis.totalStudents.toLocaleString() : dash}
+              note={kpis?.totalStudents ? 'section strengths added up across courses' : 'add Section Students to the sheet'}
+            />
+          </section>
+
+          {/* Charts */}
+          <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <ChartCard title="Faculty status" caption={`${summary?.facultyPerformance.length ?? 0} faculty`}>
+              <StatusBar rows={summary?.facultyPerformance ?? []} />
+            </ChartCard>
+            <ChartCard title="Classes per week" caption="held · cancelled">
+              <WeeklyBars points={summary?.conductTrajectory ?? []} />
+            </ChartCard>
+            <ChartCard title="Weekly load" caption="hours per faculty, incl. PBL">
+              <LoadHistogram rows={summary?.facultyPerformance ?? []} />
+            </ChartCard>
+          </section>
+
+          {/* The five most urgent cases; the Cases tab has the full ledger */}
+          {report && report.criticalCases.length > 0 && (
+            <section>
+              <SectionTitle
+                title="Most urgent"
+                count={report.criticalCases.length}
+                action={
+                  <button type="button" onClick={() => setTab('cases')} className="text-[13px] text-[var(--accent)] hover:underline">
+                    All cases
+                  </button>
+                }
+              />
+              <div className="card px-5 py-4 overflow-x-auto">
+                <CriticalCasesTable cases={report.criticalCases.slice(0, 5)} onFaculty={setOpenFacultyId} onRemind={remind} busyRef={remindingId} />
+              </div>
+            </section>
+          )}
+
+          {/* Priority: only sections behind their plan */}
+          <section>
+            <SectionTitle
+              title="Sections behind plan"
+              count={behind.length}
+              action={
+                ranking.length > 0 && (
+                  <button type="button" onClick={() => setShowAllSections((v) => !v)} className="text-[13px] text-[var(--accent)] hover:underline">
+                    {showAllSections ? 'Show only behind' : `Show all ${ranking.length}`}
+                  </button>
+                )
+              }
+            />
+            {/* Cohort filter pills */}
+            <div className="mb-4 flex items-center gap-2 flex-wrap">
+              <span className="text-[12px] text-[var(--ink-subtle)]">Cohort:</span>
+              {[
+                { label: 'All Cohorts', val: null },
+                { label: '1st Year', val: 1 },
+                { label: '2nd Year', val: 2 },
+                { label: '3rd Year', val: 3 },
+                { label: '4th Year', val: 4 },
+              ].map((c) => (
+                <button
+                  key={c.label}
+                  type="button"
+                  onClick={() => setCohortFilter(c.val)}
+                  className={`px-2.5 py-1 text-[12px] rounded-md transition-colors ${
+                    cohortFilter === c.val
+                      ? 'bg-[var(--ink)] text-white font-medium'
+                      : 'bg-white text-[var(--ink-muted)] border border-[var(--hairline)] hover:border-[var(--ink-muted)]'
+                  }`}
+                >
+                  {c.label}
+                </button>
               ))}
             </div>
-          )}
-        </div>
+            {(showAllSections ? ranking : behind).length === 0 ? (
+              <p className="card px-5 py-10 text-center text-[14px] text-[var(--ink-subtle)]">
+                {kpis && kpis.offeringsWithoutSyllabus === ranking.length && ranking.length > 0
+                  ? 'No syllabus is loaded yet, so no section can fall behind. Load syllabi from Course Allocations.'
+                  : 'Every section is on or ahead of its plan.'}
+              </p>
+            ) : (
+              <ol className="card divide-y divide-[var(--hairline-soft)]">
+                {(showAllSections ? ranking : behind).map((item) => (
+                  <SectionRow key={item.offeringId} item={item} onCourse={setOpenCourse} />
+                ))}
+              </ol>
+            )}
+          </section>
 
-        {/* Visual 2: Weekly Conduct Trajectory Line Chart */}
-        <div className="bg-white rounded-lg border border-border p-5 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-border">
-            <div className="flex items-center gap-2">
-              <LineChartIcon className="w-4 h-4 text-primary" />
-              <h2 className="font-sans text-sm font-bold text-slate-900 uppercase tracking-wider">
-                Weekly Conduct Rate Trajectory
-              </h2>
-            </div>
-            <span className="text-[11px] text-slate-500 font-medium">Weeks 1 – 11</span>
-          </div>
-
-          {loading ? (
-            <div className="p-8 text-center text-xs text-slate-500">Loading conduct trend...</div>
-          ) : (
-            <div className="pt-2">
-              {renderConductLineChart(summary?.conductTrajectory || [])}
-              <div className="flex items-center justify-between text-[11px] text-slate-500 border-t border-border/80 pt-3 mt-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block"></span>
-                  <span>Held Lecture Rate (%)</span>
-                </div>
-                <span>Minimum Target: 80%</span>
+          {/* Faculty accountability */}
+          <section>
+            <SectionTitle title="Faculty" count={summary?.facultyPerformance.length ?? 0} />
+            {!summary || summary.facultyPerformance.length === 0 ? (
+              <p className="card px-5 py-10 text-center text-[14px] text-[var(--ink-subtle)]">No allocations yet.</p>
+            ) : (
+              <div className="card overflow-x-auto">
+                <table className="min-w-full text-[13px]">
+                  <thead className="text-left text-[var(--ink-subtle)] border-b border-[var(--hairline)]">
+                    <tr>
+                      <th className="px-5 py-3 font-medium">Name</th>
+                      <th className="px-3 py-3 font-medium">Status</th>
+                      <th className="px-3 py-3 font-medium text-right">Load</th>
+                      <th className="px-3 py-3 font-medium w-48">Classes logged</th>
+                      <th className="px-3 py-3 font-medium">Last log</th>
+                      <th className="px-5 py-3 font-medium">Syllabus</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--hairline-soft)]">
+                    {(showAllFaculty ? summary.facultyPerformance : summary.facultyPerformance.slice(0, 12)).map((row) => (
+                      <FacultyTableRow key={row.facultyId} row={row} onOpen={() => setOpenFacultyId(row.facultyId)} />
+                    ))}
+                  </tbody>
+                </table>
+                {summary.facultyPerformance.length > 12 && (
+                  <div className="px-5 py-3 border-t border-[var(--hairline)]">
+                    <button type="button" onClick={() => setShowAllFaculty((v) => !v)} className="text-[13px] text-[var(--accent)] hover:underline">
+                      {showAllFaculty ? 'Show fewer' : `Show all ${summary.facultyPerformance.length}`}
+                    </button>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
-        </div>
-      </div>
+            )}
+          </section>
+        </>
+      )}
 
-      {/* Visual 3: Compliance Matrix & One Actionable List */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Visual 3: Compliance Matrix (2 cols) */}
-        <div className="lg:col-span-2 bg-white rounded-lg border border-border shadow-xs overflow-hidden">
-          <div className="p-5 border-b border-border flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <TableIcon className="w-4 h-4 text-primary" />
-              <h2 className="font-sans text-sm font-bold text-slate-900 uppercase tracking-wider">
-                Compliance Matrix
-              </h2>
-            </div>
-            <span className="text-xs text-slate-500">4 Core Milestones</span>
-          </div>
-
-          {loading ? (
-            <div className="p-8 text-center text-xs text-slate-500">Loading compliance matrix...</div>
-          ) : !matrix || matrix.rows.length === 0 ? (
-            <div className="p-8 text-center text-xs text-slate-500">No course rows available.</div>
+      {tab === 'milestones' && (
+        <section>
+          <SectionTitle title="Milestones" caption="Each column is a deadline type; a cell counts that type's submissions for the section." />
+          {!matrix || matrix.rows.length === 0 ? (
+            <p className="card px-5 py-10 text-center text-[14px] text-[var(--ink-subtle)]">No sections yet.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-border text-left">
-                <thead className="bg-slate-50 text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
+            <div className="card overflow-x-auto max-h-[640px]">
+              <table className="min-w-full text-[13px]">
+                <thead className="sticky top-0 bg-white text-left text-[var(--ink-subtle)] border-b border-[var(--hairline)]">
                   <tr>
-                    <th className="px-4 py-3">Course</th>
-                    <th className="px-4 py-3">Faculty</th>
+                    <th className="px-5 py-3 font-medium">Section</th>
+                    <th className="px-3 py-3 font-medium">Faculty</th>
                     {matrix.checkpoints.map((cp) => (
-                      <th key={cp.key} className="px-4 py-3 text-center">
-                        {cp.name}
-                      </th>
+                      <th key={cp.key} className="px-3 py-3 font-medium text-center" title={cp.description}>{cp.name}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border text-xs">
+                <tbody className="divide-y divide-[var(--hairline-soft)]">
                   {matrix.rows.map((row) => (
-                    <tr key={row.offeringId} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="px-4 py-3 font-semibold text-slate-900 whitespace-nowrap">
-                        {row.courseCode} <span className="text-slate-500 text-[11px]">({row.section})</span>
+                    <tr key={row.offeringId}>
+                      <td className="px-5 py-2.5 whitespace-nowrap">
+                        <span className="font-mono">{row.courseCode}</span>
+                        <span className="ml-2 text-[var(--ink-subtle)]">{sectionLabel(row.section)}</span>
                       </td>
-                      <td className="px-4 py-3 text-slate-700 whitespace-nowrap">
-                        {row.facultyName}
-                      </td>
+                      <td className="px-3 py-2.5 text-[var(--ink-muted)] max-w-[220px] truncate">{row.facultyName}</td>
                       {row.cells.map((cell) => (
-                        <td key={cell.checkpointKey} className="px-4 py-3 text-center">
-                          {cell.status === 'DONE' && (
-                            <span
-                              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200"
-                              title={cell.note}
-                            >
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                              Done
-                            </span>
-                          )}
-                          {cell.status === 'PENDING' && (
-                            <span
-                              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200"
-                              title={cell.note}
-                            >
-                              Pending
-                            </span>
-                          )}
-                          {cell.status === 'OVERDUE' && (
-                            <span
-                              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-800 border border-rose-200"
-                              title={cell.note}
-                            >
-                              <AlertTriangle className="w-3 h-3 text-rose-600" />
-                              Overdue
-                            </span>
-                          )}
+                        <td key={cell.checkpointKey} className="px-3 py-2.5 text-center" title={cell.note}>
+                          {cell.status === 'DONE' && <span className="chip chip-ok"><Check className="w-3 h-3" /> Done</span>}
+                          {cell.status === 'OVERDUE' && <span className="chip chip-bad">Overdue</span>}
+                          {cell.status === 'PENDING' && <span className="text-[12px] text-[var(--ink-tertiary)]">{cell.note}</span>}
                         </td>
                       ))}
                     </tr>
@@ -481,69 +353,246 @@ export function CoordinatorOverviewView() {
               </table>
             </div>
           )}
-        </div>
+        </section>
+      )}
 
-        {/* Actionable "Needs Attention" List (1 col) */}
-        <div className="bg-white rounded-lg border border-border shadow-xs p-5 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-border">
-            <div className="flex items-center gap-2">
-              <BellRing className="w-4 h-4 text-amber-500" />
-              <h2 className="font-sans text-sm font-bold text-slate-900 uppercase tracking-wider">
-                Needs Attention
-              </h2>
-            </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800">
-              {summary?.needsAttention.length ?? 0} Pending
-            </span>
+      {tab === 'cases' && (
+        <section>
+          <SectionTitle
+            title="Critical cases"
+            caption="Not logging, overdue work, sections behind plan, poor assessment results and cancellations — most urgent first."
+          />
+          <div className="card px-5 py-4 overflow-x-auto">
+            {report ? <CriticalCasesTable cases={report.criticalCases} onFaculty={setOpenFacultyId} onRemind={remind} busyRef={remindingId} /> : <p className="text-[13px] text-[var(--ink-subtle)]">Loading…</p>}
           </div>
+        </section>
+      )}
 
-          {loading ? (
-            <div className="p-8 text-center text-xs text-slate-500">Checking anomalies...</div>
-          ) : !summary || summary.needsAttention.length === 0 ? (
-            <div className="p-8 text-center text-xs text-slate-500">
-              No critical anomalies detected. Department running smoothly.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {summary.needsAttention.map((item) => (
-                <div
-                  key={item.id}
-                  className="p-3.5 rounded-md border border-border bg-slate-50 hover:bg-white transition-all space-y-2"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <span
-                      className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
-                        item.severity === 'CRITICAL'
-                          ? 'bg-rose-100 text-rose-800'
-                          : 'bg-amber-100 text-amber-800'
-                      }`}
-                    >
-                      {item.severity}
-                    </span>
-                  </div>
+      {tab === 'mismatches' && (
+        <section>
+          <SectionTitle
+            title="Allocation mismatches"
+            caption="Sections whose allocated hours or owners do not match the course's L-T-P plan. Fix the plan or the load sheet, then re-import."
+          />
+          <div className="card px-5 py-4 overflow-x-auto">
+            {report ? <MismatchTable items={report.mismatches} /> : <p className="text-[13px] text-[var(--ink-subtle)]">Loading…</p>}
+          </div>
+        </section>
+      )}
 
-                  <div>
-                    <h3 className="text-xs font-bold text-slate-900 leading-snug">{item.title}</h3>
-                    <p className="text-[11px] text-slate-500 mt-0.5">{item.subtitle}</p>
-                  </div>
+      {openFacultyId !== null && (
+        <ReportPanel onClose={() => setOpenFacultyId(null)}>
+          <FacultyReportBody facultyId={openFacultyId} />
+        </ReportPanel>
+      )}
+      {openCourse && (
+        <ReportPanel onClose={() => setOpenCourse(null)}>
+          <CourseReportBody courseCode={openCourse} />
+        </ReportPanel>
+      )}
+      {editingTerm && (
+        <SemesterSettingsModal
+          term={{ name: term?.name ?? null, startDate: term?.startDate ?? null, endDate: term?.endDate ?? null }}
+          onClose={() => setEditingTerm(false)}
+          onSaved={fetchData}
+        />
+      )}
+    </div>
+  );
+}
 
-                  <div className="pt-1 flex items-center justify-end">
-                    <button
-                      type="button"
-                      onClick={() => handleRemindFaculty(item)}
-                      disabled={remindingId === item.id}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white rounded text-[11px] font-bold hover:bg-primary-hover shadow-xs transition-colors disabled:opacity-50"
-                    >
-                      <Send className="w-3 h-3" />
-                      {remindingId === item.id ? 'Sending...' : item.actionLabel}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+function BigNumber({ label, value, note, tone }: { label: string; value: string; note: string; tone?: 'warn' }) {
+  return (
+    <div>
+      <div className="text-[13px] text-[var(--ink-subtle)]">{label}</div>
+      <div className={`mt-2 font-display text-[44px] leading-none num ${tone === 'warn' ? 'text-[var(--warn-text)]' : ''}`}>{value}</div>
+      <div className="mt-2.5 text-[12px] text-[var(--ink-tertiary)]">{note}</div>
+    </div>
+  );
+}
+
+function SectionTitle({ title, count, caption, action }: { title: string; count?: number; caption?: string; action?: React.ReactNode }) {
+  return (
+    <div className="mb-3 flex items-end justify-between gap-4">
+      <div>
+        <h2 className="font-display text-[22px] font-medium">
+          {title}
+          {count !== undefined && <span className="ml-2 text-[15px] text-[var(--ink-tertiary)] num">{count}</span>}
+        </h2>
+        {caption && <p className="mt-0.5 text-[13px] text-[var(--ink-subtle)]">{caption}</p>}
+      </div>
+      {action}
+    </div>
+  );
+}
+
+function ChartCard({ title, caption, children }: { title: string; caption: string; children: React.ReactNode }) {
+  return (
+    <div className="card px-5 pt-5 pb-4 flex flex-col">
+      <div className="flex items-baseline justify-between">
+        <h3 className="text-[14px] font-medium">{title}</h3>
+        <span className="text-[12px] text-[var(--ink-tertiary)]">{caption}</span>
+      </div>
+      <div className="mt-5 flex-1">{children}</div>
+    </div>
+  );
+}
+
+function StatusBar({ rows }: { rows: FacultyRow[] }) {
+  const counts = STATUS_ORDER.map((s) => ({ status: s, n: rows.filter((r) => r.status === s).length })).filter((c) => c.n > 0);
+  const total = rows.length || 1;
+  if (rows.length === 0) return <p className="text-[13px] text-[var(--ink-subtle)]">No faculty yet.</p>;
+  return (
+    <div>
+      <div className="flex h-3 rounded-full overflow-hidden" role="img" aria-label={counts.map((c) => `${STATUS[c.status].label}: ${c.n}`).join(', ')}>
+        {counts.map((c) => (
+          <div key={c.status} style={{ width: `${(c.n / total) * 100}%`, background: STATUS[c.status].color }} title={`${STATUS[c.status].label}: ${c.n}`} />
+        ))}
+      </div>
+      <ul className="mt-5 space-y-2">
+        {counts.map((c) => (
+          <li key={c.status} className="flex items-center justify-between text-[13px]">
+            <span className="inline-flex items-center gap-2">
+              <span className="w-2 h-2 rounded-sm" style={{ background: STATUS[c.status].color }} /> {STATUS[c.status].label}
+            </span>
+            <span className="num text-[var(--ink-muted)]">{c.n}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function WeeklyBars({ points }: { points: OverviewSummaryDto['conductTrajectory'] }) {
+  if (points.length === 0) {
+    return <p className="text-[13px] text-[var(--ink-subtle)]">Appears once classes are logged.</p>;
+  }
+  const recent = points.slice(-12);
+  const max = Math.max(...recent.map((p) => p.heldCount + p.cancelledCount), 1);
+  return (
+    <div>
+      <div className="flex items-end gap-1.5 h-32" role="img" aria-label="Classes held and cancelled per week">
+        {recent.map((p) => (
+          <div key={p.weekNumber} className="flex-1 flex flex-col justify-end h-full" title={`Week ${p.weekNumber}: ${p.heldCount} held, ${p.cancelledCount} cancelled`}>
+            <div style={{ height: `${(p.cancelledCount / max) * 100}%`, background: 'var(--warn)' }} className="rounded-t-sm" />
+            <div style={{ height: `${(p.heldCount / max) * 100}%`, background: 'var(--accent)' }} className={p.cancelledCount ? '' : 'rounded-t-sm'} />
+          </div>
+        ))}
+      </div>
+      <div className="mt-2 flex justify-between text-[11px] text-[var(--ink-tertiary)] num">
+        <span>Wk {recent[0].weekNumber}</span>
+        <span>Wk {recent[recent.length - 1].weekNumber}</span>
       </div>
     </div>
+  );
+}
+
+function LoadHistogram({ rows }: { rows: FacultyRow[] }) {
+  const buckets = [
+    { label: '< 8h', test: (h: number) => h < 8 },
+    { label: '8–12h', test: (h: number) => h >= 8 && h < 12 },
+    { label: '12–16h', test: (h: number) => h >= 12 && h < 16 },
+    { label: '16h +', test: (h: number) => h >= 16 },
+  ].map((b) => ({ ...b, n: rows.filter((r) => b.test(r.weeklyHours)).length }));
+  const max = Math.max(...buckets.map((b) => b.n), 1);
+  if (rows.length === 0) return <p className="text-[13px] text-[var(--ink-subtle)]">No allocations yet.</p>;
+  return (
+    <ul className="space-y-3">
+      {buckets.map((b) => (
+        <li key={b.label} className="grid grid-cols-[52px_1fr_28px] items-center gap-3 text-[13px]">
+          <span className="text-[var(--ink-subtle)] num">{b.label}</span>
+          <div className="bar-track h-2">
+            <div className="bar-fill" style={{ width: `${(b.n / max) * 100}%`, background: 'var(--ink-muted)' }} />
+          </div>
+          <span className="num text-right">{b.n}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function SectionRow({ item, onCourse }: { item: RankingItem; onCourse: (code: string) => void }) {
+  const isBehind = item.syllabusConfigured && item.pacingStatus === 'BEHIND';
+  const yearNum = item.yearOfStudy || Math.max(1, Math.floor((item.semester + 1) / 2));
+  return (
+    <li className="px-5 py-4 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_220px] gap-x-8 gap-y-2 items-center">
+      <div className="min-w-0">
+        <div className="flex items-baseline gap-2 flex-wrap">
+          <button type="button" onClick={() => onCourse(item.courseCode)} className="font-mono text-[13px] hover:underline hover:text-[var(--accent)]">
+            {item.courseCode}
+          </button>
+          <span className="text-[14px] font-medium truncate">{item.courseName}</span>
+          <span className="text-[11px] px-1.5 py-0.5 rounded bg-[var(--surface-4)] text-[var(--ink-muted)]">
+            Year {yearNum}
+          </span>
+          {item.studentCount && item.studentCount > 0 ? (
+            <span className="text-[12px] text-[var(--ink-tertiary)] num">
+              · {item.studentCount} students
+            </span>
+          ) : null}
+        </div>
+        <div className="mt-0.5 text-[13px] text-[var(--ink-subtle)] truncate">
+          {sectionLabel(item.section, item.semester)} · {item.facultyName}
+        </div>
+      </div>
+      {item.syllabusConfigured ? (
+        <div>
+          <div className="flex justify-between text-[12px] num">
+            <span>{item.coveragePercentage}% covered</span>
+            <span className={isBehind ? 'text-[var(--warn-text)]' : 'text-[var(--ink-subtle)]'}>
+              {item.topicDelta < 0 ? `${-item.topicDelta} topics behind` : item.topicDelta > 0 ? `${item.topicDelta} ahead` : 'on plan'}
+            </span>
+          </div>
+          <div className="relative mt-1.5 bar-track">
+            <div className="bar-fill" style={{ width: `${Math.max(item.coveragePercentage, 1)}%`, background: isBehind ? 'var(--warn)' : 'var(--accent)' }} />
+            {item.expectedPercentage > 0 && (
+              <span className="absolute -top-1 -bottom-1 w-px bg-[var(--ink)]" style={{ left: `${Math.min(item.expectedPercentage, 100)}%` }} title={`Plan: ${item.expectedPercentage}%`} />
+            )}
+          </div>
+        </div>
+      ) : (
+        <span className="text-[13px] text-[var(--ink-tertiary)]">No syllabus loaded</span>
+      )}
+    </li>
+  );
+}
+
+function FacultyTableRow({ row, onOpen }: { row: FacultyRow; onOpen: () => void }) {
+  const status = STATUS[row.status];
+  return (
+    <tr className="hover:bg-[var(--surface-3)]">
+      <td className="px-5 py-3 whitespace-nowrap">
+        <button type="button" onClick={onOpen} className="font-medium hover:text-[var(--accent)] hover:underline text-left">{row.facultyName}</button>
+      </td>
+      <td className="px-3 py-3"><span className={status.chip}>{status.label}</span></td>
+      <td className="px-3 py-3 text-right num whitespace-nowrap">
+        {row.weeklyHours}h<span className="text-[var(--ink-tertiary)]">{row.pblHours > 0 ? ` · ${row.pblHours} PBL` : ''}</span>
+      </td>
+      <td className="px-3 py-3">
+        {row.loggingRate === null ? (
+          <span className="text-[var(--ink-tertiary)]">—</span>
+        ) : (
+          <div className="flex items-center gap-3">
+            <div className="bar-track flex-1">
+              <div className="bar-fill" style={{ width: `${row.loggingRate}%`, background: row.loggingRate < 50 ? 'var(--danger)' : row.loggingRate < 80 ? 'var(--warn)' : 'var(--accent)' }} />
+            </div>
+            <span className="num w-20 text-right text-[var(--ink-muted)]">
+              {Math.min(row.sessionsHeld + row.sessionsCancelled, row.scheduledSoFar)}/{row.scheduledSoFar}
+            </span>
+          </div>
+        )}
+      </td>
+      <td className={`px-3 py-3 whitespace-nowrap ${row.status === 'NOT_LOGGING' ? 'text-[var(--danger-text)]' : 'text-[var(--ink-muted)]'}`}>
+        {lastLog(row.daysSinceLastLog)}
+      </td>
+      <td className="px-5 py-3 whitespace-nowrap text-[var(--ink-muted)]">
+        {row.averageCoverage === null ? <span className="text-[var(--ink-tertiary)]">—</span> : (
+          <>
+            <span className="num">{row.averageCoverage}%</span>
+            {row.offeringsBehind > 0 && <span className="text-[var(--warn-text)]"> · {row.offeringsBehind} behind</span>}
+          </>
+        )}
+      </td>
+    </tr>
   );
 }

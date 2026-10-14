@@ -4,7 +4,7 @@ import { DeadlineDto, DeadlineAssignmentDto } from '../types/deadlines';
 import { FacultyDto } from '../types/directory';
 import { CourseOfferingDto } from '../types/academics';
 import { useAuth } from '../context/AuthContext';
-import { Clock, Plus, AlertCircle, CheckCircle, Calendar, X, ChevronDown, ChevronRight, FileText, Trash2 } from 'lucide-react';
+import { Clock, Plus, AlertCircle, CheckCircle, Calendar, X, Trash2 } from 'lucide-react';
 import { SubmissionModal } from '../components/SubmissionModal';
 
 export function DeadlinesView() {
@@ -12,7 +12,6 @@ export function DeadlinesView() {
   const queryClient = useQueryClient();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedAssignmentForModal, setSelectedAssignmentForModal] = useState<DeadlineAssignmentDto | null>(null);
-  const [expandedDeadlineId, setExpandedDeadlineId] = useState<number | null>(null);
 
   // Form state
   const [title, setTitle] = useState('');
@@ -68,17 +67,6 @@ export function DeadlinesView() {
     enabled: isCoordinator && isCreateModalOpen,
   });
 
-  // Query assignments for expanded deadline
-  const { data: deadlineAssignments = [], isLoading: isAssignmentsLoading } = useQuery<DeadlineAssignmentDto[]>({
-    queryKey: ['deadlines', expandedDeadlineId, 'assignments'],
-    queryFn: async () => {
-      const res = await fetch(`/api/deadlines/${expandedDeadlineId}/assignments`);
-      if (!res.ok) throw new Error('Failed to fetch assignments');
-      return res.json();
-    },
-    enabled: isCoordinator && expandedDeadlineId !== null,
-  });
-
   const createDeadlineMutation = useMutation({
     mutationFn: async (payload: {
       title: string;
@@ -103,6 +91,7 @@ export function DeadlinesView() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deadlines'] });
+      queryClient.invalidateQueries({ queryKey: ['submissions'] });
       setIsCreateModalOpen(false);
       setTitle('');
       setDescription('');
@@ -125,6 +114,7 @@ export function DeadlinesView() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deadlines'] });
+      queryClient.invalidateQueries({ queryKey: ['submissions'] });
     },
   });
 
@@ -181,7 +171,7 @@ export function DeadlinesView() {
           </h2>
           <p className="text-sm text-slate-600 mt-0.5">
             {isCoordinator
-              ? 'Create, target, and monitor academic deadlines across semesters and course sections.'
+              ? 'Create and target academic deadlines. Submitted files are reviewed from the Submissions tab.'
               : 'Submit course files, evaluation rubrics, and marks before deadlines.'}
           </p>
         </div>
@@ -189,7 +179,7 @@ export function DeadlinesView() {
           <button
             type="button"
             onClick={() => setIsCreateModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary-hover shadow-xs transition-colors self-start sm:self-auto"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-md hover:bg-slate-800 shadow-xs transition-colors self-start sm:self-auto"
           >
             <Plus className="w-4 h-4" />
             Create Deadline
@@ -213,7 +203,6 @@ export function DeadlinesView() {
               <table className="min-w-full divide-y divide-border text-left">
                 <thead className="bg-slate-50 text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
                   <tr>
-                    <th className="w-8 px-3 py-3"></th>
                     <th className="px-5 py-3">Deadline Title</th>
                     <th className="px-5 py-3">Type</th>
                     <th className="px-5 py-3">Due Date (IST)</th>
@@ -223,129 +212,50 @@ export function DeadlinesView() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border text-sm">
-                  {departmentDeadlines.map((d) => {
-                    const isExpanded = expandedDeadlineId === d.id;
-                    return (
-                      <tr key={d.id} className="group">
-                        <td colSpan={7} className="p-0">
-                          <div
-                            onClick={() => setExpandedDeadlineId(isExpanded ? null : d.id)}
-                            className="flex items-center px-5 py-3.5 hover:bg-slate-50/70 transition-colors cursor-pointer"
+                  {departmentDeadlines.map((d) => (
+                    <tr key={d.id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="px-5 py-3.5">
+                        <div className="font-semibold text-slate-900">{d.title}</div>
+                        {d.description && (
+                          <div className="text-xs text-slate-500 line-clamp-1">{d.description}</div>
+                        )}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-slate-100 text-slate-700 border border-slate-200 whitespace-nowrap">
+                          {d.type.replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5 text-xs text-slate-700 whitespace-nowrap">
+                        {formatDue(d.dueAt)}
+                      </td>
+                      <td className="px-5 py-3.5 text-xs text-slate-600 whitespace-nowrap">
+                        <span className="font-semibold text-slate-800">{d.totalAssignmentsCount}</span> faculty assigned
+                      </td>
+                      <td className="px-5 py-3.5">
+                        {d.isOverdue ? (
+                          <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-semibold bg-rose-50 text-rose-700 border border-rose-200 whitespace-nowrap">
+                            <AlertCircle className="w-3 h-3 text-rose-500" /> Overdue
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
+                            <CheckCircle className="w-3 h-3 text-emerald-500" /> Active
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center justify-end">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteDeadline(d.id, d.title)}
+                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
+                            title="Delete deadline"
                           >
-                            <div className="w-8 shrink-0 text-slate-400">
-                              {isExpanded ? (
-                                <ChevronDown className="w-4 h-4 text-primary" />
-                              ) : (
-                                <ChevronRight className="w-4 h-4" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-[200px] pr-4">
-                              <div className="font-semibold text-slate-900">{d.title}</div>
-                              {d.description && (
-                                <div className="text-xs text-slate-500 line-clamp-1">{d.description}</div>
-                              )}
-                            </div>
-                            <div className="w-36 shrink-0 px-2">
-                              <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-slate-100 text-slate-700 border border-slate-200">
-                                {d.type.replace('_', ' ')}
-                              </span>
-                            </div>
-                            <div className="w-44 shrink-0 px-2 text-xs text-slate-700 whitespace-nowrap">
-                              {formatDue(d.dueAt)}
-                            </div>
-                            <div className="w-36 shrink-0 px-2 text-xs text-slate-600">
-                              <span className="font-semibold text-slate-800">{d.totalAssignmentsCount}</span> faculty assigned
-                            </div>
-                            <div className="w-28 shrink-0 px-2">
-                              {d.isOverdue ? (
-                                <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-                                  <AlertCircle className="w-3 h-3 text-rose-500" /> Overdue
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                  <CheckCircle className="w-3 h-3 text-emerald-500" /> Active
-                                </span>
-                              )}
-                            </div>
-                            <div className="w-32 shrink-0 flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                              <span
-                                onClick={() => setExpandedDeadlineId(isExpanded ? null : d.id)}
-                                className="text-xs text-primary font-medium hover:underline cursor-pointer"
-                              >
-                                {isExpanded ? 'Hide' : 'Inspect'}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteDeadline(d.id, d.title)}
-                                className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
-                                title="Delete deadline"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Expanded Assignments Panel */}
-                          {isExpanded && (
-                            <div className="bg-slate-50/80 border-t border-b border-slate-200 px-6 py-4 animate-in fade-in duration-150">
-                              <div className="flex items-center justify-between mb-3">
-                                <h4 className="text-xs font-semibold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                                  <FileText className="w-3.5 h-3.5 text-primary" />
-                                  Faculty Submission Roster ({d.title})
-                                </h4>
-                                <span className="text-xs text-slate-500">
-                                  Click any faculty row to inspect file versions & review.
-                                </span>
-                              </div>
-
-                              {isAssignmentsLoading ? (
-                                <div className="p-4 text-center text-xs text-slate-500">Loading assignments...</div>
-                              ) : deadlineAssignments.length === 0 ? (
-                                <div className="p-4 text-center text-xs text-slate-500">No faculty assigned to this deadline.</div>
-                              ) : (
-                                <div className="bg-white rounded-md border border-border overflow-hidden">
-                                  <table className="min-w-full divide-y divide-border text-left">
-                                    <thead className="bg-slate-100/70 text-[10px] font-semibold text-slate-600 uppercase tracking-wider">
-                                      <tr>
-                                        <th className="px-4 py-2">Faculty Name</th>
-                                        <th className="px-4 py-2">Due Date</th>
-                                        <th className="px-4 py-2 text-right">Action</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100 text-xs">
-                                      {deadlineAssignments.map((a) => (
-                                        <tr key={a.id} className="hover:bg-slate-50 transition-colors">
-                                          <td className="px-4 py-2.5 font-medium text-slate-800">
-                                            {a.facultyName}
-                                          </td>
-                                          <td className="px-4 py-2.5 text-slate-500">
-                                            {formatDue(a.dueAt)}
-                                          </td>
-                                          <td className="px-4 py-2.5 text-right">
-                                            <button
-                                              type="button"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                setSelectedAssignmentForModal(a);
-                                              }}
-                                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-white border border-border text-primary hover:bg-primary hover:text-white rounded text-xs font-medium transition-colors shadow-2xs"
-                                            >
-                                              <FileText className="w-3 h-3" />
-                                              Inspect / Review
-                                            </button>
-                                          </td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -407,7 +317,7 @@ export function DeadlinesView() {
                     <button
                       type="button"
                       onClick={() => setSelectedAssignmentForModal(assignment)}
-                      className="px-3 py-1.5 bg-primary text-white text-xs font-medium rounded-md hover:bg-primary-hover transition-colors shadow-xs"
+                      className="px-3.5 py-1.5 bg-slate-900 text-white text-xs font-semibold rounded-md hover:bg-slate-800 transition-colors shadow-xs"
                     >
                       Submit / View Submission
                     </button>
@@ -444,7 +354,7 @@ export function DeadlinesView() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Course File & Syllabus Conduct Report"
-                  className="w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  className="w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900"
                 />
               </div>
 
@@ -454,12 +364,15 @@ export function DeadlinesView() {
                   <select
                     value={type}
                     onChange={(e) => setType(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900"
                   >
                     <option value="COURSE_FILE">Course File</option>
                     <option value="EVALUATION">Evaluation Rubric</option>
                     <option value="MARKS_UPLOAD">Marks Upload</option>
                     <option value="SYLLABUS_REPORT">Syllabus Conduct Report</option>
+                    <option value="CONTINUOUS_ASSESSMENT">Continuous Assessment (CIE)</option>
+                    <option value="MID_SEM_QUESTION_BANK">Question Bank & Scheme</option>
+                    <option value="REMEDIAL_PLAN">Remedial Action Plan</option>
                     <option value="OTHER">Other Compliance Document</option>
                   </select>
                 </div>
@@ -470,7 +383,7 @@ export function DeadlinesView() {
                     required
                     value={dueAt}
                     onChange={(e) => setDueAt(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900"
                   />
                 </div>
               </div>
@@ -482,7 +395,7 @@ export function DeadlinesView() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Instructions for faculty regarding required sections..."
-                  className="w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  className="w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900"
                 />
               </div>
 
@@ -538,7 +451,7 @@ export function DeadlinesView() {
                     onChange={(e) => setTargetSemester(Number(e.target.value))}
                     className="w-full px-3 py-1.5 text-xs border border-border rounded-md bg-white"
                   >
-                    {[3, 4, 5, 6, 7, 8].map((s) => (
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
                       <option key={s} value={s}>
                         Semester {s} (All Faculty teaching courses in Sem {s})
                       </option>
@@ -600,7 +513,7 @@ export function DeadlinesView() {
                 <button
                   type="submit"
                   disabled={createDeadlineMutation.isPending}
-                  className="px-4 py-2 text-xs font-medium bg-primary text-white rounded-md hover:bg-primary-hover transition-colors disabled:opacity-50"
+                  className="px-4 py-2 text-xs font-semibold bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-colors disabled:opacity-50"
                 >
                   {createDeadlineMutation.isPending ? 'Creating...' : 'Create & Assign Deadline'}
                 </button>
@@ -610,7 +523,7 @@ export function DeadlinesView() {
         </div>
       )}
 
-      {/* Submission Modal for Faculty / Coordinator */}
+      {/* Submission Modal for Faculty (submit) and Coordinator (review list) */}
       {selectedAssignmentForModal && (
         <SubmissionModal
           assignment={selectedAssignmentForModal}

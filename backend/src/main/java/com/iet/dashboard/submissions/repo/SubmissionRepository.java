@@ -18,6 +18,4 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
 
     @Query("SELECT s FROM Submission s LEFT JOIN FETCH s.files WHERE s.id = :id")
     Optional<Submission> findByIdWithFiles(@Param("id") Long id);
-
-    List<Submission> findByStatus(SubmissionStatus status);
 }

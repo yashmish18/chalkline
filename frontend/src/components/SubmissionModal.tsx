@@ -222,6 +222,14 @@ export function SubmissionModal({ assignment, onClose }: SubmissionModalProps) {
               )}
             </div>
 
+            {/* Coordinator view of a slot that has not been submitted yet */}
+            {isCoordinator && submission?.status === 'PENDING' && (
+              <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-slate-400 shrink-0" />
+                <span>Nothing submitted yet. The faculty member submits this from their own Deadlines tab.</span>
+              </div>
+            )}
+
             {/* Reviewer Feedback Banner if returned */}
             {submission?.status === 'RETURNED' && submission.reviewerComment && (
               <div className="p-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs">
@@ -246,7 +254,7 @@ export function SubmissionModal({ assignment, onClose }: SubmissionModalProps) {
               <div className="bg-slate-50/70 border border-border rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded bg-white border border-border flex items-center justify-center text-primary">
+                    <div className="w-9 h-9 rounded bg-white border border-border flex items-center justify-center text-blue-600">
                       <FileText className="w-5 h-5" />
                     </div>
                     <div>
@@ -296,7 +304,7 @@ export function SubmissionModal({ assignment, onClose }: SubmissionModalProps) {
                       value={reviewComment}
                       onChange={(e) => setReviewComment(e.target.value)}
                       placeholder="e.g. Please update the course evaluation rubric according to NBA criteria..."
-                      className="w-full text-xs p-2.5 border border-border rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
+                      className="w-full text-xs p-2.5 border border-border rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900"
                     />
                     <div className="flex items-center gap-2">
                       <button
@@ -344,10 +352,10 @@ export function SubmissionModal({ assignment, onClose }: SubmissionModalProps) {
               </div>
             )}
 
-            {/* Faculty File Upload */}
-            {(!isCoordinator || submission?.status === 'PENDING') && (
+            {/* Faculty File Upload — coordinators only review, they never upload on a faculty member's behalf */}
+            {!isCoordinator && (
               <form onSubmit={handleUploadSubmit} className="space-y-4">
-                <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors bg-slate-50/50">
+                <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-slate-400 transition-colors bg-slate-50/50">
                   <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
                   <p className="text-xs font-medium text-slate-700 mb-1">
                     {submission?.status === 'RETURNED'
@@ -375,7 +383,7 @@ export function SubmissionModal({ assignment, onClose }: SubmissionModalProps) {
                   </label>
 
                   {selectedFile && (
-                    <div className="mt-3 text-xs text-primary font-medium flex items-center justify-center gap-1">
+                    <div className="mt-3 text-xs text-blue-600 font-medium flex items-center justify-center gap-1">
                       <FileText className="w-3.5 h-3.5" />
                       <span>{selectedFile.name} ({formatFileSize(selectedFile.size)})</span>
                     </div>
@@ -393,7 +401,7 @@ export function SubmissionModal({ assignment, onClose }: SubmissionModalProps) {
                   <button
                     type="submit"
                     disabled={!selectedFile || uploadMutation.isPending}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-xs font-medium rounded-md hover:bg-primary-hover transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-md hover:bg-slate-800 transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Upload className="w-3.5 h-3.5" />
                     {uploadMutation.isPending ? 'Uploading...' : 'Submit File'}
@@ -424,7 +432,7 @@ export function SubmissionModal({ assignment, onClose }: SubmissionModalProps) {
                       <a
                         href={`/api/submission-files/${f.id}/download`}
                         download
-                        className="text-primary hover:underline text-xs inline-flex items-center gap-1"
+                        className="text-blue-600 hover:underline text-xs inline-flex items-center gap-1"
                       >
                         <Download className="w-3 h-3" /> Download
                       </a>

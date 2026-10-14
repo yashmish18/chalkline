@@ -8,10 +8,23 @@ public record TeachingAssignmentDto(
         Long facultyId,
         String facultyName,
         String component,
-        String subSection
+        String subSection,
+        int contactHours,
+        /** Students this assignment teaches: the batch size, else the section strength. */
+        int studentCount
 ) {
+    public TeachingAssignmentDto(Long id, CourseOfferingDto offering, Long facultyId, String facultyName, String component,
+                                 String subSection, int contactHours) {
+        this(id, offering, facultyId, facultyName, component, subSection, contactHours,
+                offering != null ? offering.studentCount() : 0);
+    }
+
     public TeachingAssignmentDto(Long id, CourseOfferingDto offering, Long facultyId, String facultyName, String component) {
-        this(id, offering, facultyId, facultyName, component, "ALL");
+        this(id, offering, facultyId, facultyName, component, "ALL", 0);
+    }
+
+    public TeachingAssignmentDto(Long id, CourseOfferingDto offering, Long facultyId, String facultyName, String component, String subSection) {
+        this(id, offering, facultyId, facultyName, component, subSection, 0);
     }
 
     public static TeachingAssignmentDto fromEntity(TeachingAssignment assignment, String facultyName) {
@@ -21,7 +34,11 @@ public record TeachingAssignmentDto(
                 assignment.getFacultyId(),
                 facultyName,
                 assignment.getComponent().name(),
-                assignment.getSubSection()
+                assignment.getSubSection(),
+                assignment.getContactHours(),
+                assignment.getStudentCount() != null
+                        ? assignment.getStudentCount()
+                        : assignment.getOffering().getStudentCount()
         );
     }
 }

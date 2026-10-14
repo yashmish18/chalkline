@@ -4,7 +4,6 @@ import {
   DepartmentMetricsDto,
   DeadlineTrackingRowDto,
   FacultyComplianceRowDto,
-  AuditLogDto,
 } from '../types/tracking';
 import {
   AlertTriangle,
@@ -16,13 +15,12 @@ import {
   BellRing,
   ShieldAlert,
   Calendar,
-  History,
   Check,
 } from 'lucide-react';
 
 export function TrackingDashboardView() {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'deadlines' | 'faculty' | 'audit'>('deadlines');
+  const [activeTab, setActiveTab] = useState<'deadlines' | 'faculty'>('deadlines');
   const [reminderToast, setReminderToast] = useState<string | null>(null);
 
   // Fetch KPI Metrics
@@ -57,16 +55,6 @@ export function TrackingDashboardView() {
     enabled: activeTab === 'faculty',
   });
 
-  // Fetch Recent Audit Logs
-  const { data: auditLogs = [], isLoading: isAuditLoading } = useQuery<AuditLogDto[]>({
-    queryKey: ['tracking', 'audit-logs'],
-    queryFn: async () => {
-      const res = await fetch('/api/tracking/audit-logs?limit=30');
-      if (!res.ok) throw new Error('Failed to fetch audit logs');
-      return res.json();
-    },
-    enabled: activeTab === 'audit',
-  });
 
   // Trigger automated reminders mutation
   const triggerRemindersMutation = useMutation({
@@ -96,10 +84,10 @@ export function TrackingDashboardView() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="font-sans text-2xl font-bold text-slate-900 tracking-tight">
-            Compliance Tracking &amp; Submissions Audit
+            Compliance Tracking
           </h2>
           <p className="text-sm text-slate-600 mt-0.5">
-            Real-time department KPIs, drill-down faculty compliance roster, and Excel audit export.
+            Submission rates by deadline and by faculty, with an Excel export.
           </p>
         </div>
 
@@ -118,7 +106,7 @@ export function TrackingDashboardView() {
           <a
             href="/api/reports/submissions/export"
             download
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-xs font-semibold rounded-md hover:bg-primary-hover shadow-xs transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-md hover:bg-slate-800 shadow-xs transition-colors"
           >
             <FileSpreadsheet className="w-4 h-4" />
             Export Excel Report (.xlsx)
@@ -149,7 +137,7 @@ export function TrackingDashboardView() {
         <div className="bg-white rounded-lg border border-border p-5 shadow-xs">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-semibold uppercase tracking-wider">Submission Rate</span>
-            <TrendingUp className="w-4 h-4 text-primary" />
+            <TrendingUp className="w-4 h-4 text-blue-600" />
           </div>
           <div className="text-2xl font-bold font-sans text-slate-900 mt-2">
             {isMetricsLoading ? '—' : `${metrics?.submissionRate ?? 0}%`}
@@ -159,7 +147,7 @@ export function TrackingDashboardView() {
           </p>
           <div className="w-full bg-slate-100 rounded-full h-1.5 mt-3 overflow-hidden">
             <div
-              className="bg-primary h-1.5 rounded-full transition-all duration-500"
+              className="bg-blue-600 h-1.5 rounded-full transition-all duration-500"
               style={{ width: `${Math.min(metrics?.submissionRate ?? 0, 100)}%` }}
             />
           </div>
@@ -241,7 +229,7 @@ export function TrackingDashboardView() {
           onClick={() => setActiveTab('deadlines')}
           className={`py-3 text-xs font-semibold border-b-2 transition-all flex items-center gap-2 ${
             activeTab === 'deadlines'
-              ? 'border-primary text-primary'
+              ? 'border-slate-900 text-slate-900'
               : 'border-transparent text-slate-600 hover:text-slate-900'
           }`}
         >
@@ -254,7 +242,7 @@ export function TrackingDashboardView() {
           onClick={() => setActiveTab('faculty')}
           className={`py-3 text-xs font-semibold border-b-2 transition-all flex items-center gap-2 ${
             activeTab === 'faculty'
-              ? 'border-primary text-primary'
+              ? 'border-slate-900 text-slate-900'
               : 'border-transparent text-slate-600 hover:text-slate-900'
           }`}
         >
@@ -262,18 +250,6 @@ export function TrackingDashboardView() {
           Tracking by Faculty
         </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('audit')}
-          className={`py-3 text-xs font-semibold border-b-2 transition-all flex items-center gap-2 ${
-            activeTab === 'audit'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <History className="w-4 h-4" />
-          Coordinator Audit Trail
-        </button>
       </div>
 
       {/* Tab 1: Tracking by Deadline */}
@@ -422,53 +398,6 @@ export function TrackingDashboardView() {
         </div>
       )}
 
-      {/* Tab 3: Audit Trail */}
-      {activeTab === 'audit' && (
-        <div className="bg-white rounded-lg border border-border shadow-xs overflow-hidden">
-          {isAuditLoading ? (
-            <div className="p-8 text-center text-xs text-slate-500">Loading audit history...</div>
-          ) : auditLogs.length === 0 ? (
-            <div className="p-12 text-center text-xs text-slate-500">No actions logged yet.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-border text-left">
-                <thead className="bg-slate-50 text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
-                  <tr>
-                    <th className="px-5 py-3">Timestamp</th>
-                    <th className="px-5 py-3">User</th>
-                    <th className="px-5 py-3">Action</th>
-                    <th className="px-5 py-3">Target</th>
-                    <th className="px-5 py-3">Details</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border text-xs font-mono">
-                  {auditLogs.map((log) => (
-                    <tr key={log.id} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="px-5 py-3 text-slate-500 whitespace-nowrap">
-                        {formatDate(log.createdAt)}
-                      </td>
-                      <td className="px-5 py-3 font-sans font-semibold text-slate-800">
-                        {log.userName}
-                      </td>
-                      <td className="px-5 py-3">
-                        <span className="px-2 py-0.5 rounded font-mono font-semibold text-[10px] bg-slate-100 text-slate-800 border border-slate-200">
-                          {log.action}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-slate-600">
-                        {log.targetEntity} {log.targetId ? `#${log.targetId}` : ''}
-                      </td>
-                      <td className="px-5 py-3 font-sans text-slate-600">
-                        {log.details}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }

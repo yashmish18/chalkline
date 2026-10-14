@@ -10,10 +10,16 @@ public record CourseOfferingDto(
         int semester,
         String section,
         Long termId,
-        String termName
+        String termName,
+        int studentCount
 ) {
     public CourseOfferingDto(Long id, CourseDto course, String academicYear, int yearOfStudy, int semester, String section) {
-        this(id, course, academicYear, yearOfStudy, semester, section, null, null);
+        this(id, course, academicYear, yearOfStudy, semester, section, null, null, 0);
+    }
+
+    public CourseOfferingDto(Long id, CourseDto course, String academicYear, int yearOfStudy, int semester, String section,
+                             Long termId, String termName) {
+        this(id, course, academicYear, yearOfStudy, semester, section, termId, termName, 0);
     }
 
     public static CourseOfferingDto fromEntity(CourseOffering offering) {
@@ -27,7 +33,8 @@ public record CourseOfferingDto(
                 offering.getSemester(),
                 offering.getSection(),
                 termId,
-                termName
+                termName,
+                offering.getStudentCount()
         );
     }
 }

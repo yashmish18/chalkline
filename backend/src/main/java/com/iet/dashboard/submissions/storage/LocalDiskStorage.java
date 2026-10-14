@@ -67,4 +67,19 @@ public class LocalDiskStorage implements FileStorage {
         }
         Files.deleteIfExists(file);
     }
+
+    @Override
+    public int deleteAll() throws IOException {
+        if (!Files.isDirectory(rootLocation)) {
+            return 0;
+        }
+        int deleted = 0;
+        try (var files = Files.list(rootLocation)) {
+            for (Path file : files.filter(Files::isRegularFile).toList()) {
+                Files.deleteIfExists(file);
+                deleted++;
+            }
+        }
+        return deleted;
+    }
 }

@@ -22,6 +22,4 @@ public interface AcademicDocumentRepository extends JpaRepository<AcademicDocume
     Optional<AcademicDocument> findFirstByCategoryAndTermIdOrderByCreatedAtDesc(AcademicDocumentCategory category, Long termId);
 
     Optional<AcademicDocument> findFirstByCourseIdOrderByCreatedAtDesc(Long courseId);
-
-    Optional<AcademicDocument> findByStorageKey(String storageKey);
 }

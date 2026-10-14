@@ -68,7 +68,7 @@ export function TagInput({
         className={`flex flex-wrap items-center gap-1.5 p-2 bg-white border rounded-md min-h-[42px] transition-all ${
           disabled
             ? 'bg-slate-50 border-slate-200 cursor-not-allowed'
-            : 'border-border focus-within:border-primary focus-within:ring-1 focus-within:ring-primary'
+            : 'border-border focus-within:border-slate-900 focus-within:ring-1 focus-within:ring-slate-900'
         }`}
       >
         {tags.map((tag, idx) => (
@@ -112,7 +112,7 @@ export function TagInput({
             <button
               type="button"
               onClick={() => addTag(inputValue)}
-              className="w-full text-left px-3 py-1.5 font-medium text-primary hover:bg-slate-50 flex items-center gap-1.5"
+              className="w-full text-left px-3 py-1.5 font-medium text-blue-600 hover:bg-slate-50 flex items-center gap-1.5"
             >
               <Plus className="w-3.5 h-3.5" />
               Create tag &ldquo;<strong>{inputValue.trim()}</strong>&rdquo;

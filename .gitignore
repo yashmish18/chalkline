@@ -26,3 +26,11 @@ graphify-out/.graphify_*
 graphify-out/.needs_update
 
 **/data/
+
+# Real institutional data kept on this machine only (never commit)
+/*.xlsx
+/*.pdf
+/*.csv
+.env
+.agents/
+backend/target/

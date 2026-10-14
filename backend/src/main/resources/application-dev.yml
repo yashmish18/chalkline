@@ -1,0 +1,13 @@
+# Developer machine only. Never activate this profile on a server.
+app:
+  auth:
+    dev-mode: true
+    bypass-key: ${BYPASS_KEY:dev}
+  admin:
+    destructive-actions: true
+
+spring:
+  devtools:
+    restart:
+      poll-interval: 1s
+      quiet-period: 400ms

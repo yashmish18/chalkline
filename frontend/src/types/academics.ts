@@ -2,7 +2,10 @@ export interface CourseDto {
   id: number;
   code: string;
   name: string;
+  /** Course nature — always THEORY; practical work is expressed through the LTP plan. */
   type: string;
+  /** CORE, DEPARTMENT_ELECTIVE or OPEN_ELECTIVE. */
+  category?: string;
   credits?: number;
   ltp?: string;
   lectureHours?: number;
@@ -20,6 +23,8 @@ export interface CourseOfferingDto {
   section: string;
   termId?: number;
   termName?: string;
+  /** Students enrolled in the section; 0 when not yet known. */
+  studentCount: number;
 }
 
 export interface TeachingAssignmentDto {
@@ -27,8 +32,24 @@ export interface TeachingAssignmentDto {
   offering: CourseOfferingDto;
   facultyId: number;
   facultyName: string;
-  component: 'THEORY' | 'LAB' | 'LECTURE' | 'PRACTICAL' | 'TUTORIAL';
+  component: 'ALL' | 'THEORY' | 'LECTURE' | 'TUTORIAL' | 'PRACTICAL' | 'LAB';
   subSection?: string;
+  /** Weekly contact hours of this component that the assigned faculty owns. */
+  contactHours: number;
+  /** Students this allocation teaches: the batch size, else the section strength. */
+  studentCount: number;
+}
+
+/** Computed weekly LTP teaching load per faculty — derived, never typed. */
+export interface FacultyLtpLoadDto {
+  facultyId: number;
+  facultyName: string;
+  lectureHours: number;
+  tutorialHours: number;
+  practicalHours: number;
+  pblHours?: number;
+  totalHours: number;
+  assignmentCount: number;
 }
 
 export interface SyllabusTopicDto {
@@ -45,6 +66,24 @@ export interface UnitOptionDto {
   unitNumber: number;
   unitTitle: string;
   topics: SyllabusTopicDto[];
+}
+
+/** Preview returned by the syllabus PDF parser; edited client-side, then confirmed. */
+export interface ParsedSyllabusTopic {
+  topicName: string;
+  targetWeek: number;
+}
+
+export interface ParsedSyllabusUnit {
+  unitNumber: number;
+  unitTitle: string;
+  topics: ParsedSyllabusTopic[];
+}
+
+export interface ParsedSyllabusDto {
+  sourceFileName: string;
+  extractedCharacters: number;
+  units: ParsedSyllabusUnit[];
 }
 
 export interface TimetableSlotDto {
@@ -66,6 +105,7 @@ export interface TimetableSlotDto {
 
 export interface TodayClassDto {
   offeringId: number;
+  courseId?: number;
   courseCode: string;
   courseName: string;
   courseDescription?: string;
@@ -84,6 +124,8 @@ export interface TodayClassDto {
   completedSoFar: number;
   isLogged: boolean;
   availableUnits?: UnitOptionDto[];
+  /** true when the class comes from the uploaded timetable */
+  scheduled?: boolean;
 }
 
 export interface TeachingSessionDto {

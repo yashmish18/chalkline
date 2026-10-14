@@ -6,6 +6,9 @@ interface AuthContextType {
   user: UserDto | null;
   isLoading: boolean;
   login: (email: string) => Promise<void>;
+  loginWithMicrosoft: (email?: string) => Promise<void>;
+  /** Dev login bypass: signed in with the server-configured bypass identity. */
+  bypassLogin: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -13,6 +16,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 async function fetchMe(): Promise<UserDto | null> {
   const res = await fetch('/api/me');
+  // No session yet — the login screen handles sign-in from here.
   if (res.status === 401) {
     return null;
   }
@@ -20,6 +24,19 @@ async function fetchMe(): Promise<UserDto | null> {
     throw new Error('Failed to fetch current user');
   }
   return res.json();
+}
+
+async function startSession(endpoint: string, body: Record<string, unknown>): Promise<UserDto> {
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.detail || `Sign-in failed (${res.status})`);
+  }
+  return res.json() as Promise<UserDto>;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -33,18 +50,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const loginMutation = useMutation({
-    mutationFn: async (email: string) => {
-      const res = await fetch('/api/auth/dev-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.detail || 'Login failed');
-      }
-      return res.json() as Promise<UserDto>;
+    mutationFn: (email: string) => startSession('/api/auth/dev-login', { email }),
+    onSuccess: (newUser) => {
+      queryClient.setQueryData(['auth', 'me'], newUser);
+      queryClient.invalidateQueries();
     },
+  });
+
+  const microsoftLoginMutation = useMutation({
+    mutationFn: (email?: string) => startSession('/api/auth/microsoft', email ? { email } : {}),
     onSuccess: (newUser) => {
       queryClient.setQueryData(['auth', 'me'], newUser);
       queryClient.invalidateQueries();
@@ -65,12 +79,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await loginMutation.mutateAsync(email);
   };
 
+  const bypassLoginMutation = useMutation({
+    // Must match the server's app.auth.bypass-key dev default.
+    mutationFn: () => startSession('/api/auth/microsoft', { bypassKey: 'dev' }),
+    onSuccess: (newUser) => {
+      queryClient.setQueryData(['auth', 'me'], newUser);
+      queryClient.invalidateQueries();
+    },
+  });
+
+  const loginWithMicrosoft = async (email?: string) => {
+    await microsoftLoginMutation.mutateAsync(email);
+  };
+
+  const bypassLogin = async () => {
+    await bypassLoginMutation.mutateAsync();
+  };
+
   const logout = async () => {
     await logoutMutation.mutateAsync();
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, loginWithMicrosoft, bypassLogin, logout }}>
       {children}
     </AuthContext.Provider>
   );

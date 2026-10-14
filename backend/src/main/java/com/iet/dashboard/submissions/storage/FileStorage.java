@@ -12,4 +12,7 @@ public interface FileStorage {
     Resource loadAsResource(String storageKey) throws IOException;
 
     void delete(String storageKey) throws IOException;
+
+    /** Deletes every stored file; returns how many were removed. Used only by the full data wipe. */
+    int deleteAll() throws IOException;
 }

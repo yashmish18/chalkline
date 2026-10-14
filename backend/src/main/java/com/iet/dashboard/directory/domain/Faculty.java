@@ -25,8 +25,9 @@ public class Faculty {
     @Column(name = "qualifications", nullable = false)
     private String qualifications;
 
-    @Column(name = "department", nullable = false, length = 100)
-    private String department = "Information Technology";
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "department_id")
+    private Department department;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -35,6 +36,9 @@ public class Faculty {
         inverseJoinColumns = @JoinColumn(name = "skill_id")
     )
     private Set<Skill> skills = new HashSet<>();
+
+    @Column(name = "pbl_hours", nullable = false)
+    private int pblHours = 0;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
@@ -45,12 +49,17 @@ public class Faculty {
     public Faculty() {
     }
 
-    public Faculty(Long userId, String name, String designation, String qualifications, String department) {
+    public Faculty(Long userId, String name, String designation, String qualifications, Department department) {
+        this(userId, name, designation, qualifications, department, 0);
+    }
+
+    public Faculty(Long userId, String name, String designation, String qualifications, Department department, int pblHours) {
         this.userId = userId;
         this.name = name;
         this.designation = designation;
         this.qualifications = qualifications;
-        this.department = department != null ? department : "Information Technology";
+        this.department = department;
+        this.pblHours = pblHours;
         this.createdAt = Instant.now();
         this.updatedAt = Instant.now();
     }
@@ -100,12 +109,21 @@ public class Faculty {
         this.qualifications = qualifications;
     }
 
-    public String getDepartment() {
+    public Department getDepartment() {
         return department;
     }
 
-    public void setDepartment(String department) {
+    public void setDepartment(Department department) {
         this.department = department;
+    }
+
+    /** Display name of the department, or "" when none is set. */
+    public String getDepartmentName() {
+        return department != null ? department.getName() : "";
+    }
+
+    public Long getDepartmentId() {
+        return department != null ? department.getId() : null;
     }
 
     public Set<Skill> getSkills() {
@@ -114,6 +132,14 @@ public class Faculty {
 
     public void setSkills(Set<Skill> skills) {
         this.skills = skills;
+    }
+
+    public int getPblHours() {
+        return pblHours;
+    }
+
+    public void setPblHours(int pblHours) {
+        this.pblHours = pblHours;
     }
 
     public Instant getCreatedAt() {

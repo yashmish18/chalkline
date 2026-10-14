@@ -105,7 +105,17 @@ export function UploadAcademicDocumentModal({
       case 'ACADEMIC_CALENDAR':
         return 'Academic Calendar';
       case 'COURSE_SYLLABUS':
-        return 'Course Syllabus & Description';
+        return 'Course Syllabus';
+      case 'MID_SEM_QUESTION_BANK':
+        return 'Mid-Sem Question Bank';
+      case 'CONTINUOUS_ASSESSMENT':
+        return 'Continuous Assessment';
+      case 'COURSE_FILE':
+        return 'Course Document / File (CD)';
+      case 'REPORTS':
+        return 'Academic Report';
+      default:
+        return cat;
     }
   };
 
@@ -116,7 +126,7 @@ export function UploadAcademicDocumentModal({
         <div className="p-6 border-b border-border flex items-start justify-between bg-slate-50/70">
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-primary text-white">
+              <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-900 text-white">
                 Institutional Document
               </span>
               <span className="text-xs font-semibold text-slate-600">PDF / DOC / DOCX</span>
@@ -138,14 +148,14 @@ export function UploadAcademicDocumentModal({
           <div>
             <label className="block font-semibold text-slate-700 mb-1">Document Category</label>
             <div className="grid grid-cols-3 gap-2">
-              {(['MASTER_TIMETABLE', 'ACADEMIC_CALENDAR', 'COURSE_SYLLABUS'] as const).map((cat) => (
+              {(['COURSE_SYLLABUS', 'MID_SEM_QUESTION_BANK', 'CONTINUOUS_ASSESSMENT', 'COURSE_FILE', 'MASTER_TIMETABLE', 'ACADEMIC_CALENDAR'] as const).map((cat) => (
                 <button
                   key={cat}
                   type="button"
                   onClick={() => setCategory(cat)}
                   className={`py-2 px-2 text-center rounded-md font-bold border transition-all text-[11px] leading-tight ${
                     category === cat
-                      ? 'bg-primary text-white border-primary shadow-xs'
+                      ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
                       : 'bg-slate-50 text-slate-700 border-border hover:bg-slate-100'
                   }`}
                 >
@@ -155,14 +165,14 @@ export function UploadAcademicDocumentModal({
             </div>
           </div>
 
-          {/* If Course Syllabus, Course Selector */}
-          {category === 'COURSE_SYLLABUS' && (
+          {/* If Course-related, Course Selector */}
+          {category !== 'MASTER_TIMETABLE' && category !== 'ACADEMIC_CALENDAR' && (
             <div>
               <label className="block font-semibold text-slate-700 mb-1">Associated Course</label>
               <select
                 value={courseId}
                 onChange={(e) => setCourseId(e.target.value ? Number(e.target.value) : '')}
-                className="w-full px-3 py-2 text-xs border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                className="w-full px-3 py-2 text-xs border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900"
               >
                 <option value="">Select Course (optional)...</option>
                 {courses.map((c) => (
@@ -182,8 +192,8 @@ export function UploadAcademicDocumentModal({
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder={`e.g. ${getCategoryLabel(category)} 2026-27`}
-              className="w-full px-3 py-2 text-xs border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              placeholder={`e.g. ${getCategoryLabel(category)}`}
+              className="w-full px-3 py-2 text-xs border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900"
             />
           </div>
 
@@ -195,7 +205,7 @@ export function UploadAcademicDocumentModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="e.g. Official approved version signed by HOD"
-              className="w-full px-3 py-2 text-xs border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+              className="w-full px-3 py-2 text-xs border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900 resize-none"
             />
           </div>
 
@@ -207,7 +217,7 @@ export function UploadAcademicDocumentModal({
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
               className={`border-2 border-dashed rounded-lg p-5 text-center cursor-pointer transition-colors ${
-                file ? 'border-primary bg-primary/5' : 'border-slate-300 hover:border-primary hover:bg-slate-50'
+                file ? 'border-slate-900 bg-slate-50' : 'border-slate-300 hover:border-slate-900 hover:bg-slate-50'
               }`}
             >
               <input
@@ -220,12 +230,12 @@ export function UploadAcademicDocumentModal({
 
               {file ? (
                 <div className="flex items-center justify-center gap-3">
-                  <FileText className="w-6 h-6 text-primary" />
+                  <FileText className="w-6 h-6 text-blue-600" />
                   <div className="text-left">
                     <div className="font-bold text-slate-900 truncate max-w-xs">{file.name}</div>
                     <div className="text-[10px] text-slate-500">{(file.size / (1024 * 1024)).toFixed(2)} MB</div>
                   </div>
-                  <span className="ml-auto text-[10px] font-bold text-primary underline">Change</span>
+                  <span className="ml-auto text-[10px] font-bold text-blue-600 underline">Change</span>
                 </div>
               ) : (
                 <div className="space-y-1">
@@ -263,7 +273,7 @@ export function UploadAcademicDocumentModal({
             <button
               type="submit"
               disabled={uploading || !file || success}
-              className="px-4 py-2 text-xs font-bold bg-primary text-white rounded-md hover:bg-primary-hover transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              className="px-4 py-2 text-xs font-bold bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-colors disabled:opacity-50 flex items-center gap-1.5"
             >
               <Upload className="w-3.5 h-3.5" />
               {uploading ? 'Uploading...' : 'Upload Document'}
