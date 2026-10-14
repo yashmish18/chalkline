@@ -1,5 +1,7 @@
 server:
-  port: 8080
+  # Render (and similar hosts) pass the port in $PORT; bind on all interfaces so the host can reach it.
+  port: ${PORT:8080}
+  address: 0.0.0.0
   servlet:
     session:
       cookie:
