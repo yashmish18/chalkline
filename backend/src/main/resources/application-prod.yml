@@ -17,10 +17,11 @@ server:
 
 spring:
   datasource:
-    # Either a full JDBC URL, or DB_HOST / DB_PORT / DB_NAME (Render Blueprint, see render.yaml).
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    # One of: DATABASE_URL (Render's Internal Database URL, postgresql://user:pass@host/db),
+    # a full SPRING_DATASOURCE_URL, or DB_HOST / DB_PORT / DB_NAME. SPRING_DATASOURCE_* always win.
+    url: ${SPRING_DATASOURCE_URL:${app.db.url:jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}}}
+    username: ${SPRING_DATASOURCE_USERNAME:${app.db.username:}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${app.db.password:}}
   mail:
     host: ${SPRING_MAIL_HOST:}   # optional: reminder emails only
     port: ${SPRING_MAIL_PORT:587}
