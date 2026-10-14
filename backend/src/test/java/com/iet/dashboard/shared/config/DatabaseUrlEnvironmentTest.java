@@ -26,4 +26,12 @@ class DatabaseUrlEnvironmentTest {
         assertThat(DatabaseUrlEnvironment.fromUrl("")).isEmpty();
         assertThat(DatabaseUrlEnvironment.fromUrl("jdbc:postgresql://x/db")).isEmpty();
     }
+
+    @Test
+    void describesAPasswordWithoutRevealingIt() {
+        assertThat(DatabaseUrlEnvironment.describe("YqqAqa28J21zRujl2aYgkYjawP6AH5XM"))
+                .startsWith("32 chars, fingerprint ").doesNotContain("Yqq");
+        assertThat(DatabaseUrlEnvironment.describe("")).isEqualTo("EMPTY");
+        assertThat(DatabaseUrlEnvironment.describe(null)).isEqualTo("EMPTY");
+    }
 }
