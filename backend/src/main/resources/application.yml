@@ -52,10 +52,12 @@ app:
   email-domain: ${APP_EMAIL_DOMAIN:jklu.edu.in}
   mail:
     from: ${APP_MAIL_FROM:${SPRING_MAIL_USERNAME:no-reply@jklu.edu.in}}
+  admin-account:
+    # The admin: a coordinator who also sets an admin password at first sign-in. Comma-separated.
+    email: ${APP_ADMIN_EMAIL:${APP_COORDINATOR_EMAIL:}}
+    # true clears the admin password on startup, so the admin chooses a new one (then set back to false).
+    reset-password: ${APP_ADMIN_RESET_PASSWORD:false}
   coordinator:
-    # Optional first coordinator(s), comma-separated. They are sent a verification link on startup
-    # and become coordinator only after verifying and choosing a coordinator password.
-    email: ${APP_COORDINATOR_EMAIL:}
     name: ${APP_COORDINATOR_NAME:Coordinator}
   institution:
     name: ${APP_INSTITUTION_NAME:Institute of Engineering & Technology}

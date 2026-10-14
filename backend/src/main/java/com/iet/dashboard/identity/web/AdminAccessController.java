@@ -1,8 +1,7 @@
 package com.iet.dashboard.identity.web;
 
-import com.iet.dashboard.identity.domain.AppUser;
 import com.iet.dashboard.identity.domain.Role;
-import com.iet.dashboard.identity.service.CoordinatorAccessService;
+import com.iet.dashboard.identity.service.AdminAccessService;
 import com.iet.dashboard.identity.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -21,55 +20,41 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
 
 /**
- * Coordinator setup (from the emailed link) and the coordinator password prompt.
+ * The admin password: chosen at the admin's first sign-in, then asked once per session.
  * Every endpoint acts on the signed-in person only; nothing here takes a user id.
  */
 @RestController
-@RequestMapping("/api/auth/coordinator")
-public class CoordinatorAccessController {
+@RequestMapping("/api/auth/admin")
+public class AdminAccessController {
 
-    public record SetupRequest(String token, String password) {}
-
-    public record UnlockRequest(String password) {}
+    public record PasswordRequest(String password) {}
 
     private static final DateTimeFormatter CLOCK_TIME =
             DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.of("Asia/Kolkata"));
 
-    private final CoordinatorAccessService access;
+    private final AdminAccessService access;
     private final UserService userService;
 
-    public CoordinatorAccessController(CoordinatorAccessService access, UserService userService) {
+    public AdminAccessController(AdminAccessService access, UserService userService) {
         this.access = access;
         this.userService = userService;
     }
 
-    /** Opens the emailed link: sets the coordinator password and makes this person coordinator. */
     @PostMapping("/setup")
-    public UserDto setup(@RequestBody SetupRequest request, HttpServletRequest http) {
-        AppUser user = access.completeSetup(request.token(), request.password());
-        return unlockSession(user.getEmail(), http);
+    public UserDto setup(@RequestBody PasswordRequest request, HttpServletRequest http) {
+        return unlockSession(access.setInitialPassword(request.password()).getEmail(), http);
     }
 
-    /** The coordinator password prompt shown after each Microsoft sign-in. */
     @PostMapping("/unlock")
-    public ResponseEntity<?> unlock(@RequestBody UnlockRequest request, HttpServletRequest http) {
+    public ResponseEntity<?> unlock(@RequestBody PasswordRequest request, HttpServletRequest http) {
         return switch (access.unlock(request.password())) {
             case UNLOCKED -> ResponseEntity.ok(unlockSession(userService.getCurrentUser().email(), http));
-            case WRONG_PASSWORD -> problem(HttpStatus.BAD_REQUEST, "Wrong coordinator password.");
+            case WRONG_PASSWORD -> problem(HttpStatus.BAD_REQUEST, "Wrong admin password.");
             case TEMPORARILY_LOCKED -> problem(HttpStatus.TOO_MANY_REQUESTS,
-                    "Too many wrong passwords. Coordinator access is locked until " + until(access.lockedUntil()) + ".");
+                    "Too many wrong passwords. Admin access is locked until " + until(access.lockedUntil()) + ".");
         };
-    }
-
-    /** Emails the signed-in person a fresh setup link. In dev mode the link is also returned. */
-    @PostMapping("/resend")
-    public Map<String, Object> resend() {
-        CoordinatorAccessService.InviteOutcome outcome = access.resendForCurrentUser();
-        return outcome.devLink() == null ? Map.of("sent", outcome.sent())
-                : Map.of("sent", outcome.sent(), "devLink", outcome.devLink());
     }
 
     /**

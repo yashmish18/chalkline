@@ -89,8 +89,8 @@ public class SecurityConfig {
                 .requestMatchers(new AntPathRequestMatcher("/v3/api-docs/**")).permitAll()
                 .requestMatchers(new AntPathRequestMatcher("/error")).permitAll()
                 .requestMatchers(new AntPathRequestMatcher("/api/me")).authenticated()
-                // A coordinator whose session is still locked (no coordinator password entered yet)
-                // holds neither role, so they reach nothing beyond sign-in and /api/me.
+                // The admin's session before the admin password holds neither role, so it reaches
+                // nothing beyond sign-in and /api/me.
                 .requestMatchers(new AntPathRequestMatcher("/api/**")).hasAnyRole("COORDINATOR", "FACULTY", "DEAN")
                 .anyRequest().permitAll()
             )

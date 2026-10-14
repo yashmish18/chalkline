@@ -120,33 +120,47 @@ class AllocationImportServiceTest {
         assertThat(result.issues()).allMatch(i -> i.severity().equals("ERROR"));
     }
 
-    /** Role = Coordinator only sends a verification link (once per person); it grants nothing by itself. */
+    /** The Role column decides who is coordinator; the admin and the uploader are never demoted. */
     @Test
-    void aCoordinatorRoleInTheSheetSendsOneVerificationLinkAndGrantsNothingYet() {
-        var access = org.mockito.Mockito.mock(com.iet.dashboard.identity.service.CoordinatorAccessService.class);
-        org.mockito.Mockito.when(access.invite(org.mockito.ArgumentMatchers.any()))
-                .thenReturn(new com.iet.dashboard.identity.service.CoordinatorAccessService.InviteOutcome(true, null));
-        var withInvites = new AllocationImportServiceImpl(users, faculty, departments, courses, offerings, assignments, terms,
-                access, new com.iet.dashboard.identity.config.AppSettings(false, false));
+    void theRoleColumnAssignsCoordinatorAndFacultyButNeverDemotesTheAdminOrTheUploader() {
+        var admin = new com.iet.dashboard.identity.domain.AppUser("s.taruna@jklu.edu.in", "Dr. S Taruna",
+                com.iet.dashboard.identity.domain.Role.COORDINATOR);
+        admin.setAdmin(true);
+        users.save(admin);
+        users.save(new com.iet.dashboard.identity.domain.AppUser("old.coord@jklu.edu.in", "Dr. Old Coord",
+                com.iet.dashboard.identity.domain.Role.COORDINATOR));
+        users.save(new com.iet.dashboard.identity.domain.AppUser("me@jklu.edu.in", "Dr. Me",
+                com.iet.dashboard.identity.domain.Role.COORDINATOR));
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("me@jklu.edu.in", null, java.util.List.of()));
         String header = HEADER.trim() + ",Role\n";
+        try {
+            AllocationImportResultDto result = importer.importAllocations(new MockMultipartFile("file", "a.csv", "text/csv", (header + """
+                    Dr. S Taruna,s.taruna@jklu.edu.in,Professor,CSE,CS2105,Data Structures,3-1-2,3,B,60,Lecture,,,3,2,Faculty
+                    Dr. Amit Sinhal,amit.sinhal@jklu.edu.in,Professor,CSE,CS1139,Programming-I,3-0-2,1,C,64,Lecture,,,3,2,Coordinator
+                    Dr. Amit Sinhal,amit.sinhal@jklu.edu.in,Professor,CSE,CS1139,Programming-I,3-0-2,1,C,64,Practical,C1,32,2,2,Faculty
+                    Dr. Old Coord,old.coord@jklu.edu.in,Professor,CSE,CS1139,Programming-I,3-0-2,1,D,64,Lecture,,,3,2,Faculty
+                    Dr. Me,me@jklu.edu.in,Professor,CSE,CS1139,Programming-I,3-0-2,1,E,64,Lecture,,,3,2,Faculty
+                    Dr. Neha Rao,neha.rao@jklu.edu.in,Professor,CSE,CS1139,Programming-I,3-0-2,1,F,64,Lecture,,,3,2,Dean
+                    Dr. Blank Role,blank.role@jklu.edu.in,Professor,CSE,CS1139,Programming-I,3-0-2,1,G,64,Lecture,,,3,2,
+                    """).getBytes(StandardCharsets.UTF_8)));
 
-        AllocationImportResultDto result = withInvites.importAllocations(new MockMultipartFile("file", "a.csv", "text/csv", (header + """
-                Dr. S Taruna,s.taruna@jklu.edu.in,Professor,CSE,CS2105,Data Structures,3-1-2,3,B,60,Lecture,,,3,2,Coordinator
-                Dr. S Taruna,s.taruna@jklu.edu.in,Professor,CSE,CS2105,Data Structures,3-1-2,3,B,60,Tutorial,,,1,2,coordinator
-                Dr. Amit Sinhal,amit.sinhal@jklu.edu.in,Professor,CSE,CS1139,Programming-I,3-0-2,1,C,64,Lecture,,,3,2,Faculty
-                Dr. Neha Rao,neha.rao@jklu.edu.in,Professor,CSE,CS1139,Programming-I,3-0-2,1,D,64,Lecture,,,3,2,Dean
-                """).getBytes(StandardCharsets.UTF_8)));
-
-        org.mockito.Mockito.verify(access, org.mockito.Mockito.times(1)).invite(
-                org.mockito.ArgumentMatchers.argThat(u -> u.getEmail().equals("s.taruna@jklu.edu.in")));
-        org.mockito.Mockito.verifyNoMoreInteractions(access);
-        assertThat(result.coordinatorInvites()).isEqualTo(1);
-        assertThat(users.findByEmailIgnoreCase("s.taruna@jklu.edu.in")).get()
-                .extracting(u -> u.getRole()).isEqualTo(com.iet.dashboard.identity.domain.Role.FACULTY);
-        assertThat(result.issues()).anySatisfy(i -> {
-            assertThat(i.row()).isEqualTo(5);
-            assertThat(i.severity()).isEqualTo("WARN");
-            assertThat(i.message()).contains("Dean");
-        });
+            java.util.function.Function<String, com.iet.dashboard.identity.domain.Role> role =
+                    email -> users.findByEmailIgnoreCase(email).orElseThrow().getRole();
+            assertThat(role.apply("amit.sinhal@jklu.edu.in")).as("any Coordinator row wins")
+                    .isEqualTo(com.iet.dashboard.identity.domain.Role.COORDINATOR);
+            assertThat(role.apply("old.coord@jklu.edu.in")).isEqualTo(com.iet.dashboard.identity.domain.Role.FACULTY);
+            assertThat(role.apply("s.taruna@jklu.edu.in")).as("the admin").isEqualTo(com.iet.dashboard.identity.domain.Role.COORDINATOR);
+            assertThat(role.apply("me@jklu.edu.in")).as("the uploader").isEqualTo(com.iet.dashboard.identity.domain.Role.COORDINATOR);
+            assertThat(role.apply("blank.role@jklu.edu.in")).isEqualTo(com.iet.dashboard.identity.domain.Role.FACULTY);
+            assertThat(result.rolesChanged()).isEqualTo(2);
+            assertThat(result.issues()).anySatisfy(i -> {
+                assertThat(i.row()).isEqualTo(7);
+                assertThat(i.severity()).isEqualTo("WARN");
+                assertThat(i.message()).contains("Dean");
+            });
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
     }
 }

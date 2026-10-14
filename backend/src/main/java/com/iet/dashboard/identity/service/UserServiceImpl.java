@@ -1,6 +1,5 @@
 package com.iet.dashboard.identity.service;
 
-import com.iet.dashboard.identity.config.AppSettings;
 
 import com.iet.dashboard.identity.domain.AppUser;
 import com.iet.dashboard.identity.domain.Role;
@@ -23,11 +22,9 @@ import java.util.Optional;
 public class UserServiceImpl implements UserService {
 
     private final AppUserRepository userRepository;
-    private final AppSettings settings;
 
-    public UserServiceImpl(AppUserRepository userRepository, AppSettings settings) {
+    public UserServiceImpl(AppUserRepository userRepository) {
         this.userRepository = userRepository;
-        this.settings = settings;
     }
 
     @Override
@@ -63,7 +60,7 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByEmailIgnoreCase(email)
                 .filter(AppUser::isActive)
                 .map(user -> {
-                    var access = CoordinatorAccessService.accessOf(user, auth);
+                    var access = AdminAccessService.accessOf(user, auth);
                     return new UserDto(user.getId(), user.getEmail(), user.getName(), user.getRole().name(),
                             access == null ? null : access.name());
                 })
@@ -90,8 +87,8 @@ public class UserServiceImpl implements UserService {
                 .filter(AppUser::isActive)
                 .orElseThrow(() -> new ResourceNotFoundException("Active user not found for email: " + email));
 
-        // A coordinator's session starts locked until the coordinator password is entered.
-        var authority = CoordinatorAccessService.signInAuthority(user, settings != null && settings.devMode());
+        // The admin's session starts locked until the admin password is entered.
+        var authority = AdminAccessService.signInAuthority(user);
         var authToken = new UsernamePasswordAuthenticationToken(user.getEmail(), null, Collections.singletonList(authority));
         SecurityContextHolder.getContext().setAuthentication(authToken);
 

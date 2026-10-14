@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Sidebar } from './components/Sidebar';
 import { LoginScreen } from './components/LoginScreen';
-import { CoordinatorAccessScreen } from './components/CoordinatorAccessScreen';
-import { pendingSetupToken } from './lib/coordinatorSetup';
+import { AdminAccessScreen } from './components/AdminAccessScreen';
 import { NotificationCenter } from './components/NotificationCenter';
 import { DevUserSwitcher } from './components/DevUserSwitcher';
 import { HeaderClock } from './components/HeaderClock';
@@ -31,13 +30,9 @@ function MainAppShell() {
     return <LoginScreen />;
   }
 
-  // Opened the emailed coordinator link: choose the coordinator password first.
-  const setupToken = pendingSetupToken();
-  if (setupToken) {
-    return <CoordinatorAccessScreen mode="setup" token={setupToken} />;
-  }
-  if (user.role === 'COORDINATOR' && user.coordinatorAccess && user.coordinatorAccess !== 'UNLOCKED') {
-    return <CoordinatorAccessScreen mode={user.coordinatorAccess === 'LOCKED' ? 'unlock' : 'awaiting'} />;
+  // The admin enters the admin password (or chooses it at first sign-in) before the dashboard opens.
+  if (user.adminAccess && user.adminAccess !== 'UNLOCKED') {
+    return <AdminAccessScreen mode={user.adminAccess === 'LOCKED' ? 'unlock' : 'setup'} />;
   }
 
   return <DashboardShell />;

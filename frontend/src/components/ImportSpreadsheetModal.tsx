@@ -12,7 +12,7 @@ interface ImportIssue {
 const CONFIG: Record<ImportKind, { title: string; help: string; endpoint: string; template: string; accept: string; fileHint: string; summary: [string, string][] }> = {
   allocations: {
     title: 'Import allocations',
-    help: 'One row per faculty, course, section, component and batch. Re-importing the same sheet updates rows instead of duplicating them. Role = Coordinator emails that person a link to activate coordinator access.',
+    help: 'One row per faculty, course, section, component and batch. Re-importing the same sheet updates rows instead of duplicating them. The Role column (Coordinator or Faculty) decides who gets the coordinator dashboard.',
     endpoint: '/api/allocations/import',
     template: '/api/allocations/import-template',
     accept: '.csv,.xlsx,.xls',
@@ -24,7 +24,7 @@ const CONFIG: Record<ImportKind, { title: string; help: string; endpoint: string
       ['offeringsCreated', 'New sections'],
       ['assignmentsCreated', 'New allocations'],
       ['assignmentsUpdated', 'Updated allocations'],
-      ['coordinatorInvites', 'Coordinator links emailed'],
+      ['rolesChanged', 'Roles changed'],
     ],
   },
   timetable: {

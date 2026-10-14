@@ -90,9 +90,9 @@ services:
       - key: ENTRA_CLIENT_SECRET
         sync: false
 
-      # First coordinator(s), comma-separated. Each is emailed a one-time activation link and sets a
-      # coordinator password. Later coordinators come from the allocation sheet's Role column.
-      - key: APP_COORDINATOR_EMAIL
+      # The admin (e.g. s.taruna@jklu.edu.in). Sets the admin password at first sign-in, then uploads
+      # the allocation sheet; its Role column makes everyone else Coordinator or Faculty.
+      - key: APP_ADMIN_EMAIL
         sync: false
       - key: APP_EMAIL_DOMAIN
         value: jklu.edu.in

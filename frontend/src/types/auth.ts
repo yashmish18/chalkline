@@ -5,8 +5,8 @@ export interface UserDto {
   email: string;
   name: string;
   role: UserRole;
-  /** A coordinator's own session: unlocked, waiting for the coordinator password, or not set up yet. */
-  coordinatorAccess?: CoordinatorAccess | null;
+  /** Only for the admin's own session: unlocked, waiting for the admin password, or password not chosen yet. */
+  adminAccess?: AdminAccess | null;
 }
 
-export type CoordinatorAccess = 'UNLOCKED' | 'LOCKED' | 'SETUP_REQUIRED';
+export type AdminAccess = 'UNLOCKED' | 'LOCKED' | 'SETUP_REQUIRED';

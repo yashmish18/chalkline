@@ -20,7 +20,7 @@ import com.iet.dashboard.identity.domain.AppUser;
 import com.iet.dashboard.identity.domain.Role;
 import com.iet.dashboard.identity.config.AppSettings;
 import com.iet.dashboard.identity.repo.AppUserRepository;
-import com.iet.dashboard.identity.service.CoordinatorAccessService;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.iet.dashboard.shared.spreadsheet.SpreadsheetReader;
 import org.springframework.stereotype.Service;
@@ -64,7 +64,7 @@ public class AllocationImportServiceImpl implements AllocationImportService {
             Map.entry("batchstudents", List.of("batchstudents", "batchstrength")),
             Map.entry("hours", List.of("weeklyhours", "contacthours", "=hours")),
             Map.entry("pbl", List.of("pblhours", "=pbl")),
-            // Dashboard access: "Coordinator" (or "Admin") invites that person to become coordinator.
+            // Dashboard access per person: "Coordinator" or "Faculty". Blank leaves the role as it is.
             Map.entry("role", List.of("=role", "access", "dashboardrole", "accessrole"))
     );
 
@@ -80,7 +80,6 @@ public class AllocationImportServiceImpl implements AllocationImportService {
     private final CourseOfferingRepository offeringRepository;
     private final TeachingAssignmentRepository assignmentRepository;
     private final AcademicTermRepository termRepository;
-    private final CoordinatorAccessService coordinatorAccess;
     private final String emailDomain;
 
     @Autowired
@@ -92,7 +91,6 @@ public class AllocationImportServiceImpl implements AllocationImportService {
             CourseOfferingRepository offeringRepository,
             TeachingAssignmentRepository assignmentRepository,
             AcademicTermRepository termRepository,
-            CoordinatorAccessService coordinatorAccess,
             AppSettings settings
     ) {
         this.userRepository = userRepository;
@@ -102,11 +100,10 @@ public class AllocationImportServiceImpl implements AllocationImportService {
         this.offeringRepository = offeringRepository;
         this.assignmentRepository = assignmentRepository;
         this.termRepository = termRepository;
-        this.coordinatorAccess = coordinatorAccess;
         this.emailDomain = settings.emailDomain();
     }
 
-    /** Without coordinator invites, and with the default email domain; for tests. */
+    /** With the default email domain; for tests. */
     public AllocationImportServiceImpl(
             AppUserRepository userRepository,
             FacultyRepository facultyRepository,
@@ -123,7 +120,6 @@ public class AllocationImportServiceImpl implements AllocationImportService {
         this.offeringRepository = offeringRepository;
         this.assignmentRepository = assignmentRepository;
         this.termRepository = termRepository;
-        this.coordinatorAccess = null;
         this.emailDomain = new AppSettings(false, false).emailDomain();
     }
 
@@ -148,7 +144,8 @@ public class AllocationImportServiceImpl implements AllocationImportService {
         String academicYear = term != null ? term.getAcademicYear() : "";
         Counts counts = new Counts();
         List<Issue> issues = new ArrayList<>();
-        Map<Long, Integer> coordinatorRows = new LinkedHashMap<>();
+        Map<Long, Role> wantedRoles = new LinkedHashMap<>();
+        Map<Long, Integer> roleRows = new LinkedHashMap<>();
         Set<String> derivedEmailWarned = new HashSet<>();
 
         for (int i = 0; i < rows.size(); i++) {
@@ -187,8 +184,12 @@ public class AllocationImportServiceImpl implements AllocationImportService {
             }
             String role = cell(row, columns, "role").toLowerCase(Locale.ROOT);
             if (role.contains("coord") || role.contains("admin")) {
-                coordinatorRows.putIfAbsent(member.getUserId(), rowNumber);
-            } else if (!role.isEmpty() && !role.contains("faculty") && !role.contains("teach")) {
+                wantedRoles.put(member.getUserId(), Role.COORDINATOR);   // any Coordinator row wins
+                roleRows.putIfAbsent(member.getUserId(), rowNumber);
+            } else if (role.contains("faculty") || role.contains("teach")) {
+                wantedRoles.putIfAbsent(member.getUserId(), Role.FACULTY);
+                roleRows.putIfAbsent(member.getUserId(), rowNumber);
+            } else if (!role.isEmpty()) {
                 issues.add(new Issue(rowNumber, "WARN", "Role \"" + cell(row, columns, "role")
                         + "\" is not Faculty or Coordinator; treated as Faculty."));
             }
@@ -222,30 +223,35 @@ public class AllocationImportServiceImpl implements AllocationImportService {
             assignmentRepository.save(assignment);
         }
 
-        inviteCoordinators(coordinatorRows, counts, issues);
+        assignRoles(wantedRoles, roleRows, counts, issues);
 
         return new AllocationImportResultDto(rows.size(), counts.facultyCreated, counts.coursesCreated,
                 counts.offeringsCreated, counts.assignmentsCreated, counts.assignmentsUpdated,
-                counts.coordinatorInvites, issues);
+                counts.rolesChanged, issues);
     }
 
     /**
-     * Role = Coordinator only invites: the person becomes coordinator after opening the emailed link
-     * and choosing a coordinator password. The sheet never removes anyone's coordinator access.
+     * The Role column decides who reaches the coordinator dashboard. Two people are never demoted by
+     * a sheet: the admin, and whoever is uploading it (so nobody locks themselves out).
      */
-    private void inviteCoordinators(Map<Long, Integer> coordinatorRows, Counts counts, List<Issue> issues) {
-        if (coordinatorAccess == null) {
-            return;
-        }
-        coordinatorRows.forEach((userId, rowNumber) -> userRepository.findById(userId).ifPresent(user -> {
-            var outcome = coordinatorAccess.invite(user);
-            if (outcome.sent()) {
-                counts.coordinatorInvites++;
-                issues.add(new Issue(rowNumber, "INFO", "Coordinator verification link emailed to " + user.getEmail()
-                        + (outcome.devLink() != null ? " (dev: " + outcome.devLink() + ")" : "") + "."));
-            } else {
-                issues.add(new Issue(rowNumber, "INFO", user.getEmail() + " is already a coordinator."));
+    private void assignRoles(Map<Long, Role> wantedRoles, Map<Long, Integer> roleRows, Counts counts, List<Issue> issues) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        String uploader = auth == null ? "" : auth.getName();
+        wantedRoles.forEach((userId, wanted) -> userRepository.findById(userId).ifPresent(user -> {
+            if (user.getRole() == wanted) {
+                return;
             }
+            int row = roleRows.get(userId);
+            if (wanted == Role.FACULTY && (user.isAdmin() || user.getEmail().equalsIgnoreCase(uploader))) {
+                issues.add(new Issue(row, "INFO", user.getEmail() + " stays coordinator"
+                        + (user.isAdmin() ? " (the admin)." : " (you can't remove your own access).")));
+                return;
+            }
+            user.setRole(wanted);
+            userRepository.save(user);
+            counts.rolesChanged++;
+            issues.add(new Issue(row, "INFO", user.getEmail() + " is now "
+                    + (wanted == Role.COORDINATOR ? "a coordinator." : "faculty (coordinator access removed).")));
         }));
     }
 
@@ -275,8 +281,18 @@ public class AllocationImportServiceImpl implements AllocationImportService {
         if (member == null) {
             member = new Faculty(user.getId(), name, designation.isEmpty() ? "Assistant Professor" : designation, "", null);
             counts.facultyCreated++;
-        } else if (!designation.isEmpty()) {
-            member.setDesignation(designation);
+        } else {
+            if (!designation.isEmpty()) {
+                member.setDesignation(designation);
+            }
+            // The sheet names people; an account created before it (e.g. the admin) takes that name.
+            if (!name.equals(member.getName())) {
+                member.setName(name);
+            }
+        }
+        if (!name.equals(user.getName())) {
+            user.setName(name);
+            userRepository.save(user);
         }
         Department department = department(cell(row, columns, "department"));
         if (department != null) {
@@ -372,7 +388,7 @@ public class AllocationImportServiceImpl implements AllocationImportService {
         int offeringsCreated;
         int assignmentsCreated;
         int assignmentsUpdated;
-        int coordinatorInvites;
+        int rolesChanged;
     }
 
     @Override

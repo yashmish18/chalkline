@@ -27,7 +27,11 @@ public class AppUser {
     @Column(name = "active", nullable = false)
     private boolean active = true;
 
-    /** BCrypt hash of the coordinator password; null until the person completes coordinator setup. */
+    /** The admin (APP_ADMIN_EMAIL): a coordinator whose sessions also need the admin password. */
+    @Column(name = "admin", nullable = false)
+    private boolean admin;
+
+    /** BCrypt hash of the admin password; null until the admin chooses it at first sign-in. */
     @Column(name = "coordinator_password_hash", length = 100)
     private String coordinatorPasswordHash;
 
@@ -106,6 +110,14 @@ public class AppUser {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public boolean isAdmin() {
+        return admin;
+    }
+
+    public void setAdmin(boolean admin) {
+        this.admin = admin;
     }
 
     public String getCoordinatorPasswordHash() {

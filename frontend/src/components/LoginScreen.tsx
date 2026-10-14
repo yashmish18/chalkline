@@ -2,49 +2,38 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { AlertTriangle, ArrowRight } from 'lucide-react';
 import { useAppConfig } from '../lib/appConfig';
-import { pendingSetupToken } from '../lib/coordinatorSetup';
 
 /**
  * Sign-in. Paper background, a serif statement of what the portal is for, and one
  * institutional sign-in action. Development shortcuts sit below a hairline, visually quiet.
  */
 export function LoginScreen() {
-  const { loginWithMicrosoft, bypassLogin, login } = useAuth();
+  const { login } = useAuth();
   const config = useAppConfig();
   const [isPending, setIsPending] = useState(false);
+  const [devEmail, setDevEmail] = useState('');
   const [error, setError] = useState<string | null>(() =>
     new URLSearchParams(window.location.search).get('signin') === 'not-registered'
       ? 'Microsoft signed you in, but this email has no account here. Ask the coordinator to add you through the allocation sheet.'
       : null,
   );
 
-  const handleMicrosoftSignIn = async () => {
-    // Production: the real Microsoft Entra flow (a full-page redirect).
-    if (config.microsoftLoginUrl) {
-      window.location.href = config.microsoftLoginUrl;
-      return;
-    }
+  // The real Microsoft Entra flow: a full-page redirect to Microsoft and back.
+  const handleMicrosoftSignIn = () => {
+    if (!config.microsoftLoginUrl) return;
     setIsPending(true);
-    setError(null);
-    try {
-      await loginWithMicrosoft();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Sign-in failed. Please try again.');
-      setIsPending(false);
-    }
+    window.location.href = config.microsoftLoginUrl;
   };
 
-  const handleFastLogin = async (email: string) => {
+  /** Dev only: sign in as an existing account by email. The admin still needs the admin password next. */
+  const handleDevLogin = async (email: string) => {
+    if (!email.trim()) return;
     setIsPending(true);
     setError(null);
     try {
-      await login(email);
-    } catch {
-      try {
-        await bypassLogin();
-      } catch (fallbackErr: unknown) {
-        setError(fallbackErr instanceof Error ? fallbackErr.message : 'Sign-in failed.');
-      }
+      await login(email.trim());
+    } catch (err: unknown) {
+      setError(err instanceof Error && err.message ? err.message : `No active account for ${email}.`);
     } finally {
       setIsPending(false);
     }
@@ -83,12 +72,6 @@ export function LoginScreen() {
           <div className="w-full max-w-sm">
             <h2 className="font-display text-[28px] font-medium">Sign in</h2>
             <p className="mt-1.5 text-sm text-[var(--ink-subtle)]">Use your institutional Microsoft account.</p>
-            {pendingSetupToken() && (
-              <p className="mt-4 rounded-lg border border-[var(--hairline)] bg-[var(--surface-3)] p-3 text-[13px] text-[var(--ink-muted)]">
-                You opened a coordinator activation link. Sign in with the Microsoft account it was emailed to, then
-                choose your coordinator password.
-              </p>
-            )}
 
             {!config.microsoftLogin && !config.devLogin && (
               <p className="mt-8 rounded-lg border border-[var(--hairline)] bg-[var(--surface-3)] p-3 text-[13px] text-[var(--ink-muted)]">
@@ -97,7 +80,7 @@ export function LoginScreen() {
               </p>
             )}
 
-            {(config.microsoftLogin || config.devLogin) && (
+            {config.microsoftLogin && (
             <button
               type="button"
               onClick={handleMicrosoftSignIn}
@@ -119,17 +102,38 @@ export function LoginScreen() {
               </div>
             )}
 
+            {config.devLogin && !config.microsoftLogin && (
+              <p className="mt-8 rounded-lg border border-[var(--hairline)] bg-[var(--surface-3)] p-3 text-[13px] text-[var(--ink-muted)]">
+                Microsoft sign-in isn’t set up on this machine (it needs the Entra settings, see README). Use
+                development sign-in below.
+              </p>
+            )}
+
             {config.devLogin && (
             <div className="mt-10 pt-6 border-t border-[var(--hairline)]">
               <p className="eyebrow">Development sign-in</p>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => handleFastLogin('coordinator@iet.edu')} disabled={isPending} className="btn">
-                  Coordinator
+              <p className="mt-1.5 text-[12px] text-[var(--ink-subtle)]">
+                Stands in for Microsoft on this machine only. Enter an account email; the admin is then asked for the admin password.
+              </p>
+              <form
+                className="mt-3 flex gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleDevLogin(devEmail);
+                }}
+              >
+                <input
+                  type="email"
+                  className="field flex-1"
+                  placeholder="any account email"
+                  value={devEmail}
+                  onChange={(e) => setDevEmail(e.target.value)}
+                  aria-label="Account email"
+                />
+                <button type="submit" disabled={isPending || !devEmail.trim()} className="btn">
+                  Sign in
                 </button>
-                <button type="button" onClick={() => handleFastLogin('mayank.kundalwal@iet.edu')} disabled={isPending} className="btn">
-                  Faculty
-                </button>
-              </div>
+              </form>
             </div>
             )}
           </div>

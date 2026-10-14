@@ -1,5 +1,8 @@
 # Developer machine only. Never activate this profile on a server.
 app:
+  # Locally the admin is Dr. S Taruna: signing in as her asks for the admin password (set at first sign-in).
+  admin-account:
+    email: ${APP_ADMIN_EMAIL:s.taruna@jklu.edu.in}
   auth:
     dev-mode: true
     bypass-key: ${BYPASS_KEY:dev}

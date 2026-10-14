@@ -7,8 +7,8 @@ public record UserDto(
         String email,
         String name,
         String role,
-        /** UNLOCKED, LOCKED or SETUP_REQUIRED for a coordinator's own session; null otherwise. */
-        String coordinatorAccess
+        /** UNLOCKED, LOCKED or SETUP_REQUIRED for the admin's own session; null for everyone else. */
+        String adminAccess
 ) {
     public UserDto(Long id, String email, String name, String role) {
         this(id, email, name, role, null);

@@ -14,14 +14,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @ActiveProfiles("test")
-class CoordinatorBootstrapTest {
+class AdminBootstrapTest {
 
     @Autowired AppUserRepository users;
     @Autowired FacultyRepository faculty;
 
     @Test
     void createsTheConfiguredCoordinatorWithAProfile() {
-        new CoordinatorBootstrap(users, faculty, "HoD.Office@IET.edu", "Head of Department").run(null);
+        new AdminBootstrap(users, faculty, "HoD.Office@IET.edu", "Head of Department").run(null);
 
         AppUser coordinator = users.findByEmailIgnoreCase("hod.office@iet.edu").orElseThrow();
         assertThat(coordinator.getRole()).isEqualTo(Role.COORDINATOR);
@@ -32,8 +32,8 @@ class CoordinatorBootstrapTest {
     void promotesAnExistingAccountInsteadOfDuplicatingIt() {
         users.save(new AppUser("amit.sinhal@iet.edu", "Dr. Amit Sinhal", Role.FACULTY));
 
-        new CoordinatorBootstrap(users, faculty, "amit.sinhal@iet.edu", "Coordinator").run(null);
-        new CoordinatorBootstrap(users, faculty, "amit.sinhal@iet.edu", "Coordinator").run(null);
+        new AdminBootstrap(users, faculty, "amit.sinhal@iet.edu", "Coordinator").run(null);
+        new AdminBootstrap(users, faculty, "amit.sinhal@iet.edu", "Coordinator").run(null);
 
         assertThat(users.findAll()).singleElement().extracting(AppUser::getRole).isEqualTo(Role.COORDINATOR);
         assertThat(faculty.findAll()).hasSize(1);
@@ -41,14 +41,14 @@ class CoordinatorBootstrapTest {
 
     @Test
     void doesNothingWhenNoEmailIsConfigured() {
-        new CoordinatorBootstrap(users, faculty, "", "Coordinator").run(null);
+        new AdminBootstrap(users, faculty, "", "Coordinator").run(null);
         assertThat(users.count()).isZero();
     }
 
     @Test
     void doesNothingForABlankOrMissingEmail() {
-        new CoordinatorBootstrap(users, faculty, "   ", "Coordinator").run(null);
-        new CoordinatorBootstrap(users, faculty, null, "Coordinator").run(null);
+        new AdminBootstrap(users, faculty, "   ", "Coordinator").run(null);
+        new AdminBootstrap(users, faculty, null, "Coordinator").run(null);
 
         assertThat(users.count()).isZero();
         assertThat(faculty.count()).isZero();
@@ -60,7 +60,7 @@ class CoordinatorBootstrapTest {
         AppUser amit = users.save(new AppUser("amit.sinhal@iet.edu", "Dr. Amit Sinhal", Role.FACULTY));
         faculty.save(new Faculty(amit.getId(), "Dr. Amit Sinhal", "Professor", "", null));
 
-        new CoordinatorBootstrap(users, faculty, "  Amit.Sinhal@IET.edu ", "Coordinator").run(null);
+        new AdminBootstrap(users, faculty, "  Amit.Sinhal@IET.edu ", "Coordinator").run(null);
 
         AppUser promoted = users.findByEmailIgnoreCase("amit.sinhal@iet.edu").orElseThrow();
         assertThat(promoted.getId()).isEqualTo(amit.getId());
@@ -78,7 +78,7 @@ class CoordinatorBootstrapTest {
         hod.setActive(false);
         users.save(hod);
 
-        new CoordinatorBootstrap(users, faculty, "hod@iet.edu", "HoD").run(null);
+        new AdminBootstrap(users, faculty, "hod@iet.edu", "HoD").run(null);
 
         assertThat(users.findByEmailIgnoreCase("hod@iet.edu")).get().satisfies(u -> {
             assertThat(u.isActive()).isTrue();
@@ -88,8 +88,8 @@ class CoordinatorBootstrapTest {
 
     @Test
     void runningTwiceOnAFreshDatabaseCreatesOneAccountAndOneProfile() {
-        new CoordinatorBootstrap(users, faculty, "hod@iet.edu", "HoD").run(null);
-        new CoordinatorBootstrap(users, faculty, "HOD@iet.edu", "Someone Else").run(null);
+        new AdminBootstrap(users, faculty, "hod@iet.edu", "HoD").run(null);
+        new AdminBootstrap(users, faculty, "HOD@iet.edu", "Someone Else").run(null);
 
         assertThat(users.findAll()).singleElement().satisfies(u -> {
             assertThat(u.getName()).isEqualTo("HoD");
@@ -97,5 +97,23 @@ class CoordinatorBootstrapTest {
         });
         assertThat(faculty.findAll()).singleElement()
                 .satisfies(f -> assertThat(f.getDesignation()).isEqualTo("Coordinator"));
+    }
+
+    @Test
+    void marksTheAdminAndCanClearTheAdminPasswordForAReset() {
+        new AdminBootstrap(users, faculty, "S.Taruna@JKLU.edu.in, second.admin@jklu.edu.in", "Admin").run(null);
+        var taruna = users.findByEmailIgnoreCase("s.taruna@jklu.edu.in").orElseThrow();
+        assertThat(taruna.isAdmin()).isTrue();
+        assertThat(users.findByEmailIgnoreCase("second.admin@jklu.edu.in")).get()
+                .satisfies(u -> assertThat(u.isAdmin()).isTrue());
+
+        taruna.setCoordinatorPasswordHash("$2a$12$hash");
+        users.save(taruna);
+        new AdminBootstrap(users, faculty, "s.taruna@jklu.edu.in", "Admin").run(null);
+        assertThat(users.findById(taruna.getId()).orElseThrow().getCoordinatorPasswordHash())
+                .as("a normal restart keeps the password").isEqualTo("$2a$12$hash");
+
+        new AdminBootstrap(users, faculty, "s.taruna@jklu.edu.in", "Admin", true).run(null);
+        assertThat(users.findById(taruna.getId()).orElseThrow().getCoordinatorPasswordHash()).isNull();
     }
 }

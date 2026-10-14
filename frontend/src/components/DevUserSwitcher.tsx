@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { FacultyDto } from '../types/directory';
 
 export function DevUserSwitcher() {
-  const { user, login, logout, bypassLogin } = useAuth();
+  const { user, login, logout } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const { data: facultyList = [] } = useQuery<FacultyDto[]>({
@@ -37,9 +37,8 @@ export function DevUserSwitcher() {
   };
 
   const dynamicAccounts = [
-    { email: 'coordinator@iet.edu', name: 'Coordinator', role: 'COORDINATOR' },
     ...facultyList
-      .filter(f => !f.name.toLowerCase().includes('coordinator') && accountEmail(f).length > 0)
+      .filter(f => accountEmail(f).length > 0)
       .map(f => ({ email: accountEmail(f), name: f.name, role: 'FACULTY' })),
   ];
 
@@ -50,20 +49,8 @@ export function DevUserSwitcher() {
         <span>Switch to:</span>
       </div>
 
-      <button
-        type="button"
-        onClick={() => login('coordinator@iet.edu')}
-        className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
-          user?.role === 'COORDINATOR'
-            ? 'bg-[#0F5C5C]/20 text-[#0B4747] font-semibold border border-[#0F5C5C]/40'
-            : 'text-[#6B6F76] hover:text-[#0B4747]'
-        }`}
-      >
-        Coordinator
-      </button>
-
       <select
-        value={user?.role === 'FACULTY' ? user.email : ''}
+        value={user?.email ?? ''}
         onChange={(e) => {
           if (e.target.value) login(e.target.value);
         }}
@@ -72,23 +59,15 @@ export function DevUserSwitcher() {
         className="max-w-[200px] bg-white border border-[#E6E4DD] rounded px-2 py-1 text-[11px] text-[#16181D] focus:outline-none focus:border-[#0F5C5C]"
       >
         <option value="" disabled>
-          {user?.role === 'FACULTY' ? 'Choose faculty…' : `Choose faculty (${dynamicAccounts.length - 1})`}
+          {`Choose account (${dynamicAccounts.length})`}
         </option>
-        {dynamicAccounts.filter(a => a.role === 'FACULTY').map((account) => (
+        {dynamicAccounts.map((account) => (
           <option key={account.email} value={account.email}>
             {account.name}
           </option>
         ))}
       </select>
 
-      <button
-        type="button"
-        onClick={() => bypassLogin()}
-        title="Instant coordinator sign-in (bypass)"
-        className="ml-1 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-[#0B4747] hover:bg-[#0F5C5C]/15 transition-colors"
-      >
-        Bypass
-      </button>
       <button
         type="button"
         onClick={handleLogout}

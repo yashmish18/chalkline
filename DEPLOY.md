@@ -14,7 +14,7 @@ Uploaded files live in the `uploads` volume. Both volumes must be backed up.
 
 - **Sign-in is Microsoft Entra ID only.** Password-less dev sign-in, the bypass key and the user
   switcher do not exist (they answer 404). Only people who already have an account — created by the
-  allocation import, or the coordinator from `APP_COORDINATOR_EMAIL` — can sign in.
+  allocation import, or the admin from `APP_ADMIN_EMAIL` — can sign in.
 - **CSRF protection is on.** The app sends the token automatically.
 - **"Delete all data", "Reset activity" and "Delete all faculty" are switched off** (404, buttons hidden).
 - Session cookies are `Secure`, so the site **must be served over HTTPS**.
@@ -36,8 +36,8 @@ Azure portal → Microsoft Entra ID → App registrations → New registration.
 cp .env.example .env      # on the server; never commit .env
 ```
 
-Fill in the database password, the three `ENTRA_*` values, `APP_COORDINATOR_EMAIL` (the
-coordinator's real Microsoft email), and the SMTP mailbox used for reminder emails.
+Fill in the database password, the three `ENTRA_*` values, `APP_ADMIN_EMAIL` (the
+admin's real Microsoft email), and optionally the SMTP mailbox used for reminder emails.
 
 ## 3. Start
 
@@ -100,7 +100,7 @@ Secrets go only into the Render dashboard. Nothing secret is written to `render.
    |---|---|
    | `APP_PUBLIC_URL` | The Vercel address, e.g. `https://faculty-dashboard.vercel.app` (no trailing slash). If you do not know it yet, enter a guess and fix it after step 2. |
    | `ENTRA_TENANT_ID`, `ENTRA_CLIENT_ID`, `ENTRA_CLIENT_SECRET` | From the Entra app registration (step 3) |
-   | `APP_COORDINATOR_EMAIL` | First coordinator's Microsoft email(s), comma-separated; they are emailed an activation link |
+   | `APP_ADMIN_EMAIL` | The admin's Microsoft email; they set the admin password at first sign-in |
    | `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD` | The SMTP mailbox for reminder emails |
 4. **Apply**. Render creates the database, builds `backend/Dockerfile` and starts the service with
    `SPRING_PROFILES_ACTIVE=prod`. Flyway runs the migrations on first start. The deploy counts as
@@ -159,30 +159,18 @@ Azure portal → **Microsoft Entra ID** → **App registrations** → **New regi
 5. **API permissions**: Microsoft Graph, delegated `openid`, `profile`, `email` (`User.Read` is
    there by default and harmless). Grant admin consent if your tenant requires it.
 
-### 4. Coordinators: email verification and coordinator password
+### 4. The admin, coordinators and faculty
 
-Coordinator access takes three things: an account, a verified email, and a coordinator password.
-
-**Who is invited**
-- The **Role** column of the allocation sheet. `Coordinator` (or `Admin`) emails that person a
-  one-time activation link. The sheet only ever *invites*: it never removes anyone's access, and a
-  person who is already a coordinator is not emailed again on re-import.
-- `APP_COORDINATOR_EMAIL` (comma-separated). This is only needed for the very first coordinator,
-  because someone has to be coordinator to upload the first sheet. On startup each listed account is
-  created or promoted, and emailed a link if it has no coordinator password yet.
-
-**Activating** (what the coordinator does once)
-1. Open the emailed link. It works once and expires after 72 hours.
-2. Sign in with Microsoft **as the email it was sent to**. A link opened under another account is refused.
-3. Choose a coordinator password (12 to 72 characters, not containing the email name). Only a
-   BCrypt hash is stored. The password is never emailed or logged.
-
-**Every sign-in after that:** Microsoft sign-in, then the coordinator password. Until the password is
-entered, the session reaches nothing except sign-in. After 5 wrong passwords coordinator access locks
-for 15 minutes. "Forgot it? Email me a reset link" sends a fresh link to their own inbox.
-
-Invites need working mail (`SPRING_MAIL_*`). Without it the link can't be delivered. On a
-developer machine (dev mode) the link is printed in the backend log and shown in the import result.
+- **Admin:** the account in `APP_ADMIN_EMAIL` (e.g. `s.taruna@jklu.edu.in`). It is created on
+  startup. At their first Microsoft sign-in they choose the **admin password**; only a BCrypt
+  hash is stored. Every later sign-in asks for it. After 5 wrong tries it locks for 15 minutes.
+  Forgotten password: set `APP_ADMIN_RESET_PASSWORD=true`, redeploy, let the admin choose a new
+  one, then set it back to `false`.
+- **Coordinators and faculty** come from the allocation sheet the admin uploads. Its **Role**
+  column (`Coordinator` or `Faculty`) decides who gets the coordinator dashboard. People are
+  matched by email when they sign in with Microsoft; they don't need a password. Re-uploading
+  updates roles. The admin and the person uploading are never demoted by a sheet.
+- Email is optional (`SPRING_MAIL_*`): it is used for reminders only.
 
 Then follow **4. First use** above (semester dates, allocation import, timetable import).
 

@@ -20,7 +20,7 @@ bash scripts/dev-backend.sh            # backend on :8080, reloads itself on cod
 cd frontend && npm install && npm run dev   # app on http://localhost:5173
 ```
 
-Open http://localhost:5173 and use **Development sign-in → Coordinator**. Dev sign-in and
+Open http://localhost:5173 and type an account email under **Development sign-in**. Dev sign-in and
 "delete everything" exist only in dev mode; production never shows them.
 
 Then load the sample data (in this order):
@@ -32,8 +32,8 @@ Then load the sample data (in this order):
 | 3. Master timetable | Timetable → Import timetable | `docs/samples/complete/timetable-master-complete.csv` |
 | 4. A personal timetable | Sign in as that faculty → Timetable → Upload my timetable | `docs/samples/complete/timetable-personal-mayank.csv` |
 
-The sample sheet makes Dr. S Taruna coordinator (Role column). Locally her activation email lands
-in Mailpit at http://localhost:8025, and in dev mode the link is also shown in the import result.
+Locally the admin is `s.taruna@jklu.edu.in`: type it under Development sign-in, choose the admin
+password, and import the sample sheet. Any other email from the sheet signs in without a password.
 
 Tests: `cd backend && mvn test` · `cd frontend && npx vitest run && npx tsc --noEmit -p .`
 
@@ -47,23 +47,25 @@ Tests: `cd backend && mvn test` · `cd frontend && npx vitest run && npx tsc --n
   self-registers. Others see "not registered".
 - **Faculty** reach their own data only. Identity always comes from the signed-in session,
   never from a request parameter.
-- **Coordinators** need two things: Microsoft sign-in and a **coordinator password**.
+- **The admin** also enters the admin password after Microsoft sign-in.
 
-### Becoming coordinator
-1. Someone is invited, either by `Role = Coordinator` in the allocation sheet or by
-   `APP_COORDINATOR_EMAIL` on the server (only needed for the very first coordinator).
-2. They get an email with a one-time link (valid 72 h).
-3. They open it, sign in with Microsoft **as that email**, and choose a coordinator password.
-   Only a BCrypt hash is stored.
-4. Every later session asks for that password before coordinator tools open. After 5 wrong
-   tries access locks for 15 minutes. "Forgot it?" emails a reset link to their own inbox.
+### Admin, coordinators, faculty
+1. The **admin** is set on the server (`APP_ADMIN_EMAIL`, e.g. `s.taruna@jklu.edu.in`). At their
+   first Microsoft sign-in they choose the admin password (stored only as a BCrypt hash); every
+   later sign-in asks for it.
+2. The admin uploads the allocation sheet. Its **Role** column makes each person `Coordinator`
+   or `Faculty`.
+3. Everyone else signs in with Microsoft and lands on their dashboard, matched by email. No
+   password is needed.
 
-The sheet only invites. It never removes anyone's coordinator access.
+The admin and the person uploading are never demoted by a sheet.
 
 ### The allocation sheet (one row per faculty × course × section × component × batch)
 
 `Faculty Name, Email, Designation, Department, Course Code, Course Name, L-T-P, Semester,
 Section, Section Students, Component, Batch, Batch Students, Weekly Hours, PBL Hours, Role`
+
+- **Role**: `Coordinator` or `Faculty` (blank keeps the person's current role).
 
 - **Component**: Lecture, Tutorial or Practical (L/T/P and Lab also work).
 - **Batch**: `ALL` (or blank) means the whole section. `C1`, `C2`, ... are lab batches.

@@ -46,8 +46,13 @@ class SampleFilesImportTest {
         AllocationImportResultDto allocations = new AllocationImportServiceImpl(
                 users, faculty, departments, courses, offerings, assignments, terms)
                 .importAllocations(sample("allocations-complete.csv"));
-        assertThat(allocations.issues()).isEmpty();
+        assertThat(allocations.issues()).as("only role notices, no problems")
+                .allSatisfy(i -> assertThat(i.severity()).isEqualTo("INFO"));
+        assertThat(allocations.rolesChanged()).as("Dr. S Taruna becomes coordinator").isEqualTo(1);
+        assertThat(users.findByEmailIgnoreCase("s.taruna@jklu.edu.in")).get()
+                .satisfies(u -> assertThat(u.getRole().name()).isEqualTo("COORDINATOR"));
         assertThat(allocations.facultyCreated()).isEqualTo(6);
+        assertThat(faculty.findAll()).extracting(f -> f.getName()).contains("Dr. S Taruna");
         assertThat(allocations.assignmentsCreated()).isEqualTo(18);
         assertThat(departments.findAll()).extracting(d -> d.getCode()).containsExactlyInAnyOrder("CSE", "ECE");
         assertThat(users.findAll()).allMatch(u -> u.getEmail().endsWith("@jklu.edu.in"));
