@@ -1,7 +1,7 @@
-# Optional: real Microsoft Entra sign-in on a developer machine.
-#   ENTRA_TENANT_ID=... ENTRA_CLIENT_ID=... ENTRA_CLIENT_SECRET=... SPRING_PROFILES_ACTIVE=dev,entra
-# In the Entra app registration add the redirect URI http://localhost:5173/login/oauth2/code/entra
-# (production uses its own copy of this block in application-prod.yml).
+# Microsoft Entra sign-in. Add this profile once the Entra app registration exists:
+#   production:  SPRING_PROFILES_ACTIVE=prod,entra   (redirect URI https://<site>/login/oauth2/code/entra)
+#   your machine: SPRING_PROFILES_ACTIVE=dev,entra   (redirect URI http://localhost:5173/login/oauth2/code/entra)
+# with ENTRA_TENANT_ID, ENTRA_CLIENT_ID and ENTRA_CLIENT_SECRET set.
 server:
   tomcat:
     use-relative-redirects: true
@@ -15,7 +15,8 @@ spring:
             client-id: ${ENTRA_CLIENT_ID}
             client-secret: ${ENTRA_CLIENT_SECRET}
             scope: openid,profile,email
-            redirect-uri: "${APP_PUBLIC_URL:http://localhost:5173}/login/oauth2/code/{registrationId}"
+            # APP_PUBLIC_URL pins the public host when a proxy does not pass X-Forwarded-Host.
+            redirect-uri: "${APP_PUBLIC_URL:{baseUrl}}/login/oauth2/code/{registrationId}"
         provider:
           entra:
             issuer-uri: https://login.microsoftonline.com/${ENTRA_TENANT_ID}/v2.0

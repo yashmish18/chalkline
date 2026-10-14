@@ -32,21 +32,8 @@ spring:
           auth: ${SPRING_MAIL_SMTP_AUTH:true}
           starttls:
             enable: ${SPRING_MAIL_STARTTLS:true}
-  security:
-    oauth2:
-      client:
-        registration:
-          entra:
-            client-id: ${ENTRA_CLIENT_ID}
-            client-secret: ${ENTRA_CLIENT_SECRET}
-            scope: openid,profile,email
-            # APP_PUBLIC_URL (e.g. https://your-app.vercel.app, no trailing slash) pins the public host
-            # when a proxy does not pass X-Forwarded-Host reliably; otherwise the request's host is used.
-            redirect-uri: "${APP_PUBLIC_URL:{baseUrl}}/login/oauth2/code/{registrationId}"
-        provider:
-          entra:
-            issuer-uri: https://login.microsoftonline.com/${ENTRA_TENANT_ID}/v2.0
-            user-name-attribute: preferred_username
+  # Microsoft Entra sign-in lives in application-entra.yml: run with SPRING_PROFILES_ACTIVE=prod,entra
+  # once ENTRA_TENANT_ID / ENTRA_CLIENT_ID / ENTRA_CLIENT_SECRET are set.
 
 app:
   auth:

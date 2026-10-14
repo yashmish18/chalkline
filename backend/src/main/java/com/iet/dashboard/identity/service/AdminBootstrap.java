@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,14 +39,19 @@ public class AdminBootstrap implements ApplicationRunner {
     private final List<String> emails;
     private final String name;
     private final boolean resetPassword;
+    private final PasswordEncoder passwordEncoder;
+    private final String initialPassword;
 
     @Autowired
-    public AdminBootstrap(AppUserRepository users, FacultyRepository faculty,
+    public AdminBootstrap(AppUserRepository users, FacultyRepository faculty, PasswordEncoder passwordEncoder,
                           @Value("${app.admin-account.email:}") String email,
                           @Value("${app.coordinator.name:Coordinator}") String name,
-                          @Value("${app.admin-account.reset-password:false}") boolean resetPassword) {
+                          @Value("${app.admin-account.reset-password:false}") boolean resetPassword,
+                          @Value("${app.admin-account.initial-password:}") String initialPassword) {
         this.users = users;
         this.faculty = faculty;
+        this.passwordEncoder = passwordEncoder;
+        this.initialPassword = initialPassword == null ? "" : initialPassword;
         this.emails = Arrays.stream(email == null ? new String[0] : email.split(","))
                 .map(e -> e.trim().toLowerCase(Locale.ROOT))
                 .filter(e -> !e.isEmpty())
@@ -57,6 +63,10 @@ public class AdminBootstrap implements ApplicationRunner {
 
     public AdminBootstrap(AppUserRepository users, FacultyRepository faculty, String email, String name) {
         this(users, faculty, email, name, false);
+    }
+
+    public AdminBootstrap(AppUserRepository users, FacultyRepository faculty, String email, String name, boolean resetPassword) {
+        this(users, faculty, null, email, name, resetPassword, "");
     }
 
     @Override
@@ -77,6 +87,12 @@ public class AdminBootstrap implements ApplicationRunner {
             user.setCoordinatorFailedAttempts(0);
             user.setCoordinatorLockedUntil(null);
             log.warn("Admin password cleared for {}; they choose a new one at next sign-in. Set APP_ADMIN_RESET_PASSWORD=false.", email);
+        }
+        if (user.getCoordinatorPasswordHash() == null && !initialPassword.isBlank() && passwordEncoder != null) {
+            AdminAccessService.checkPasswordRules(initialPassword, email);
+            user.setCoordinatorPasswordHash(passwordEncoder.encode(initialPassword));
+            log.info("Admin password for {} set from APP_ADMIN_INITIAL_PASSWORD (stored hashed). "
+                    + "You can remove that variable now.", email);
         }
         user = users.save(user);
         if (faculty.findByUserId(user.getId()).isEmpty()) {

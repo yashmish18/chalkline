@@ -32,6 +32,7 @@ describe('useAppConfig', () => {
       microsoftLogin: false,
       microsoftLoginUrl: null,
       destructiveActions: false,
+      emailSignIn: false,
     });
   });
 

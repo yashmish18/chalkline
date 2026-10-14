@@ -1,5 +1,6 @@
 package com.iet.dashboard.identity.service;
 
+import com.iet.dashboard.identity.config.AppSettings;
 import com.iet.dashboard.identity.domain.AppUser;
 import com.iet.dashboard.identity.domain.Role;
 import com.iet.dashboard.identity.repo.AppUserRepository;
@@ -54,16 +55,22 @@ public class AdminAccessService {
 
     private final AppUserRepository users;
     private final PasswordEncoder passwordEncoder;
+    private final AppSettings settings;
     private final Clock clock;
 
     @Autowired
-    public AdminAccessService(AppUserRepository users, PasswordEncoder passwordEncoder) {
-        this(users, passwordEncoder, Clock.systemUTC());
+    public AdminAccessService(AppUserRepository users, PasswordEncoder passwordEncoder, AppSettings settings) {
+        this(users, passwordEncoder, settings, Clock.systemUTC());
     }
 
     AdminAccessService(AppUserRepository users, PasswordEncoder passwordEncoder, Clock clock) {
+        this(users, passwordEncoder, new AppSettings(false, false), clock);
+    }
+
+    AdminAccessService(AppUserRepository users, PasswordEncoder passwordEncoder, AppSettings settings, Clock clock) {
         this.users = users;
         this.passwordEncoder = passwordEncoder;
+        this.settings = settings;
         this.clock = clock;
     }
 
@@ -90,6 +97,12 @@ public class AdminAccessService {
         AppUser admin = currentAdmin();
         if (admin.getCoordinatorPasswordHash() != null) {
             throw new ForbiddenException("The admin password is already set.");
+        }
+        // With preview sign-in nobody's identity is proven, so whoever typed the admin email first
+        // could claim the account. The password then has to come from the server instead.
+        if (settings.previewSignIn() && !settings.devMode()) {
+            throw new ForbiddenException("Preview sign-in is on, so the admin password must be set on the server "
+                    + "(APP_ADMIN_INITIAL_PASSWORD), then restart.");
         }
         checkPasswordRules(password, admin.getEmail());
         admin.setCoordinatorPasswordHash(passwordEncoder.encode(password));

@@ -132,4 +132,13 @@ class AdminAccessServiceTest {
         assertThat(AdminAccessService.accessOf(admin, open)).isEqualTo(AdminAccessService.Access.UNLOCKED);
         assertThat(AdminAccessService.accessOf(coordinator, open)).isNull();
     }
+
+    @Test
+    void withPreviewSignInTheAdminPasswordCannotBeClaimedFromTheBrowser() {
+        var preview = new com.iet.dashboard.identity.config.AppSettings(false, false, "IET", "https://x", "jklu.edu.in", "", true);
+        assertThatThrownBy(() -> new AdminAccessService(users, encoder, preview, Clock.fixed(T0, ZoneOffset.UTC))
+                .setInitialPassword(CHOSEN_PHRASE))
+                .isInstanceOf(ForbiddenException.class).hasMessageContaining("APP_ADMIN_INITIAL_PASSWORD");
+        assertThat(users.findById(admin.getId()).orElseThrow().getCoordinatorPasswordHash()).isNull();
+    }
 }

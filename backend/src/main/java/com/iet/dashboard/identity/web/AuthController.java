@@ -33,14 +33,14 @@ public class AuthController {
 
     /** What this server offers, so the UI shows only the sign-in and admin actions that work here. */
     public record AuthConfig(String institutionName, boolean devLogin, boolean microsoftLogin,
-                             String microsoftLoginUrl, boolean destructiveActions) {}
+                             String microsoftLoginUrl, boolean destructiveActions, boolean emailSignIn) {}
 
     @GetMapping("/config")
     public AuthConfig config() {
         boolean entra = clientRegistrations.getIfAvailable() != null
                 && clientRegistrations.getIfAvailable().findByRegistrationId("entra") != null;
         return new AuthConfig(settings.institutionName(), settings.devMode(), entra,
-                entra ? "/oauth2/authorization/entra" : null, settings.destructiveActions());
+                entra ? "/oauth2/authorization/entra" : null, settings.destructiveActions(), settings.emailSignIn());
     }
 
     /** Dev-only endpoints answer 404 on a production server, exactly as if they did not exist. */
@@ -52,7 +52,10 @@ public class AuthController {
 
     @PostMapping("/dev-login")
     public ResponseEntity<UserDto> devLogin(@Valid @RequestBody DevLoginRequest request, HttpServletRequest httpRequest) {
-        requireDevMode();
+        // Dev mode, or the temporary preview sign-in on a server; 404 otherwise.
+        if (!settings.emailSignIn()) {
+            throw new com.iet.dashboard.shared.error.ResourceNotFoundException("Not found");
+        }
         UserDto user = userService.authenticateDev(request.email());
         // Force session creation and persist security context in session
         HttpSession session = httpRequest.getSession(true);

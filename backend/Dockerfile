@@ -12,7 +12,7 @@ USER app
 COPY --from=build /app.jar /app/app.jar
 ENV SPRING_PROFILES_ACTIVE=prod \
     STORAGE_UPLOAD_DIR=/data/uploads \
-    JAVA_OPTS="-XX:MaxRAMPercentage=75"
+    JAVA_OPTS="-XX:MaxRAMPercentage=60 -XX:+UseSerialGC -Xss512k -XX:ReservedCodeCacheSize=64m -XX:MaxMetaspaceSize=160m"
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
   CMD wget -qO- http://localhost:8080/actuator/health | grep -q '"UP"' || exit 1

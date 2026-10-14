@@ -73,7 +73,7 @@ export function LoginScreen() {
             <h2 className="font-display text-[28px] font-medium">Sign in</h2>
             <p className="mt-1.5 text-sm text-[var(--ink-subtle)]">Use your institutional Microsoft account.</p>
 
-            {!config.microsoftLogin && !config.devLogin && (
+            {!config.microsoftLogin && !config.emailSignIn && (
               <p className="mt-8 rounded-lg border border-[var(--hairline)] bg-[var(--surface-3)] p-3 text-[13px] text-[var(--ink-muted)]">
                 Sign-in is not configured on this server yet. The administrator needs to set the Microsoft Entra
                 settings (see DEPLOY.md).
@@ -102,18 +102,20 @@ export function LoginScreen() {
               </div>
             )}
 
-            {config.devLogin && !config.microsoftLogin && (
+            {config.emailSignIn && !config.microsoftLogin && (
               <p className="mt-8 rounded-lg border border-[var(--hairline)] bg-[var(--surface-3)] p-3 text-[13px] text-[var(--ink-muted)]">
-                Microsoft sign-in isn’t set up on this machine (it needs the Entra settings, see README). Use
-                development sign-in below.
+                Microsoft sign-in isn’t set up yet. Sign in with your email below.
               </p>
             )}
 
-            {config.devLogin && (
+            {config.emailSignIn && (
             <div className="mt-10 pt-6 border-t border-[var(--hairline)]">
-              <p className="eyebrow">Development sign-in</p>
+              <p className="eyebrow">{config.devLogin ? 'Development sign-in' : 'Preview sign-in'}</p>
               <p className="mt-1.5 text-[12px] text-[var(--ink-subtle)]">
-                Stands in for Microsoft on this machine only. Enter an account email; the admin is then asked for the admin password.
+                {config.devLogin
+                  ? 'Stands in for Microsoft on this machine only.'
+                  : 'Temporary, until Microsoft sign-in is set up.'}{' '}
+                Enter your account email; the admin is then asked for the admin password.
               </p>
               <form
                 className="mt-3 flex gap-2"

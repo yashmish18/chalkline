@@ -45,10 +45,6 @@ services:
         value: "8080"
       # Sized for a 512 MB instance: cap the heap, use the low-overhead serial GC, keep thread stacks
       # and the code cache small, and exit (so Render restarts the service) instead of limping on after an OOM.
-      - key: JAVA_OPTS
-        value: >-
-          -XX:MaxRAMPercentage=60 -XX:+UseSerialGC -Xss512k -XX:ReservedCodeCacheSize=64m
-          -XX:MaxMetaspaceSize=160m -XX:+ExitOnOutOfMemoryError
       - key: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
         value: "5"
 
@@ -93,6 +89,12 @@ services:
       # The admin (e.g. s.taruna@jklu.edu.in). Sets the admin password at first sign-in, then uploads
       # the allocation sheet; its Role column makes everyone else Coordinator or Faculty.
       - key: APP_ADMIN_EMAIL
+        sync: false
+      # Until Microsoft sign-in is set up: sign in by email, admin password from the server.
+      # Remove both (and use SPRING_PROFILES_ACTIVE=prod,entra) once Entra works.
+      - key: APP_PREVIEW_SIGNIN
+        value: "true"
+      - key: APP_ADMIN_INITIAL_PASSWORD
         sync: false
       - key: APP_EMAIL_DOMAIN
         value: jklu.edu.in

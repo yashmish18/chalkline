@@ -57,6 +57,9 @@ app:
     email: ${APP_ADMIN_EMAIL:${APP_COORDINATOR_EMAIL:}}
     # true clears the admin password on startup, so the admin chooses a new one (then set back to false).
     reset-password: ${APP_ADMIN_RESET_PASSWORD:false}
+    # Optional: the admin password to start with (hashed into the database on startup if none is set).
+    # Required with preview sign-in. Remove it from the environment once the admin has signed in.
+    initial-password: ${APP_ADMIN_INITIAL_PASSWORD:}
   coordinator:
     name: ${APP_COORDINATOR_NAME:Coordinator}
   institution:
@@ -70,6 +73,8 @@ app:
     bypass-email: ${BYPASS_EMAIL:coordinator@iet.edu}
     # Microsoft accounts outside these domains are refused (comma-separated; empty = any).
     allowed-email-domains: ${APP_ALLOWED_EMAIL_DOMAINS:}
+    # Temporary sign-in by email alone on a server (testing before Microsoft is set up).
+    preview-sign-in: ${APP_PREVIEW_SIGNIN:false}
   admin:
     # "Delete all data", "Reset activity" and "Delete all faculty".
     destructive-actions: false

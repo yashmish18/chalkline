@@ -25,6 +25,7 @@ public class AppSettings {
     private final String publicUrl;
     private final String emailDomain;
     private final List<String> allowedEmailDomains;
+    private final boolean previewSignIn;
 
     @Autowired
     public AppSettings(
@@ -33,7 +34,8 @@ public class AppSettings {
             @Value("${app.institution.name:Institute of Engineering & Technology}") String institutionName,
             @Value("${app.public-url:http://localhost:5173}") String publicUrl,
             @Value("${app.email-domain:jklu.edu.in}") String emailDomain,
-            @Value("${app.auth.allowed-email-domains:}") String allowedEmailDomains) {
+            @Value("${app.auth.allowed-email-domains:}") String allowedEmailDomains,
+            @Value("${app.auth.preview-sign-in:false}") boolean previewSignIn) {
         this.devMode = devMode;
         this.destructiveActions = destructiveActions;
         this.institutionName = institutionName;
@@ -44,6 +46,11 @@ public class AppSettings {
                 .map(d -> d.trim().toLowerCase(Locale.ROOT).replaceFirst("^@", ""))
                 .filter(d -> !d.isEmpty())
                 .toList();
+        this.previewSignIn = previewSignIn;
+        if (previewSignIn && !devMode) {
+            log.warn("Preview sign-in is ON: anyone who types a registered email signs in as that person "
+                    + "(the admin still needs the admin password). Turn it off once Microsoft sign-in works.");
+        }
         if (devMode) {
             log.warn("Dev mode is ON: password-less dev sign-in is enabled. Never run production with app.auth.dev-mode=true.");
         }
@@ -57,6 +64,19 @@ public class AppSettings {
         return devMode;
     }
 
+    /**
+     * Temporary sign-in by email alone on a server, for testing before Microsoft sign-in is set
+     * up ({@code APP_PREVIEW_SIGNIN=true}). Off by default.
+     */
+    public boolean previewSignIn() {
+        return previewSignIn;
+    }
+
+    /** Sign-in by typing an email: always in dev mode, and in preview mode on a server. */
+    public boolean emailSignIn() {
+        return devMode || previewSignIn;
+    }
+
     /** "Delete all data", "Reset activity" and "Delete all faculty". */
     public boolean destructiveActions() {
         return destructiveActions;
@@ -64,7 +84,12 @@ public class AppSettings {
 
     /** Settings for tests and tools: everything at its safe production default. */
     public AppSettings(boolean devMode, boolean destructiveActions) {
-        this(devMode, destructiveActions, "Institute of Engineering & Technology", "http://localhost:5173", "jklu.edu.in", "");
+        this(devMode, destructiveActions, "Institute of Engineering & Technology", "http://localhost:5173", "jklu.edu.in", "", false);
+    }
+
+    public AppSettings(boolean devMode, boolean destructiveActions, String institutionName, String publicUrl,
+                       String emailDomain, String allowedEmailDomains) {
+        this(devMode, destructiveActions, institutionName, publicUrl, emailDomain, allowedEmailDomains, false);
     }
 
     public String institutionName() {

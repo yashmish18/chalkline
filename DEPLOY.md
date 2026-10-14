@@ -159,6 +159,17 @@ Azure portal → **Microsoft Entra ID** → **App registrations** → **New regi
 5. **API permissions**: Microsoft Graph, delegated `openid`, `profile`, `email` (`User.Read` is
    there by default and harmless). Grant admin consent if your tenant requires it.
 
+### Before Microsoft sign-in is ready (preview)
+
+The backend starts without any Microsoft settings. To let people in meanwhile, set
+`APP_PREVIEW_SIGNIN=true` and `APP_ADMIN_INITIAL_PASSWORD` (12+ characters; stored hashed). Then
+everyone signs in by typing their email, and the admin also enters that password.
+
+Preview sign-in trusts the typed email, so anyone who knows a registered email can open that
+person's dashboard. Use it for testing only. To switch to Microsoft: register the app (section 3),
+set the `ENTRA_*` variables, set `SPRING_PROFILES_ACTIVE=prod,entra`, and delete
+`APP_PREVIEW_SIGNIN` and `APP_ADMIN_INITIAL_PASSWORD`.
+
 ### 4. The admin, coordinators and faculty
 
 - **Admin:** the account in `APP_ADMIN_EMAIL` (e.g. `s.taruna@jklu.edu.in`). It is created on

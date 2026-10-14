@@ -10,6 +10,8 @@ export interface AppConfig {
   microsoftLoginUrl: string | null;
   /** "Delete all data", "Reset activity", "Delete all faculty". */
   destructiveActions: boolean;
+  /** Sign-in by typing an email: dev mode, or the temporary preview mode on a server. */
+  emailSignIn?: boolean;
 }
 
 const SAFE_DEFAULT: AppConfig = {
@@ -18,6 +20,7 @@ const SAFE_DEFAULT: AppConfig = {
   microsoftLogin: false,
   microsoftLoginUrl: null,
   destructiveActions: false,
+  emailSignIn: false,
 };
 
 export function useAppConfig(): AppConfig {
