@@ -117,16 +117,4 @@ class AdminBootstrapTest {
         assertThat(users.findById(taruna.getId()).orElseThrow().getCoordinatorPasswordHash()).isNull();
     }
 
-    @Test
-    void theStartingAdminPasswordIsStoredHashedOnlyWhenNoneIsSet() {
-        var encoder = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder(4);
-        new AdminBootstrap(users, faculty, encoder, "s.taruna@jklu.edu.in", "Admin", false, "Starting-Phrase-42").run(null);
-        String hash = users.findByEmailIgnoreCase("s.taruna@jklu.edu.in").orElseThrow().getCoordinatorPasswordHash();
-        assertThat(hash).startsWith("$2a$").doesNotContain("Starting-Phrase-42");
-        assertThat(encoder.matches("Starting-Phrase-42", hash)).isTrue();
-
-        new AdminBootstrap(users, faculty, encoder, "s.taruna@jklu.edu.in", "Admin", false, "Another-Phrase-99").run(null);
-        assertThat(users.findByEmailIgnoreCase("s.taruna@jklu.edu.in").orElseThrow().getCoordinatorPasswordHash())
-                .as("a password chosen earlier is never overwritten").isEqualTo(hash);
-    }
 }

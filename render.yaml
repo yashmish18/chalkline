@@ -90,12 +90,10 @@ services:
       # the allocation sheet; its Role column makes everyone else Coordinator or Faculty.
       - key: APP_ADMIN_EMAIL
         sync: false
-      # Until Microsoft sign-in is set up: sign in by email, admin password from the server.
-      # Remove both (and use SPRING_PROFILES_ACTIVE=prod,entra) once Entra works.
+      # Until Microsoft sign-in is set up: sign in by email (the admin also sets/enters the admin
+      # password). Remove it and use SPRING_PROFILES_ACTIVE=prod,entra once Entra works.
       - key: APP_PREVIEW_SIGNIN
         value: "true"
-      - key: APP_ADMIN_INITIAL_PASSWORD
-        sync: false
       - key: APP_EMAIL_DOMAIN
         value: jklu.edu.in
       - key: APP_ALLOWED_EMAIL_DOMAINS

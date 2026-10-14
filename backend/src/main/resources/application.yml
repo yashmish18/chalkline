@@ -57,9 +57,6 @@ app:
     email: ${APP_ADMIN_EMAIL:${APP_COORDINATOR_EMAIL:}}
     # true clears the admin password on startup, so the admin chooses a new one (then set back to false).
     reset-password: ${APP_ADMIN_RESET_PASSWORD:false}
-    # Optional: the admin password to start with (hashed into the database on startup if none is set).
-    # Required with preview sign-in. Remove it from the environment once the admin has signed in.
-    initial-password: ${APP_ADMIN_INITIAL_PASSWORD:}
   coordinator:
     name: ${APP_COORDINATOR_NAME:Coordinator}
   institution:

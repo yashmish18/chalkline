@@ -98,12 +98,6 @@ public class AdminAccessService {
         if (admin.getCoordinatorPasswordHash() != null) {
             throw new ForbiddenException("The admin password is already set.");
         }
-        // With preview sign-in nobody's identity is proven, so whoever typed the admin email first
-        // could claim the account. The password then has to come from the server instead.
-        if (settings.previewSignIn() && !settings.devMode()) {
-            throw new ForbiddenException("Preview sign-in is on, so the admin password must be set on the server "
-                    + "(APP_ADMIN_INITIAL_PASSWORD), then restart.");
-        }
         checkPasswordRules(password, admin.getEmail());
         admin.setCoordinatorPasswordHash(passwordEncoder.encode(password));
         admin.setCoordinatorFailedAttempts(0);
