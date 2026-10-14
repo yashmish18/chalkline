@@ -15,7 +15,7 @@ Spring Boot 3 / Java 21 + PostgreSQL backend, React + Vite frontend, Microsoft E
 Needs Docker, Java 21, Maven and Node 20+.
 
 ```bash
-docker compose up -d postgres          # PostgreSQL on localhost:5433
+docker compose up -d                  # PostgreSQL on :5433 + Mailpit (catches emails, UI on :8025)
 bash scripts/dev-backend.sh            # backend on :8080, reloads itself on code changes
 cd frontend && npm install && npm run dev   # app on http://localhost:5173
 ```
@@ -28,12 +28,12 @@ Then load the sample data (in this order):
 | Step | Where | File |
 |---|---|---|
 | 1. Semester dates | Overview → Semester settings | — |
-| 2. Allocation sheet | Allocations → Import | `docs/samples/complete/allocations-complete.csv` |
+| 2. Allocation sheet | Course Allocations → Import | `docs/samples/complete/allocations-complete.csv` |
 | 3. Master timetable | Timetable → Import timetable | `docs/samples/complete/timetable-master-complete.csv` |
 | 4. A personal timetable | Sign in as that faculty → Timetable → Upload my timetable | `docs/samples/complete/timetable-personal-mayank.csv` |
 
-The sample sheet makes Dr. S Taruna coordinator (Role column). In dev mode there is no mail
-server, so her activation link is shown in the import result and printed in the backend log.
+The sample sheet makes Dr. S Taruna coordinator (Role column). Locally her activation email lands
+in Mailpit at http://localhost:8025, and in dev mode the link is also shown in the import result.
 
 Tests: `cd backend && mvn test` · `cd frontend && npx vitest run && npx tsc --noEmit -p .`
 
@@ -86,17 +86,17 @@ Section, Section Students, Component, Batch, Batch Students, Weekly Hours, PBL H
 
 **Coordinator**
 1. Set the semester dates (Overview → Semester settings).
-2. Import the allocation sheet. Check the import result for warnings (guessed emails, unknown roles).
+2. Import the allocation sheet (Course Allocations → Import). Check the import result for warnings (guessed emails, unknown roles).
 3. Import the master timetable, or let faculty upload their own.
-4. Day to day: **Overview** (who is behind or silent), **Tracking** (pacing per section),
-   **Reports** (faculty, course and the printable semester report), **Deadlines** (milestones
-   and reminders).
+4. Day to day: **Overview** (who is behind or silent), **Compliance Tracking** (pacing per section),
+   **Semester report** (printable; faculty and course reports inside), **Deadlines** (milestones
+   and reminders), **Submissions**.
 
 **Faculty**
-1. **Today**: log each class you taught (topics covered).
+1. **Today's Classes**: log each class you taught (topics covered).
 2. **My Courses**: syllabus pace per section, assessments (CIE) and remedial plans.
 3. **Timetable**: your week; **Upload my timetable** if the department's isn't in yet.
-4. **Submissions**: upload what deadlines ask for.
+4. **Deadlines**: upload what each deadline asks for; **My report** shows your semester summary.
 
 ---
 
