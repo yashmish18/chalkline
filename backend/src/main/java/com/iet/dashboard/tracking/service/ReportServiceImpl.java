@@ -398,7 +398,9 @@ public class ReportServiceImpl implements ReportService {
                 s.offerings.size() + " sections", gaps == 0 && mismatches.isEmpty() ? "OK" : gaps > 0 ? "CRITICAL" : "WATCH",
                 mismatches.size() + " allocation mismatches (" + gaps + " without an owner)"));
 
-        List<SectionPerformance> paced = sections.stream().filter(x -> !"NO_SYLLABUS".equals(x.pacingStatus())).toList();
+        // Only sections whose pace could be measured count; "not measured" is neither on plan nor behind.
+        List<SectionPerformance> paced = sections.stream()
+                .filter(x -> !"NO_SYLLABUS".equals(x.pacingStatus()) && !"NOT_MEASURED".equals(x.pacingStatus())).toList();
         long onPlan = paced.stream().filter(x -> !"BEHIND".equals(x.pacingStatus())).count();
         Integer onPlanPct = paced.isEmpty() ? null : (int) Math.round(onPlan * 100.0 / paced.size());
         lines.add(new ScoreLine("Syllabus pacing", "≥ 90% of sections on plan",

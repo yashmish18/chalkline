@@ -124,22 +124,14 @@ public class AcademicDocumentServiceImpl implements AcademicDocumentService {
     @Override
     @Transactional(readOnly = true)
     public List<AcademicDocumentDto> getDocuments(AcademicDocumentCategory category, Long courseId, Long termId) {
-        if (category != null) {
-            return documentRepository.findByCategoryOrderByCreatedAtDesc(category).stream()
-                    .map(AcademicDocumentDto::fromEntity)
-                    .collect(Collectors.toList());
-        }
-        if (courseId != null) {
-            return documentRepository.findByCourseIdOrderByCreatedAtDesc(courseId).stream()
-                    .map(AcademicDocumentDto::fromEntity)
-                    .collect(Collectors.toList());
-        }
-        if (termId != null) {
-            return documentRepository.findByTermIdOrderByCreatedAtDesc(termId).stream()
-                    .map(AcademicDocumentDto::fromEntity)
-                    .collect(Collectors.toList());
-        }
-        return documentRepository.findAll().stream()
+        // Every filter given applies; before, a category silently dropped the course filter.
+        List<AcademicDocument> base = category != null
+                ? documentRepository.findByCategoryOrderByCreatedAtDesc(category)
+                : documentRepository.findAll(org.springframework.data.domain.Sort.by(
+                        org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
+        return base.stream()
+                .filter(d -> courseId == null || courseId.equals(d.getCourseId()))
+                .filter(d -> termId == null || termId.equals(d.getTermId()))
                 .map(AcademicDocumentDto::fromEntity)
                 .collect(Collectors.toList());
     }

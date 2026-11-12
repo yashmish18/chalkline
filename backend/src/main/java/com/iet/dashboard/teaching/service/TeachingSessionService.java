@@ -19,4 +19,7 @@ public interface TeachingSessionService {
     Set<Long> getCoveredTopicIdsForOffering(Long offeringId);
 
     void deleteSession(Long sessionId, Long currentFacultyId, boolean isCoordinator);
+
+    /** Timetabled classes between the dates (inclusive) that have passed with nothing logged. */
+    List<com.iet.dashboard.teaching.web.PendingClassDto> getPendingClasses(Long facultyId, LocalDate from, LocalDate to);
 }

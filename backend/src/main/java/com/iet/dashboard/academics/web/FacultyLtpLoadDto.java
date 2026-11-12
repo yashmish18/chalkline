@@ -16,8 +16,27 @@ public record FacultyLtpLoadDto(
         int practicalHours,
         int pblHours,
         int totalHours,
-        int assignmentCount
+        int assignmentCount,
+        /** The same hours, one line per course / section / component / batch. */
+        java.util.List<Line> lines
 ) {
+    /** One allocation's share of the load: L hours for a lecture, T for a tutorial, P for each practical batch. */
+    public record Line(String courseCode, String courseName, String ltp, int semester, String section,
+                       String component, String batch, Integer students, int hours) {}
+
+    public FacultyLtpLoadDto(
+            Long facultyId,
+            String facultyName,
+            int lectureHours,
+            int tutorialHours,
+            int practicalHours,
+            int pblHours,
+            int totalHours,
+            int assignmentCount
+    ) {
+        this(facultyId, facultyName, lectureHours, tutorialHours, practicalHours, pblHours, totalHours, assignmentCount, java.util.List.of());
+    }
+
     public FacultyLtpLoadDto(
             Long facultyId,
             String facultyName,

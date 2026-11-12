@@ -18,10 +18,10 @@ public class SyllabusTopic {
     @Column(name = "unit_number", nullable = false)
     private int unitNumber;
 
-    @Column(name = "unit_title", nullable = false)
+    @Column(name = "unit_title", nullable = false, length = 500)
     private String unitTitle;
 
-    @Column(name = "topic_name", nullable = false)
+    @Column(name = "topic_name", nullable = false, length = 500)
     private String topicName;
 
     @Column(name = "target_week", nullable = false)

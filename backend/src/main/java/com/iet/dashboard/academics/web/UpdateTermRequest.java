@@ -12,9 +12,15 @@ public record UpdateTermRequest(
         @NotNull LocalDate startDate,
         @NotNull LocalDate endDate,
         /** Continuous assessments each section must hold; null keeps the current value. */
-        Integer requiredAssessments
+        Integer requiredAssessments,
+        /** The semester's holidays; null keeps the current list, an empty list clears it. */
+        java.util.List<AcademicTermDto.Holiday> holidays
 ) {
     public UpdateTermRequest(String name, String academicYear, LocalDate startDate, LocalDate endDate) {
-        this(name, academicYear, startDate, endDate, null);
+        this(name, academicYear, startDate, endDate, null, null);
+    }
+
+    public UpdateTermRequest(String name, String academicYear, LocalDate startDate, LocalDate endDate, Integer requiredAssessments) {
+        this(name, academicYear, startDate, endDate, requiredAssessments, null);
     }
 }

@@ -48,3 +48,9 @@ export const componentShort = (component: string | null | undefined) => SHORT[ca
 export function localDateString(date: Date = new Date()): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
+
+/** "Dr. S. Taruna" → "ST", "Prof. Amit Sinhal" → "AS": avatar letters skip titles. */
+export function nameInitials(name: string | null | undefined): string {
+  const words = (name ?? '').replace(/\b(Dr|Prof|Mr|Mrs|Ms)\b\.?/gi, ' ').split(/[\s.]+/).filter(Boolean);
+  return words.slice(0, 2).map((w) => w[0]).join('').toUpperCase() || 'U';
+}

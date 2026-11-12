@@ -89,9 +89,22 @@ public class AcademicDocumentController {
     public ResponseEntity<List<AcademicDocumentDto>> getDocuments(
             @RequestParam(value = "category", required = false) AcademicDocumentCategory category,
             @RequestParam(value = "courseId", required = false) Long courseId,
-            @RequestParam(value = "termId", required = false) Long termId
+            @RequestParam(value = "termId", required = false) Long termId,
+            @RequestParam(value = "facultyId", required = false) Long facultyId
     ) {
-        return ResponseEntity.ok(documentService.getDocuments(category, courseId, termId));
+        List<AcademicDocumentDto> documents = documentService.getDocuments(category, courseId, termId);
+        if (facultyId == null) {
+            return ResponseEntity.ok(documents);
+        }
+        // A faculty member's files: what they uploaded, plus every file of a course they teach.
+        Long userId = facultyService.getFacultyById(facultyId).userId();
+        java.util.Set<Long> courses = academicsService.getTeachingAssignmentsForFaculty(facultyId).stream()
+                .filter(a -> a.offering() != null && a.offering().course() != null)
+                .map(a -> a.offering().course().id())
+                .collect(java.util.stream.Collectors.toSet());
+        return ResponseEntity.ok(documents.stream()
+                .filter(d -> userId.equals(d.uploadedByFacultyId()) || courses.contains(d.courseId()))
+                .toList());
     }
 
     @GetMapping("/latest")

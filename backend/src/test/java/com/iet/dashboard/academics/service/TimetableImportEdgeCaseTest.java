@@ -45,6 +45,8 @@ class TimetableImportEdgeCaseTest {
             Dr. Amit Sinhal,amit@iet.edu,CS1139,Programming-I,3-0-2,1,C,64,Lecture,,
             """;
 
+    @Autowired com.iet.dashboard.directory.repo.SkillRepository skillRepo;
+    @Autowired com.iet.dashboard.academics.repo.TimetableSlotRepository slotRepo;
     @Autowired AppUserRepository users;
     @Autowired FacultyRepository faculty;
     @Autowired DepartmentRepository departments;
@@ -67,7 +69,7 @@ class TimetableImportEdgeCaseTest {
     }
 
     private void allocate(String csv) {
-        new AllocationImportServiceImpl(users, faculty, departments, courses, offerings, assignments, terms)
+        new AllocationImportServiceImpl(users, faculty, departments, courses, offerings, assignments, terms, skillRepo, slotRepo)
                 .importAllocations(file("allocations.csv", csv));
     }
 
@@ -93,23 +95,38 @@ class TimetableImportEdgeCaseTest {
 
         assertThat(result.issues()).isEmpty();
         assertThat(result.rows()).isEqualTo(10);
-        assertThat(result.slotsCreated()).isEqualTo(10);
+        assertThat(result.slotsCreated()).as("each 2-hour lab is one class").isEqualTo(8);
         assertThat(result.facultyCovered()).isEqualTo(1);
         assertThat(slots.findAll()).allMatch(s -> s.getFacultyId().equals(tarunaId));
         assertThat(slots.findByFacultyIdWithDetails(tarunaId))
                 .filteredOn(s -> s.getDayOfWeek().equals("MONDAY"))
-                .allSatisfy(s -> {
+                .singleElement().satisfies(s -> {
                     assertThat(s.getComponent()).isEqualTo("PRACTICAL");
                     assertThat(s.getSubSection()).isEqualTo("A1");
                     assertThat(s.getRoom()).isEqualTo("LRC007");
+                    assertThat(s.getStartTime()).isEqualTo(LocalTime.of(15, 0));
+                    assertThat(s.getEndTime()).isEqualTo(LocalTime.of(16, 50));
                 });
+    }
+
+    /** The real case: the sheet gave her lab batch A3, her timetable says A1 and A2. */
+    @Test
+    void aLabWhoseBatchDisagreesWithTheSheetNamesBothSides() throws Exception {
+        allocate(ALLOCATIONS.replace("Practical,A1,32", "Practical,A3,32").replace("Ms. Taruna,taruna@iet.edu,CS1133,Data Structures,3-0-2,3,A,64,Practical,A2,32\n", ""));
+
+        TimetableImportResultDto result = importer.importTimetable(pdf("department-grid.pdf", "taruna.pdf"), tarunaId);
+
+        assertThat(result.slotsCreated()).as("lectures still import").isEqualTo(6);
+        assertThat(result.issues()).filteredOn(i -> i.message().contains("batch A1"))
+                .isNotEmpty()
+                .allSatisfy(i -> assertThat(i.message()).contains("practical batch A3"));
     }
 
     @Test
     void anUppercasePdfExtensionIsStillReadAsAPdf() throws Exception {
         TimetableImportResultDto result = importer.importTimetable(pdf("department-grid.pdf", "TARUNA.PDF"), tarunaId);
 
-        assertThat(result.slotsCreated()).isEqualTo(10);
+        assertThat(result.slotsCreated()).isEqualTo(8);
         assertThat(result.issues()).isEmpty();
     }
 
@@ -118,10 +135,10 @@ class TimetableImportEdgeCaseTest {
     void codeLessPortalCellsResolveToTheFacultysSingleMatchingAllocation() throws Exception {
         TimetableImportResultDto result = importer.importTimetable(pdf("portal-grid.pdf", "portal.pdf"), tarunaId);
 
-        assertThat(result.slotsCreated()).isEqualTo(10);
+        assertThat(result.slotsCreated()).isEqualTo(8);
         assertThat(slots.findByFacultyIdWithDetails(tarunaId))
                 .filteredOn(s -> s.getComponent().equals("PRACTICAL"))
-                .hasSize(4)
+                .hasSize(2)
                 .allSatisfy(s -> assertThat(s.getOffering().getCourse().getCode()).isEqualTo("CS1133"));
         // The stray CS1142 entry is not hers: reported, not silently dropped or guessed.
         assertThat(result.issues()).singleElement().satisfies(i -> {
@@ -133,10 +150,8 @@ class TimetableImportEdgeCaseTest {
     @Test
     void aCodeLessCellThatCouldMeanTwoAllocationsIsAnError() throws Exception {
         // A second course whose A1 lab she also teaches makes the code-less lab cells ambiguous.
-        allocate("""
-                Faculty Name,Email,Course Code,Course Name,L-T-P,Semester,Section,Section Students,Component,Batch,Batch Students
-                Ms. Taruna,taruna@iet.edu,CS1142,Operating Systems,3-0-2,3,A,64,Practical,A1,32
-                """);
+        // The sheet is the whole semester, so the correction is the full sheet plus the new row.
+        allocate(ALLOCATIONS + "Ms. Taruna,taruna@iet.edu,CS1142,Operating Systems,3-0-2,3,A,64,Practical,A1,32\n");
 
         TimetableImportResultDto result = importer.importTimetable(pdf("portal-grid.pdf", "portal.pdf"), tarunaId);
 
@@ -148,7 +163,7 @@ class TimetableImportEdgeCaseTest {
                 .noneMatch(s -> s.getSubSection().equals("A1"));
         // Her A2 lab is still unambiguous.
         assertThat(slots.findByFacultyIdWithDetails(tarunaId))
-                .filteredOn(s -> s.getSubSection().equals("A2")).hasSize(2);
+                .filteredOn(s -> s.getSubSection().equals("A2")).hasSize(1);
     }
 
     // ---- Whose slots an upload replaces ----------------------------------------------------------
@@ -169,12 +184,12 @@ class TimetableImportEdgeCaseTest {
             assertThat(s.getStartTime()).isEqualTo(LocalTime.of(9, 0));
             assertThat(s.getRoom()).isEqualTo("LT-1");
         });
-        assertThat(slots.findByFacultyIdWithDetails(tarunaId)).hasSize(10)
+        assertThat(slots.findByFacultyIdWithDetails(tarunaId)).hasSize(8)
                 .noneMatch(s -> s.getDayOfWeek().equals("THURSDAY"));
     }
 
     @Test
-    void aCoordinatorUploadReplacesEverySlot() {
+    void aCoordinatorUploadReplacesTheSlotsOfEveryoneInTheFileAndNoOneElse() {
         importer.importTimetable(file("master.csv", HEADER + """
                 Mon,9:00,10:00,LT-1,CS1139,1,C,Lecture,,amit@iet.edu
                 Thu,10:00,11:00,EB2-004,CS1133,3,A,Lecture,,taruna@iet.edu
@@ -184,9 +199,34 @@ class TimetableImportEdgeCaseTest {
                 + "Fri,12:00,13:00,EB2-206,CS1133,3,B,Lecture,,taruna@iet.edu\n"), null);
 
         assertThat(result.slotsCreated()).isEqualTo(1);
-        assertThat(slots.findAll()).singleElement().satisfies(s -> {
-            assertThat(s.getFacultyId()).isEqualTo(tarunaId);
-            assertThat(s.getDayOfWeek()).isEqualTo("FRIDAY");
+        assertThat(slots.findAll()).hasSize(2);
+        assertThat(slots.findAll()).filteredOn(s -> s.getFacultyId().equals(tarunaId)).singleElement()
+                .satisfies(s -> assertThat(s.getDayOfWeek()).isEqualTo("FRIDAY"));
+        assertThat(slots.findAll()).filteredOn(s -> !s.getFacultyId().equals(tarunaId)).singleElement()
+                .satisfies(s -> assertThat(s.getDayOfWeek()).isEqualTo("MONDAY"));
+    }
+
+    /**
+     * One person can't be in two rooms at once: the later clashing row is rejected with both classes
+     * named. The same room at the same time is a combined class (two sections together) and is kept;
+     * a two-hour lab is merged first, so it never clashes with itself.
+     */
+    @Test
+    void aFacultyMemberBookedInTwoRoomsAtOnceIsRejected() {
+        TimetableImportResultDto result = importer.importTimetable(file("tt.csv", HEADER + """
+                Mon,10:00,10:50,EB2-004,CS1133,3,A,Lecture,,taruna@iet.edu
+                Mon,10:30,11:20,EB2-206,CS1133,3,B,Lecture,,taruna@iet.edu
+                Tue,10:00,10:50,EB2-004,CS1133,3,A,Lecture,,taruna@iet.edu
+                Tue,10:00,10:50,EB2-004,CS1133,3,B,Lecture,,taruna@iet.edu
+                Wed,15:00,15:50,LRC007,CS1133,3,A,Practical,A1,taruna@iet.edu
+                Wed,16:00,16:50,LRC007,CS1133,3,A,Practical,A1,taruna@iet.edu
+                """), null);
+
+        assertThat(result.slotsCreated()).isEqualTo(4);   // Mon A, Tue A+B combined, Wed lab as one slot
+        assertThat(result.issues()).singleElement().satisfies(issue -> {
+            assertThat(issue.row()).isEqualTo(3);
+            assertThat(issue.severity()).isEqualTo("ERROR");
+            assertThat(issue.message()).contains("MONDAY 10:30–11:20", "EB2-206", "CS1133 Sec A lecture", "EB2-004");
         });
     }
 

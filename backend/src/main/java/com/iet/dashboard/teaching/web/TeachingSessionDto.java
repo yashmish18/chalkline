@@ -27,7 +27,9 @@ public record TeachingSessionDto(
         String note,
         String reasonNotHeld,
         List<SyllabusTopicDto> topicsCovered,
-        Instant createdAt
+        Instant createdAt,
+        Integer lectureNumber,
+        String delayReason
 ) {
     public static TeachingSessionDto fromEntity(TeachingSession session) {
         List<SyllabusTopicDto> topics = session.getTopicsCovered() != null
@@ -66,7 +68,9 @@ public record TeachingSessionDto(
                 session.getNote(),
                 session.getReasonNotHeld(),
                 topics,
-                session.getCreatedAt()
+                session.getCreatedAt(),
+                session.getLectureNumber(),
+                session.getDelayReason()
         );
     }
 }

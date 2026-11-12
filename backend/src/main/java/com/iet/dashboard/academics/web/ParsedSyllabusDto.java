@@ -11,8 +11,22 @@ import java.util.List;
 public record ParsedSyllabusDto(
         String sourceFileName,
         int extractedCharacters,
-        List<Unit> units
+        List<Unit> units,
+        /** The course title as the document writes it ("Course Title and Code: X (CS -)" gives X), or null. */
+        String documentTitle,
+        /** The L-T-P the document states ("L-T-P: 3-0-2 (5 hours)" gives 3-0-2), or null. */
+        String documentLtp,
+        /** Every difference between the document and the allocation sheet's course, in words. */
+        List<String> mismatches
 ) {
+    public ParsedSyllabusDto(String sourceFileName, int extractedCharacters, List<Unit> units) {
+        this(sourceFileName, extractedCharacters, units, null, null, List.of());
+    }
+
+    public ParsedSyllabusDto withMismatches(List<String> found) {
+        return new ParsedSyllabusDto(sourceFileName, extractedCharacters, units, documentTitle, documentLtp, List.copyOf(found));
+    }
+
     public record Unit(
             int unitNumber,
             String unitTitle,
@@ -20,6 +34,7 @@ public record ParsedSyllabusDto(
     ) {
     }
 
+    /** targetWeek is 0 unless a document states a week; nothing is spread or guessed. */
     public record Topic(
             String topicName,
             int targetWeek

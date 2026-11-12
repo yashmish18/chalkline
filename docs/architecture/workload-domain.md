@@ -1,6 +1,16 @@
 # Architecture & Process: Workload Sheet as Source of Truth
 
-**Status:** Slices W0–W3 implemented and verified; W4–W5 (declared-load schema, review UI) open
+**Status:** Superseded on 2026-10-29 by the strict importer (`AllocationImportServiceImpl`, `tasks/plan.md` Slice 16).
+The code this page describes (`WorkloadSheetParser`, `LoadSheetCompatibilityTest`, migration V16) was lost in the
+2026-10-14 restore. The rules that hold now:
+- The importer never invents a value. A missing email, course name, L-T-P, section strength or practical batch is an error, not a default.
+- The whole file is validated first; one error and nothing is saved.
+- A value repeated across rows (course name, L-T-P, section strength, batch strength, a person's details) must be identical on every row.
+- Re-importing replaces the semester's allocations.
+
+The rest of this page is kept for history. Where it conflicts with the rules above (e.g. §3 "Identity rule"), the rules above win.
+
+**Original status:** Slices W0–W3 implemented and verified; W4–W5 (declared-load schema, review UI) open
 **Verified:** `mvn -o test` → 135 tests green. Importing the real sheet yields exactly the 104
 offerings and 110 `(offering, faculty)` assignments `V16` seeded, so re-importing the file is
 idempotent.

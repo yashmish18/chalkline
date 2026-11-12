@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { nameInitials } from '../lib/labels';
 import { useAuth } from '../context/AuthContext';
 import { FacultyProfileDto } from '../types/directory';
 import {
@@ -29,16 +30,7 @@ export function UserProfileModal({ onClose }: UserProfileModalProps) {
     enabled: !!user,
   });
 
-  const initials = user?.name
-    ? user.name
-        .replace(/^(Dr|Prof|Mr|Ms|Mrs)\.?\s+/i, '')
-        .split(' ')
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-    : 'U';
+  const initials = nameInitials(user?.name);
 
   const departmentName = profile?.department || '—';
   const designation = profile?.designation || (user?.role === 'COORDINATOR' ? 'Academic Coordinator' : 'Faculty Member');

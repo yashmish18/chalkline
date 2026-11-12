@@ -18,8 +18,6 @@ import java.util.regex.Pattern;
  */
 public final class SyllabusTextParser {
 
-    /** Total teaching weeks used to spread topics across the term. */
-    private static final int TERM_WEEKS = 11;
     private static final int MAX_TOPIC_LENGTH = 500;
 
     private static final Pattern UNIT_HEADING = Pattern.compile(
@@ -38,9 +36,20 @@ public final class SyllabusTextParser {
     /** Lines that announce a trailing appendix section whose contents are not topics. */
     private static final Pattern NOISE_SECTION = Pattern.compile(
             "^\\s*(text\\s*books?|reference\\s*books?|references|suggested\\s*readings?|"
-                    + "course\\s*outcomes?|learning\\s*outcomes?|assessment|evaluation\\s*scheme|"
-                    + "laboratory\\s*requirements?|prerequisites?)\\b.*$",
+                    + "course\\s*outcomes?|learning\\s*outcomes?|course\\s*objectives?|assessment|evaluation\\s*scheme|"
+                    + "laboratory\\s*requirements?|prerequisites?|pre-requisites?|(?:online|web|e-|other)\\s*-?\\s*resources?|"
+                    + "resources|reading\\s*list|list\\s*of\\s*(?:experiments|practicals)|lab(?:oratory)?\\s*(?:experiments|exercises)|"
+                    + "pedagogy|teaching\\s*methodology)\\b.*$",
             Pattern.CASE_INSENSITIVE);
+
+    /** "Course Title and Code: Cloud-Based Machine Learning (CS -)" → the title, without the code part. */
+    private static final Pattern COURSE_TITLE = Pattern.compile(
+            "^\\s*course\\s*title(?:\\s*(?:and|&)\\s*code)?\\s*[:\\-–—]\\s*(.+?)\\s*(?:\\([^)]*\\))?\\s*$",
+            Pattern.CASE_INSENSITIVE);
+
+    /** "L-T-P: 3-0-2 (5 hours)" → 3-0-2. */
+    private static final Pattern LTP = Pattern.compile(
+            "\\bL\\s*-\\s*T\\s*-\\s*P\\s*[:=]?\\s*(\\d{1,2})\\s*-\\s*(\\d{1,2})\\s*-\\s*(\\d{1,2})\\b");
 
     private static final Pattern PAGE_FURNITURE = Pattern.compile(
             "^\\s*(page\\s*)?\\d{1,3}\\s*$", Pattern.CASE_INSENSITIVE);
@@ -61,11 +70,24 @@ public final class SyllabusTextParser {
 
         boolean inNoiseSection = false;
         int currentUnit = -1;
+        String documentTitle = null;
+        String documentLtp = null;
 
         for (String rawLine : rawLines) {
             String line = normalize(rawLine);
             if (line.isEmpty() || PAGE_FURNITURE.matcher(line).matches()) {
                 continue;
+            }
+            if (currentUnit < 0) {
+                Matcher title = COURSE_TITLE.matcher(line);
+                if (documentTitle == null && title.matches()) {
+                    documentTitle = clean(title.group(1));
+                    continue;
+                }
+                Matcher ltp = LTP.matcher(line);
+                if (documentLtp == null && ltp.find()) {
+                    documentLtp = ltp.group(1) + "-" + ltp.group(2) + "-" + ltp.group(3);
+                }
             }
 
             if (NOISE_SECTION.matcher(line).matches()) {
@@ -96,6 +118,11 @@ public final class SyllabusTextParser {
             }
 
             String topic = extractTopic(line);
+            if (topic == null && currentUnit >= 0) {
+                // Under a unit heading every line is a topic, exactly as written: Word list
+                // paragraphs carry no "1.1" or bullet characters in their text.
+                topic = truncate(line);
+            }
             if (topic == null) {
                 continue;
             }
@@ -123,31 +150,7 @@ public final class SyllabusTextParser {
             units.add(new ParsedSyllabusDto.Unit(unitNumbers.get(i), unitTitles.get(i), topicDtos));
         }
 
-        return new ParsedSyllabusDto(sourceFileName, rawText.length(), assignTargetWeeks(units));
-    }
-
-    /**
-     * Spreads topics evenly across the term so pacing has something to compare against.
-     * Topic {@code n} of {@code total} lands on week {@code ceil(n * TERM_WEEKS / total)}.
-     */
-    private static List<ParsedSyllabusDto.Unit> assignTargetWeeks(List<ParsedSyllabusDto.Unit> units) {
-        int total = units.stream().mapToInt(unit -> unit.topics().size()).sum();
-        if (total == 0) {
-            return units;
-        }
-
-        List<ParsedSyllabusDto.Unit> result = new ArrayList<>(units.size());
-        int index = 0;
-        for (ParsedSyllabusDto.Unit unit : units) {
-            List<ParsedSyllabusDto.Topic> topics = new ArrayList<>(unit.topics().size());
-            for (ParsedSyllabusDto.Topic topic : unit.topics()) {
-                index++;
-                int week = (int) Math.ceil((double) index * TERM_WEEKS / total);
-                topics.add(new ParsedSyllabusDto.Topic(topic.topicName(), Math.min(TERM_WEEKS, Math.max(1, week))));
-            }
-            result.add(new ParsedSyllabusDto.Unit(unit.unitNumber(), unit.unitTitle(), topics));
-        }
-        return result;
+        return new ParsedSyllabusDto(sourceFileName, rawText.length(), units, documentTitle, documentLtp, List.of());
     }
 
     private static String extractTopic(String line) {

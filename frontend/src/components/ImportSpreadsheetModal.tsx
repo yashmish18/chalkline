@@ -12,7 +12,7 @@ interface ImportIssue {
 const CONFIG: Record<ImportKind, { title: string; help: string; endpoint: string; template: string; accept: string; fileHint: string; summary: [string, string][] }> = {
   allocations: {
     title: 'Import allocations',
-    help: 'One row per faculty, course, section, component and batch. Re-importing the same sheet updates rows instead of duplicating them. The Role column (Coordinator or Faculty) decides who gets the coordinator dashboard.',
+    help: 'One row per faculty, course, section, component and batch; a row with no course adds a person only. The sheet is the whole semester: re-importing updates rows and removes allocations it no longer lists. Nothing is filled in for you, and if any row has a problem nothing is saved.',
     endpoint: '/api/allocations/import',
     template: '/api/allocations/import-template',
     accept: '.csv,.xlsx,.xls',
@@ -24,6 +24,7 @@ const CONFIG: Record<ImportKind, { title: string; help: string; endpoint: string
       ['offeringsCreated', 'New sections'],
       ['assignmentsCreated', 'New allocations'],
       ['assignmentsUpdated', 'Updated allocations'],
+      ['assignmentsRemoved', 'Removed allocations'],
       ['rolesChanged', 'Roles changed'],
     ],
   },
@@ -56,7 +57,7 @@ export function ImportSpreadsheetModal({ kind, onClose, onSuccess, help }: Impor
   const isPdf = file?.name.toLowerCase().endsWith('.pdf') ?? false;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<(Record<string, number> & { issues: ImportIssue[] }) | null>(null);
+  const [result, setResult] = useState<(Record<string, number> & { imported?: boolean; issues: ImportIssue[] }) | null>(null);
 
   const upload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,8 +72,9 @@ export function ImportSpreadsheetModal({ kind, onClose, onSuccess, help }: Impor
         const body = await res.json().catch(() => ({}));
         throw new Error(body.detail || body.title || `Upload failed (${res.status})`);
       }
-      setResult(await res.json());
-      onSuccess();
+      const body = await res.json();
+      setResult(body);
+      if (body.imported !== false) onSuccess();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
@@ -80,7 +82,8 @@ export function ImportSpreadsheetModal({ kind, onClose, onSuccess, help }: Impor
     }
   };
 
-  const errors = result?.issues.filter((i) => i.severity === 'ERROR').length ?? 0;
+  const errors = result?.issues.filter((i) => i.severity === 'ERROR' && i.row > 0).length ?? 0;
+  const refused = result?.imported === false;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4" role="dialog" aria-modal="true" aria-labelledby="import-title">
@@ -133,10 +136,13 @@ export function ImportSpreadsheetModal({ kind, onClose, onSuccess, help }: Impor
           </form>
         ) : (
           <div className="mt-6 space-y-5">
-            <p className={`flex items-center gap-2 text-[13px] ${errors ? 'text-[var(--warn-text)]' : 'text-[var(--success-text)]'}`}>
-              {errors ? <AlertTriangle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
-              {errors ? `Imported, but ${errors} row${errors === 1 ? ' was' : 's were'} skipped.` : 'Imported without problems.'}
+            <p role={refused ? 'alert' : undefined} className={`flex items-center gap-2 text-[13px] ${refused ? 'text-[var(--danger-text)]' : errors ? 'text-[var(--warn-text)]' : 'text-[var(--success-text)]'}`}>
+              {refused || errors ? <AlertTriangle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+              {refused
+                ? `Nothing was imported. Fix the ${errors} problem${errors === 1 ? '' : 's'} below and upload again.`
+                : errors ? `Imported, but ${errors} row${errors === 1 ? ' was' : 's were'} skipped.` : 'Imported without problems.'}
             </p>
+            {!refused && (
             <dl className="grid grid-cols-3 gap-px overflow-hidden rounded-lg border border-[var(--hairline)] bg-[var(--hairline)]">
               {config.summary.map(([key, label]) => (
                 <div key={key} className="bg-white px-3 py-2.5">
@@ -145,7 +151,8 @@ export function ImportSpreadsheetModal({ kind, onClose, onSuccess, help }: Impor
                 </div>
               ))}
             </dl>
-            {result.issues.length > 0 && (
+            )}
+            {result.issues.some((i) => i.row > 0) && (
               <div className="max-h-56 overflow-y-auto rounded-lg border border-[var(--hairline)]">
                 <table className="min-w-full text-[12px]">
                   <thead className="sticky top-0 bg-[var(--surface-3)] text-left text-[var(--ink-subtle)]">
@@ -155,7 +162,7 @@ export function ImportSpreadsheetModal({ kind, onClose, onSuccess, help }: Impor
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--hairline-soft)]">
-                    {result.issues.map((issue, i) => (
+                    {result.issues.filter((issue) => issue.row > 0).map((issue, i) => (
                       <tr key={i}>
                         <td className="px-3 py-2 num align-top">{issue.row}</td>
                         <td className={`px-3 py-2 ${issue.severity === 'ERROR' ? 'text-[var(--danger-text)]' : 'text-[var(--ink-muted)]'}`}>{issue.message}</td>
@@ -165,7 +172,10 @@ export function ImportSpreadsheetModal({ kind, onClose, onSuccess, help }: Impor
                 </table>
               </div>
             )}
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+              {refused && (
+                <button type="button" onClick={() => { setResult(null); setFile(null); }} className="btn">Upload corrected sheet</button>
+              )}
               <button type="button" onClick={onClose} className="btn btn-primary">Done</button>
             </div>
           </div>

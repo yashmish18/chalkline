@@ -19,7 +19,7 @@ import {
   Download
 } from 'lucide-react';
 import { UploadAcademicDocumentModal } from '../components/UploadAcademicDocumentModal';
-import { sectionLabel, batchLabel, componentLabel } from '../lib/labels';
+import { sectionLabel, batchLabel, componentLabel, nameInitials } from '../lib/labels';
 
 interface FacultyDetailViewProps {
   facultyId: number;
@@ -69,12 +69,7 @@ export function FacultyDetailView({ facultyId, onBack }: FacultyDetailViewProps)
     queryKey: ['faculty-documents', facultyId],
     queryFn: async () => {
       const res = await fetch(`/api/academic-documents?facultyId=${facultyId}`, { credentials: 'include' });
-      if (!res.ok) {
-        // Fallback to all documents if faculty filter not supported
-        const fallback = await fetch('/api/academic-documents', { credentials: 'include' });
-        if (!fallback.ok) return [];
-        return fallback.json();
-      }
+      if (!res.ok) throw new Error(`Failed to load files (${res.status})`);
       return res.json();
     },
   });
@@ -107,14 +102,7 @@ export function FacultyDetailView({ facultyId, onBack }: FacultyDetailViewProps)
     );
   }
 
-  const initials = profile.name
-    .replace(/^(Dr|Prof|Mr|Ms|Mrs)\.?\s+/i, '')
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase();
+  const initials = nameInitials(profile.name);
 
   const load = profile.load;
   const pblHours = load?.pblHours ?? 0;

@@ -61,6 +61,7 @@ class AcademicsControllerSecurityTest {
     @MockBean SyllabusImportService syllabusImportService;
     @MockBean AllocationImportService allocationImportService;
     @MockBean TimetableImportService timetableImportService;
+    @MockBean com.iet.dashboard.academics.service.AcademicDocumentService academicDocumentService;
 
     private static final MockMultipartFile SHEET =
             new MockMultipartFile("file", "tt.csv", "text/csv", "Day,Start\n".getBytes());
@@ -101,6 +102,17 @@ class AcademicsControllerSecurityTest {
         verifyNoInteractions(allocationImportService, academicsService);
     }
 
+    /** Department-wide allocations and loads are coordinator data; a faculty member sees their own via my-courses. */
+    @Test
+    @WithMockUser(username = "taruna@iet.edu", roles = "FACULTY")
+    void facultyCannotReadOtherPeoplesAllocationsOrLoads() throws Exception {
+        expectForbidden(get("/api/teaching-assignments"));
+        expectForbidden(get("/api/faculty/99/teaching-assignments"));
+        expectForbidden(get("/api/teaching-assignments/faculty-load"));
+
+        verifyNoInteractions(academicsService);
+    }
+
     @Test
     void anUnauthenticatedApiCallGetsA401JsonBody() throws Exception {
         mvc.perform(get("/api/courses"))
@@ -139,6 +151,15 @@ class AcademicsControllerSecurityTest {
 
         verify(timetableImportService).importTimetable(any(), eq(TARUNA_FACULTY_ID));
         verify(timetableImportService, never()).importTimetable(any(), eq(99L));
+
+        // A timetable PDF is kept as her timetable file, so she never uploads it twice.
+        mvc.perform(multipart("/api/timetable/import")
+                        .file(new org.springframework.mock.web.MockMultipartFile("file", "taruna.pdf", "application/pdf", new byte[]{1}))
+                        .with(csrf()))
+                .andExpect(status().isOk());
+        verify(academicDocumentService).uploadDocument(any(),
+                eq(com.iet.dashboard.academics.domain.AcademicDocumentCategory.MASTER_TIMETABLE),
+                any(), any(), any(), any(), any(), any());
     }
 
     @Test

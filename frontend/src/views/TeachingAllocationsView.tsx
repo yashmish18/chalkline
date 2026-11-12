@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { Fragment, useState, useMemo } from 'react';
+import { componentLabel, sectionLabel } from '../lib/labels';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CourseDto, CourseOfferingDto, FacultyLtpLoadDto, TeachingAssignmentDto } from '../types/academics';
 import { FacultyDto, DepartmentDto } from '../types/directory';
@@ -419,6 +420,7 @@ export function TeachingAllocationsView() {
    * Load figures are aggregated server-side across the term, so they are never recomputed here —
    * we only narrow the roster to the faculty actually selected.
    */
+  const [expandedLoadId, setExpandedLoadId] = useState<number | null>(null);
   const visibleFacultyLoad = useMemo(() => {
     const rows = filterFacultyId === ''
       ? facultyLoad
@@ -840,7 +842,7 @@ export function TeachingAllocationsView() {
           <div className="px-5 py-3 border-b border-border flex items-center justify-between gap-3">
             <h3 className="font-sans text-sm font-bold text-slate-900">Faculty Weekly LTP Load</h3>
             <span className="text-[11px] text-slate-500">
-              Computed from allocated component hours — never typed
+              From the sheet&apos;s L-T-P: L hours per lecture section, T per tutorial, P per practical batch, plus PBL. Click a name for the breakdown.
             </span>
           </div>
           <div className="overflow-x-auto">
@@ -858,8 +860,18 @@ export function TeachingAllocationsView() {
               </thead>
               <tbody className="divide-y divide-border text-sm">
                 {visibleFacultyLoad.map((row) => (
-                  <tr key={row.facultyId} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="px-5 py-2.5 text-xs font-medium text-slate-900">{row.facultyName}</td>
+                  <Fragment key={row.facultyId}>
+                  <tr className="hover:bg-slate-50/70 transition-colors">
+                    <td className="px-5 py-2.5 text-xs font-medium text-slate-900">
+                      <button
+                        type="button"
+                        className="text-left hover:underline focus-visible:ring-2 focus-visible:ring-[#5E6AD2] rounded"
+                        aria-expanded={expandedLoadId === row.facultyId}
+                        onClick={() => setExpandedLoadId(expandedLoadId === row.facultyId ? null : row.facultyId)}
+                      >
+                        {row.facultyName}
+                      </button>
+                    </td>
                     <td className="px-5 py-2.5 text-right font-mono text-xs text-slate-600">
                       {row.lectureHours > 0 ? `${row.lectureHours}h` : '—'}
                     </td>
@@ -877,6 +889,41 @@ export function TeachingAllocationsView() {
                     </td>
                     <td className="px-5 py-2.5 text-right text-xs text-slate-500">{row.assignmentCount}</td>
                   </tr>
+                  {expandedLoadId === row.facultyId && (
+                    <tr className="bg-slate-50/60">
+                      <td colSpan={7} className="px-5 py-3">
+                        {(row.lines ?? []).length === 0 ? (
+                          <p className="text-xs text-slate-500">No course allocated{(row.pblHours ?? 0) > 0 ? `; ${row.pblHours}h PBL` : ''}.</p>
+                        ) : (
+                          <table className="w-full text-xs">
+                            <thead className="text-[11px] text-slate-500">
+                              <tr>
+                                <th className="text-left font-medium py-1">Course</th>
+                                <th className="text-left font-medium py-1">L-T-P</th>
+                                <th className="text-left font-medium py-1">Section</th>
+                                <th className="text-left font-medium py-1">Component</th>
+                                <th className="text-right font-medium py-1">Students</th>
+                                <th className="text-right font-medium py-1">Hours / week</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(row.lines ?? []).map((line, i) => (
+                                <tr key={i} className="border-t border-border">
+                                  <td className="py-1"><span className="font-mono">{line.courseCode}</span> {line.courseName}</td>
+                                  <td className="py-1 font-mono">{line.ltp}</td>
+                                  <td className="py-1">{sectionLabel(line.section, line.semester, line.batch)}</td>
+                                  <td className="py-1">{componentLabel(line.component)}</td>
+                                  <td className="py-1 text-right font-mono">{line.students ?? '—'}</td>
+                                  <td className="py-1 text-right font-mono">{line.hours}h</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>

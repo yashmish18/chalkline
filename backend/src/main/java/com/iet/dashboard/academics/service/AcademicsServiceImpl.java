@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -243,17 +244,25 @@ public class AcademicsServiceImpl implements AcademicsService {
 
         Map<Long, int[]> buckets = new LinkedHashMap<>();
         Map<Long, Integer> counts = new HashMap<>();
+        Map<Long, List<FacultyLtpLoadDto.Line>> lines = new HashMap<>();
 
         for (TeachingAssignment assignment : assignmentRepository.findAllWithCourseAndOffering()) {
             int[] bucket = buckets.computeIfAbsent(assignment.getFacultyId(), key -> new int[3]);
             applyToBucket(bucket, assignment);
             counts.merge(assignment.getFacultyId(), 1, Integer::sum);
+            CourseOffering offering = assignment.getOffering();
+            Course course = offering.getCourse();
+            boolean wholeSection = SubSections.WHOLE_SECTION.equals(assignment.getSubSection());
+            lines.computeIfAbsent(assignment.getFacultyId(), key -> new ArrayList<>()).add(new FacultyLtpLoadDto.Line(
+                    course.getCode(), course.getName(), course.getLtp(), offering.getSemester(), offering.getSection(),
+                    assignment.getComponent().name(), assignment.getSubSection(),
+                    wholeSection ? (offering.getStudentCount() > 0 ? offering.getStudentCount() : null) : assignment.getStudentCount(),
+                    assignment.getContactHours()));
         }
 
+        // Everyone is listed, including a faculty member with no course yet (0 hours is a fact worth seeing).
         for (FacultyDto f : allFaculty) {
-            if (f.pblHours() > 0 && !buckets.containsKey(f.id())) {
-                buckets.put(f.id(), new int[3]);
-            }
+            buckets.putIfAbsent(f.id(), new int[3]);
         }
 
         return buckets.entrySet().stream()
@@ -269,7 +278,8 @@ public class AcademicsServiceImpl implements AcademicsService {
                             bucket[2],
                             pbl,
                             total,
-                            counts.getOrDefault(entry.getKey(), 0));
+                            counts.getOrDefault(entry.getKey(), 0),
+                            lines.getOrDefault(entry.getKey(), List.of()));
                 })
                 .sorted(Comparator.comparingInt(FacultyLtpLoadDto::totalHours).reversed())
                 .collect(Collectors.toList());
@@ -343,6 +353,25 @@ public class AcademicsServiceImpl implements AcademicsService {
             }
             term.setRequiredAssessments(request.requiredAssessments());
         }
+        if (request.holidays() != null) {
+            java.util.Set<java.time.LocalDate> seen = new java.util.HashSet<>();
+            List<com.iet.dashboard.academics.domain.TermHoliday> holidays = new java.util.ArrayList<>();
+            for (var h : request.holidays()) {
+                if (h == null || h.date() == null || h.name() == null || h.name().isBlank()) {
+                    throw new IllegalArgumentException("Every holiday needs a date and a name.");
+                }
+                if (h.date().isBefore(request.startDate()) || h.date().isAfter(request.endDate())) {
+                    throw new IllegalArgumentException("The holiday on " + h.date() + " (" + h.name().trim()
+                            + ") is outside the semester, " + request.startDate() + " to " + request.endDate() + ".");
+                }
+                if (!seen.add(h.date())) {
+                    throw new IllegalArgumentException(h.date() + " is listed as a holiday twice.");
+                }
+                holidays.add(new com.iet.dashboard.academics.domain.TermHoliday(h.date(), h.name().trim()));
+            }
+            holidays.sort(java.util.Comparator.comparing(com.iet.dashboard.academics.domain.TermHoliday::getDate));
+            term.setHolidays(holidays);
+        }
         return AcademicTermDto.fromEntity(termRepository.save(term));
     }
 
@@ -411,6 +440,15 @@ public class AcademicsServiceImpl implements AcademicsService {
         return timetableSlotRepository.findByFacultyIdWithDetails(facultyId).stream()
                 .map(TimetableSlotDto::fromEntity)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Map<Long, List<String>> getLectureDaysByOffering() {
+        return timetableSlotRepository.findAll().stream()
+                .filter(slot -> "LECTURE".equals(slot.getComponent()))
+                .collect(Collectors.groupingBy(slot -> slot.getOffering().getId(),
+                        Collectors.mapping(com.iet.dashboard.academics.domain.TimetableSlot::getDayOfWeek, Collectors.toList())));
     }
 
     @Override

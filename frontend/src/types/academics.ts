@@ -50,6 +50,20 @@ export interface FacultyLtpLoadDto {
   pblHours?: number;
   totalHours: number;
   assignmentCount: number;
+  /** The same hours, one line per course / section / component / batch. */
+  lines?: FacultyLoadLine[];
+}
+
+export interface FacultyLoadLine {
+  courseCode: string;
+  courseName: string;
+  ltp: string;
+  semester: number;
+  section: string;
+  component: string;
+  batch: string;
+  students: number | null;
+  hours: number;
 }
 
 export interface SyllabusTopicDto {
@@ -84,6 +98,11 @@ export interface ParsedSyllabusDto {
   sourceFileName: string;
   extractedCharacters: number;
   units: ParsedSyllabusUnit[];
+  /** As the document writes them, or null when it doesn't say. */
+  documentTitle?: string | null;
+  documentLtp?: string | null;
+  /** Every difference between the document and the allocation sheet, in words. */
+  mismatches?: string[];
 }
 
 export interface TimetableSlotDto {
@@ -126,6 +145,8 @@ export interface TodayClassDto {
   availableUnits?: UnitOptionDto[];
   /** true when the class comes from the uploaded timetable */
   scheduled?: boolean;
+  /** One past the highest lecture number already logged for this section/batch and component. */
+  nextLectureNumber?: number;
 }
 
 export interface TeachingSessionDto {
@@ -146,6 +167,8 @@ export interface TeachingSessionDto {
   reasonNotHeld?: string;
   topicsCovered: SyllabusTopicDto[];
   createdAt: string;
+  lectureNumber?: number | null;
+  delayReason?: string | null;
 }
 
 export interface SyllabusTopicProgressDto {
@@ -174,7 +197,8 @@ export interface CourseProgressDto {
   coveragePercentage: number;
   expectedTopicsByCurrentWeek: number;
   topicDelta: number;
-  pacingStatus: 'ON_TRACK' | 'AHEAD' | 'BEHIND';
+  /** NO_SYLLABUS / NOT_MEASURED: pace can't be measured (no syllabus, no timetabled lectures, no term dates). */
+  pacingStatus: 'ON_TRACK' | 'AHEAD' | 'BEHIND' | 'NO_SYLLABUS' | 'NOT_MEASURED';
   pacingLabel: string;
   totalSessions: number;
   heldSessions: number;

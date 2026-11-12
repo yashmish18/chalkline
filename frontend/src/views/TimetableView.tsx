@@ -37,11 +37,13 @@ export function TimetableView() {
   const fetchDocuments = async () => {
     try {
       const [resTT, resCal] = await Promise.all([
-        fetch('/api/academic-documents/latest?category=MASTER_TIMETABLE', { credentials: 'include' }),
+        fetch('/api/academic-documents?category=MASTER_TIMETABLE', { credentials: 'include' }),
         fetch('/api/academic-documents/latest?category=ACADEMIC_CALENDAR', { credentials: 'include' }),
       ]);
-      if (resTT.ok && resTT.status === 200) {
-        setTimetableDoc(await resTT.json());
+      if (resTT.ok) {
+        // Faculty see the timetable file they imported; the coordinator sees the newest one.
+        const docs: AcademicDocumentDto[] = await resTT.json();
+        setTimetableDoc(docs.find((d) => isCoordinator || d.uploadedByFacultyId === user?.id) ?? null);
       }
       if (resCal.ok && resCal.status === 200) {
         setCalendarDoc(await resCal.json());
@@ -186,9 +188,12 @@ export function TimetableView() {
               <span>Official Timetable ({timetableDoc.fileName.endsWith('.pdf') ? 'PDF' : 'DOC'})</span>
             </a>
           ) : (
-            <span className="text-[11px] text-[#8A8E95] italic">No timetable file uploaded</span>
+            <span className="text-[11px] text-[#8A8E95] italic">
+              {slots.length > 0 ? `Timetable loaded (${slots.length} classes)` : 'No timetable uploaded yet'}
+            </span>
           )}
 
+          {isCoordinator && (
           <button
             type="button"
             onClick={() => {
@@ -200,6 +205,7 @@ export function TimetableView() {
             <Upload className="w-3.5 h-3.5" />
             <span>{timetableDoc ? 'Replace PDF copy' : 'Attach PDF copy'}</span>
           </button>
+          )}
 
           <div className="h-4 w-px bg-[#E6E4DD] hidden sm:block"></div>
 
@@ -325,7 +331,7 @@ export function TimetableView() {
           kind="timetable"
           help={isCoordinator ? undefined : 'Upload your own weekly timetable — the PDF from the portal, or a CSV/Excel sheet. It replaces only your own classes; nobody else’s timetable changes. Each class is matched to your allocation for that course, section and batch.'}
           onClose={() => setIsImportOpen(false)}
-          onSuccess={fetchTimetable}
+          onSuccess={() => { fetchTimetable(); fetchDocuments(); }}
         />
       )}
 

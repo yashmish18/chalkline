@@ -201,4 +201,22 @@ class AcademicDocumentServiceTest {
         assertEquals(1, results.size());
         assertEquals("Timetable", results.get(0).title());
     }
+
+    @Test
+    void aCategoryAndACourseTogetherReturnOnlyThatCoursesFiles() {
+        AcademicDocument mine = new AcademicDocument();
+        mine.setCategory(AcademicDocumentCategory.COURSE_SYLLABUS);
+        mine.setTitle("DBMS syllabus");
+        mine.setCourseId(7L);
+        AcademicDocument other = new AcademicDocument();
+        other.setCategory(AcademicDocumentCategory.COURSE_SYLLABUS);
+        other.setTitle("OS syllabus");
+        other.setCourseId(8L);
+        when(documentRepository.findByCategoryOrderByCreatedAtDesc(AcademicDocumentCategory.COURSE_SYLLABUS))
+                .thenReturn(List.of(mine, other));
+
+        List<AcademicDocumentDto> results = service.getDocuments(AcademicDocumentCategory.COURSE_SYLLABUS, 7L, null);
+        assertEquals(1, results.size());
+        assertEquals("DBMS syllabus", results.get(0).title());
+    }
 }

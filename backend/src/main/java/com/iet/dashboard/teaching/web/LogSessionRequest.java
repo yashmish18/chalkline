@@ -30,8 +30,21 @@ public record LogSessionRequest(
 
         String note,
 
-        String reasonNotHeld
+        String reasonNotHeld,
+
+        /** Which lecture of the course this was (Lecture 15). Optional; unique per section and batch. */
+        Integer lectureNumber,
+
+        /** Required when the class is logged more than two days after it took place. */
+        String delayReason
 ) {
+    public LogSessionRequest(Long offeringId, LocalDate sessionDate, String sessionType, SessionStatus status,
+                             Integer unitNumber, List<Long> topicIds, String customTopicName, String subSection,
+                             Integer lecturesTaken, String note, String reasonNotHeld) {
+        this(offeringId, sessionDate, sessionType, status, unitNumber, topicIds, customTopicName, subSection,
+                lecturesTaken, note, reasonNotHeld, null, null);
+    }
+
     public LogSessionRequest(
             Long offeringId,
             LocalDate sessionDate,

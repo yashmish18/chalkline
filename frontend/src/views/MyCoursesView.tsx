@@ -1,3 +1,5 @@
+import { ClassHistory } from '../components/ClassHistory';
+import { PacingBadge } from '../components/PacingBadge';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { CourseProgressDto, SyllabusTopicProgressDto, TodayClassDto } from '../types/academics';
 import { AcademicDocumentDto, AcademicDocumentCategory } from '../types/documents';
@@ -22,10 +24,13 @@ import {
 import { sectionLabel, batchLabel } from '../lib/labels';
 import { AssessmentsAndRemedial } from '../components/AssessmentsAndRemedial';
 
+const courseKey = (c: CourseProgressDto) => `${c.offeringId}|${c.component}|${c.subSection ?? 'ALL'}`;
+
 export function MyCoursesView() {
   const [courses, setCourses] = useState<CourseProgressDto[]>([]);
-  const [activeOfferingId, setActiveOfferingId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'syllabus' | 'documents' | 'overview'>('syllabus');
+  // A section's lecture and each of its lab batches are separate cards, so the key is all three.
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'syllabus' | 'classes' | 'documents' | 'overview'>('syllabus');
   const [expandedUnit, setExpandedUnit] = useState<number | null>(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,8 +72,8 @@ export function MyCoursesView() {
   }, [fetchMyCourses]);
 
   const activeCourse = useMemo(
-    () => courses.find((c) => c.offeringId === activeOfferingId) ?? null,
-    [courses, activeOfferingId]
+    () => courses.find((c) => courseKey(c) === activeKey) ?? null,
+    [courses, activeKey]
   );
 
   // Fetch course documents when an active course is selected
@@ -98,15 +103,15 @@ export function MyCoursesView() {
     }
   }, [activeCourse?.courseId, fetchDocumentsForCourse]);
 
-  const openCourse = (offeringId: number) => {
-    setActiveOfferingId(offeringId);
+  const openCourse = (key: string) => {
+    setActiveKey(key);
     setActiveTab('syllabus');
     setExpandedUnit(1);
     setUploadSuccessMsg(null);
   };
 
   const closeCourse = () => {
-    setActiveOfferingId(null);
+    setActiveKey(null);
     setActiveTab('syllabus');
     setExpandedUnit(1);
     setUploadSuccessMsg(null);
@@ -133,7 +138,7 @@ export function MyCoursesView() {
         courseCode: activeCourse.courseCode,
         courseName: activeCourse.courseName,
         courseDescription: activeCourse.courseDescription,
-        ltp: activeCourse.ltp || '3-0-0',
+        ltp: activeCourse.ltp ?? '',
         section: activeCourse.section,
         subSection: activeCourse.subSection,
         component: activeCourse.component,
@@ -185,30 +190,6 @@ export function MyCoursesView() {
   const overallConductPct =
     totalSessionsOverall > 0 ? Math.round((heldSessionsOverall / totalSessionsOverall) * 100) : 0;
 
-  const pacingBadge = (status: CourseProgressDto['pacingStatus'], label: string) => {
-    if (status === 'ON_TRACK') {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-          {label || 'On Track'}
-        </span>
-      );
-    }
-    if (status === 'AHEAD') {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-          {label || 'Ahead'}
-        </span>
-      );
-    }
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-        <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
-        {label || 'Behind'}
-      </span>
-    );
-  };
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 B';
@@ -463,8 +444,8 @@ export function MyCoursesView() {
                   <tbody className="divide-y divide-border text-xs">
                     {filteredCourses.map((c) => (
                       <tr
-                        key={c.offeringId}
-                        onClick={() => openCourse(c.offeringId)}
+                        key={courseKey(c)}
+                        onClick={() => openCourse(courseKey(c))}
                         className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
                       >
                         {/* Course Code & Title */}
@@ -540,7 +521,7 @@ export function MyCoursesView() {
 
                         {/* Pacing Status */}
                         <td className="px-3 py-3 whitespace-nowrap">
-                          {pacingBadge(c.pacingStatus, c.pacingLabel)}
+                          <PacingBadge status={c.pacingStatus} label={c.pacingLabel} />
                         </td>
 
                         {/* Action */}
@@ -549,7 +530,7 @@ export function MyCoursesView() {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              openCourse(c.offeringId);
+                              openCourse(courseKey(c));
                             }}
                             className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded bg-slate-100 hover:bg-slate-200 text-slate-800 transition-colors"
                           >
@@ -619,14 +600,16 @@ export function MyCoursesView() {
                 Curriculum Pacing
               </span>
               <div className="mt-1">
-                {pacingBadge(activeCourse.pacingStatus, activeCourse.pacingLabel)}
+                <PacingBadge status={activeCourse.pacingStatus} label={activeCourse.pacingLabel} />
               </div>
               <div className="text-[11px] text-slate-500 mt-1.5">
                 {activeCourse.pacingStatus === 'BEHIND'
                   ? `Lagging by ${Math.abs(activeCourse.topicDelta)} topic(s)`
                   : activeCourse.pacingStatus === 'AHEAD'
                   ? `Ahead by ${activeCourse.topicDelta} topic(s)`
-                  : 'On schedule with curriculum master'}
+                  : activeCourse.pacingStatus === 'ON_TRACK'
+                  ? 'On pace with the timetabled lectures'
+                  : ''}
               </div>
             </div>
 
@@ -701,6 +684,18 @@ export function MyCoursesView() {
                 <Info className="w-3.5 h-3.5" />
                 <span>Course Specifications &amp; LTP</span>
               </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('classes')}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'classes'
+                    ? 'bg-slate-900 text-white shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Classes Taken</span>
+              </button>
             </div>
 
             <div className="flex items-center gap-2">
@@ -714,6 +709,10 @@ export function MyCoursesView() {
               </button>
             </div>
           </div>
+
+          {activeTab === 'classes' && (
+            <ClassHistory offeringId={activeCourse.offeringId} component={activeCourse.component} subSection={activeCourse.subSection} />
+          )}
 
           {/* TAB 1: SYLLABUS UNITS & TOPICS */}
           {activeTab === 'syllabus' && (
@@ -804,8 +803,7 @@ export function MyCoursesView() {
                         <div className="border-t border-border bg-slate-50/40 p-3 space-y-1.5">
                           <div className="grid grid-cols-12 text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 py-1">
                             <span className="col-span-1">Lec #</span>
-                            <span className="col-span-8">Topic Name</span>
-                            <span className="col-span-2 text-center">Target Week</span>
+                            <span className="col-span-10">Topic Name</span>
                             <span className="col-span-1 text-right">Status</span>
                           </div>
 
@@ -822,7 +820,7 @@ export function MyCoursesView() {
                                 #{topic.lectureOrder}
                               </div>
 
-                              <div className="col-span-8 flex items-center gap-2">
+                              <div className="col-span-10 flex items-center gap-2">
                                 {topic.isCovered ? (
                                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                                 ) : (
@@ -837,9 +835,6 @@ export function MyCoursesView() {
                                 </span>
                               </div>
 
-                              <div className="col-span-2 text-center text-[11px] font-mono text-slate-500">
-                                Week {topic.targetWeek}
-                              </div>
 
                               <div className="col-span-1 text-right">
                                 <span

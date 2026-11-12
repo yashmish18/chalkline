@@ -101,6 +101,7 @@ public class TimetableImportServiceImpl implements TimetableImportService {
         List<Faculty> allFaculty = facultyRepository.findAll();
 
         List<TimetableSlot> accepted = new ArrayList<>();
+        java.util.Map<TimetableSlot, Integer> rowOf = new java.util.IdentityHashMap<>();
         List<Issue> issues = new ArrayList<>();
         for (int i = 0; i < rows.size(); i++) {
             int rowNumber = i + 2;
@@ -157,9 +158,17 @@ public class TimetableImportServiceImpl implements TimetableImportService {
                             && coversComponent(a, component)
                             && coversBatch(a, batch));
             if (!allocated) {
-                issues.add(new Issue(rowNumber, "ERROR", "No allocation gives this faculty member the "
+                List<String> given = assignments.stream()
+                        .filter(a -> a.getOffering().getId().equals(offering.getId()) && a.getFacultyId().equals(finalFacultyId))
+                        .map(a -> a.getComponent().name().toLowerCase(Locale.ROOT)
+                                + (SubSections.WHOLE_SECTION.equals(a.getSubSection()) ? "" : " batch " + a.getSubSection()))
+                        .toList();
+                issues.add(new Issue(rowNumber, "ERROR", "The timetable has the "
                         + component.name().toLowerCase(Locale.ROOT) + " of " + code + " Sec " + section
-                        + (SubSections.WHOLE_SECTION.equals(batch) ? "" : " batch " + batch) + "."));
+                        + (SubSections.WHOLE_SECTION.equals(batch) ? "" : " batch " + batch)
+                        + ", but the allocation sheet gives this faculty member "
+                        + (given.isEmpty() ? "nothing in that section" : String.join(", ", given))
+                        + ". Correct whichever is wrong."));
                 continue;
             }
 
@@ -173,20 +182,99 @@ public class TimetableImportServiceImpl implements TimetableImportService {
                 continue;
             }
 
-            accepted.add(new TimetableSlot(offering, facultyId, day.name(), start, end,
-                    cell(row, columns, "room"), component.name(), batch));
+            TimetableSlot slot = new TimetableSlot(offering, facultyId, day.name(), start, end,
+                    cell(row, columns, "room"), component.name(), batch);
+            accepted.add(slot);
+            rowOf.put(slot, rowNumber);
         }
 
+        accepted = rejectDoubleBookings(mergeBackToBackPracticals(accepted), rowOf, issues);
+        // Replace the timetable of whoever this file has classes for, and nobody else: a coordinator
+        // uploading one person's sheet must not wipe every other faculty member's timetable.
+        Set<Long> covered = new HashSet<>();
+        accepted.forEach(s -> covered.add(s.getFacultyId()));
         if (onlyFacultyId != null) {
             slotRepository.deleteByFacultyId(onlyFacultyId);
         } else {
-            slotRepository.deleteAllInBatch();
+            covered.forEach(slotRepository::deleteByFacultyId);
         }
         slotRepository.saveAll(accepted);
-
-        Set<Long> covered = new HashSet<>();
-        accepted.forEach(s -> covered.add(s.getFacultyId()));
         return new TimetableImportResultDto(rows.size(), accepted.size(), covered.size(), issues);
+    }
+
+    /**
+     * A two-hour lab fills two neighbouring grid columns (2:00–2:50, 3:00–3:50). That is one class,
+     * so practical slots of the same batch, room and day that follow within 15 minutes become one.
+     * Back-to-back lectures stay separate: each is its own lecture.
+     */
+    static List<TimetableSlot> mergeBackToBackPracticals(List<TimetableSlot> slots) {
+        List<TimetableSlot> sorted = new ArrayList<>(slots);
+        sorted.sort(java.util.Comparator.comparing((TimetableSlot s) -> s.getDayOfWeek())
+                .thenComparing(TimetableSlot::getStartTime));
+        List<TimetableSlot> merged = new ArrayList<>();
+        for (TimetableSlot slot : sorted) {
+            TimetableSlot previous = merged.stream()
+                    .filter(m -> CourseComponent.PRACTICAL.name().equals(slot.getComponent())
+                            && m.getComponent().equals(slot.getComponent())
+                            && m.getOffering().getId().equals(slot.getOffering().getId())
+                            && m.getFacultyId().equals(slot.getFacultyId())
+                            && m.getDayOfWeek().equals(slot.getDayOfWeek())
+                            && m.getSubSection().equals(slot.getSubSection())
+                            && m.getRoom().equalsIgnoreCase(slot.getRoom())
+                            && !slot.getStartTime().isBefore(m.getEndTime())
+                            && !slot.getStartTime().isAfter(m.getEndTime().plusMinutes(15)))
+                    .findFirst().orElse(null);
+            if (previous != null) {
+                previous.setEndTime(slot.getEndTime());
+            } else {
+                merged.add(slot);
+            }
+        }
+        return merged;
+    }
+
+    /**
+     * One person can't be in two rooms at once. A slot that overlaps an earlier row of the same
+     * faculty member in a different room is rejected, both classes named. The same room at the same
+     * time is a combined class (e.g. sections A and B together) and is kept.
+     */
+    private static List<TimetableSlot> rejectDoubleBookings(List<TimetableSlot> slots,
+                                                            java.util.Map<TimetableSlot, Integer> rowOf,
+                                                            List<Issue> issues) {
+        List<TimetableSlot> inRowOrder = new ArrayList<>(slots);
+        inRowOrder.sort(java.util.Comparator.comparing(rowOf::get));
+        List<TimetableSlot> kept = new ArrayList<>();
+        for (TimetableSlot slot : inRowOrder) {
+            TimetableSlot clash = kept.stream()
+                    .filter(k -> k.getFacultyId().equals(slot.getFacultyId())
+                            && k.getDayOfWeek().equals(slot.getDayOfWeek())
+                            && slot.getStartTime().isBefore(k.getEndTime())
+                            && k.getStartTime().isBefore(slot.getEndTime())
+                            && !(sameRoom(k, slot)))
+                    .findFirst().orElse(null);
+            if (clash == null) {
+                kept.add(slot);
+                continue;
+            }
+            issues.add(new Issue(rowOf.get(slot), "ERROR", "Booked in two places at once: " + describe(slot)
+                    + " overlaps " + describe(clash).replaceFirst("^\\S+ \\S+ ", "") + " (row " + rowOf.get(clash)
+                    + "). One of them is wrong in the timetable."));
+        }
+        kept.sort(java.util.Comparator.comparing(rowOf::get));
+        return kept;
+    }
+
+    private static boolean sameRoom(TimetableSlot a, TimetableSlot b) {
+        return a.getRoom() != null && !a.getRoom().isBlank() && a.getRoom().trim().equalsIgnoreCase(b.getRoom().trim());
+    }
+
+    /** "MONDAY 10:30–11:20 CS1133 Sec B lecture in EB2-206". */
+    private static String describe(TimetableSlot s) {
+        return s.getDayOfWeek() + " " + s.getStartTime() + "–" + s.getEndTime() + " "
+                + s.getOffering().getCourse().getCode() + " Sec " + s.getOffering().getSection() + " "
+                + s.getComponent().toLowerCase(Locale.ROOT)
+                + (SubSections.WHOLE_SECTION.equals(s.getSubSection()) ? "" : " batch " + s.getSubSection())
+                + (s.getRoom() == null || s.getRoom().isBlank() ? "" : " in " + s.getRoom());
     }
 
     /** A PDF upload is read as a week grid; every other upload as a flat sheet. */

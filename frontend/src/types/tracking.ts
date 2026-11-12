@@ -71,7 +71,7 @@ export interface OverviewSummaryDto {
     totalTopics: number;
     coveragePercentage: number;
     expectedPercentage: number;
-    pacingStatus: 'BEHIND' | 'ON_TRACK' | 'AHEAD';
+    pacingStatus: 'BEHIND' | 'ON_TRACK' | 'AHEAD' | 'NO_SYLLABUS' | 'NOT_MEASURED';
     topicDelta: number;
     syllabusConfigured: boolean;
     lastSessionDate: string | null;

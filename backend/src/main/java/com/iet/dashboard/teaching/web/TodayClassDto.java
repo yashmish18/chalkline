@@ -24,8 +24,20 @@ public record TodayClassDto(
         boolean isLogged,
         List<UnitOptionDto> availableUnits,
         /** True when this class comes from the uploaded timetable; false = allocation without a slot. */
-        boolean scheduled
+        boolean scheduled,
+        /** One past the highest lecture number already logged for this section/batch and component. */
+        int nextLectureNumber
 ) {
+    public TodayClassDto(Long offeringId, Long courseId, String courseCode, String courseName, String courseDescription,
+                         String ltp, String section, String subSection, String component, String timeSlot, String room,
+                         int currentUnitNumber, Long nextTopicId, String nextTopic, String unitTitle, int targetWeek,
+                         int totalPlanned, int completedSoFar, boolean isLogged, List<UnitOptionDto> availableUnits,
+                         boolean scheduled) {
+        this(offeringId, courseId, courseCode, courseName, courseDescription, ltp, section, subSection, component, timeSlot,
+                room, currentUnitNumber, nextTopicId, nextTopic, unitTitle, targetWeek, totalPlanned, completedSoFar,
+                isLogged, availableUnits, scheduled, 1);
+    }
+
     public TodayClassDto(Long offeringId, Long courseId, String courseCode, String courseName, String courseDescription,
                          String ltp, String section, String subSection, String component, String timeSlot, String room,
                          int currentUnitNumber, Long nextTopicId, String nextTopic, String unitTitle, int targetWeek,

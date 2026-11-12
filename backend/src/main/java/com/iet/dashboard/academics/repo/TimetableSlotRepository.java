@@ -15,4 +15,6 @@ public interface TimetableSlotRepository extends JpaRepository<TimetableSlot, Lo
     List<TimetableSlot> findByFacultyIdWithDetails(@Param("facultyId") Long facultyId);
 
     void deleteByFacultyId(Long facultyId);
+
+    void deleteByOfferingIdAndFacultyIdAndComponentAndSubSection(Long offeringId, Long facultyId, String component, String subSection);
 }

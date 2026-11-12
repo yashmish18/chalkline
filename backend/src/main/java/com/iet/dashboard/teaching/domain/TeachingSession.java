@@ -52,6 +52,28 @@ public class TeachingSession {
     @Column(name = "reason_not_held", columnDefinition = "TEXT")
     private String reasonNotHeld;
 
+    @Column(name = "lecture_number")
+    private Integer lectureNumber;
+
+    @Column(name = "delay_reason", columnDefinition = "TEXT")
+    private String delayReason;
+
+    public Integer getLectureNumber() {
+        return lectureNumber;
+    }
+
+    public void setLectureNumber(Integer lectureNumber) {
+        this.lectureNumber = lectureNumber;
+    }
+
+    public String getDelayReason() {
+        return delayReason;
+    }
+
+    public void setDelayReason(String delayReason) {
+        this.delayReason = delayReason;
+    }
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "session_topic_log",

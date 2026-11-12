@@ -28,6 +28,8 @@ class TimetableImportServiceTest {
 
     private static final String HEADER = "Day,Start,End,Room,Course Code,Semester,Section,Component,Batch,Faculty Email\n";
 
+    @Autowired com.iet.dashboard.directory.repo.SkillRepository skillRepo;
+    @Autowired com.iet.dashboard.academics.repo.TimetableSlotRepository slotRepo;
     @Autowired AppUserRepository users;
     @Autowired FacultyRepository faculty;
     @Autowired DepartmentRepository departments;
@@ -42,7 +44,7 @@ class TimetableImportServiceTest {
 
     @BeforeEach
     void setUp() {
-        new AllocationImportServiceImpl(users, faculty, departments, courses, offerings, assignments, terms)
+        new AllocationImportServiceImpl(users, faculty, departments, courses, offerings, assignments, terms, skillRepo, slotRepo)
                 .importAllocations(file("allocations.csv", """
                         Faculty Name,Email,Course Code,Course Name,L-T-P,Semester,Section,Section Students,Component,Batch,Batch Students
                         Dr. Amit Sinhal,amit@iet.edu,CS1139,Programming-I,3-0-2,1,C,64,Lecture,,
@@ -106,19 +108,46 @@ class TimetableImportServiceTest {
         assertThat(slots.findAll()).hasSize(3);
     }
 
-    /** The files in docs/samples are what we hand to coordinators; they must import cleanly. */
+    /**
+     * A coordinator uploading one faculty member's sheet must not wipe everyone else's timetable:
+     * a coordinator upload replaces only the faculty the file has classes for.
+     */
     @Test
-    void theSampleFilesInDocsImportWithoutIssues() throws Exception {
-        java.nio.file.Path samples = java.nio.file.Path.of("..", "docs", "samples");
-        var allocations = new AllocationImportServiceImpl(users, faculty, departments, courses, offerings, assignments, terms)
-                .importAllocations(file("allocations-odd-2026.csv", java.nio.file.Files.readString(samples.resolve("allocations-odd-2026.csv"))));
-        assertThat(allocations.issues()).isEmpty();
-        assertThat(allocations.rows()).isEqualTo(215);
+    void aCoordinatorUploadKeepsTheTimetablesOfFacultyNotInTheFile() {
+        importer.importTimetable(file("amit.csv", HEADER + """
+                Mon,9:00,10:00,LT-1,CS1139,1,C,Lecture,,amit@iet.edu
+                Wed,14:00,16:00,Lab 3,CS1139,1,C,Practical,C1,amit@iet.edu
+                """), null);
+        importer.importTimetable(file("surbhi.csv", HEADER + """
+                Tue,11:00,13:00,Lab 3,CS1139,1,C,Practical,C2,surbhi@iet.edu
+                """), null);
 
-        TimetableImportResultDto timetable = importer.importTimetable(
-                file("timetable-sample.csv", java.nio.file.Files.readString(samples.resolve("timetable-sample.csv"))), null);
-        assertThat(timetable.issues()).isEmpty();
-        assertThat(timetable.slotsCreated()).isEqualTo(19);
-        assertThat(timetable.facultyCovered()).isEqualTo(2);
+        assertThat(slots.findByFacultyIdWithDetails(amitId)).extracting(TimetableSlot::getDayOfWeek)
+                .containsExactlyInAnyOrder("MONDAY", "WEDNESDAY");
+        assertThat(slots.findAll()).hasSize(3);
+
+        // Uploading Amit's corrected sheet replaces his classes, and only his.
+        importer.importTimetable(file("amit-v2.csv", HEADER + """
+                Thu,9:00,10:00,LT-1,CS1139,1,C,Lecture,,amit@iet.edu
+                """), null);
+        assertThat(slots.findByFacultyIdWithDetails(amitId)).extracting(TimetableSlot::getDayOfWeek)
+                .containsExactly("THURSDAY");
+        assertThat(slots.findAll()).hasSize(2);
+    }
+
+    /**
+     * The real load sheet has no student numbers. Those are never made up: the import is refused,
+     * every row is named, and nothing is saved. (The complete sample set is SampleFilesImportTest.)
+     */
+    @Test
+    void theRealLoadSheetWithoutStudentNumbersIsRefusedRowByRow() throws Exception {
+        java.nio.file.Path samples = java.nio.file.Path.of("..", "docs", "samples");
+        long before = offerings.count();
+        var allocations = new AllocationImportServiceImpl(users, faculty, departments, courses, offerings, assignments, terms, skillRepo, slotRepo)
+                .importAllocations(file("allocations-odd-2026.csv", java.nio.file.Files.readString(samples.resolve("allocations-odd-2026.csv"))));
+        assertThat(allocations.imported()).isFalse();
+        assertThat(allocations.rows()).isEqualTo(215);
+        assertThat(allocations.issues()).filteredOn(i -> i.message().contains("Section Students missing")).hasSize(215);
+        assertThat(offerings.count()).isEqualTo(before);
     }
 }

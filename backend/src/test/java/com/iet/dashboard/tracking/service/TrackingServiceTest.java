@@ -450,6 +450,9 @@ class TrackingServiceTest {
 
         assertEquals(0, TrackingServiceImpl.scheduledBetween(List.of(mondaySlot), LocalDate.of(2026, 7, 1), null, null, today));
         assertEquals(1, TrackingServiceImpl.scheduledBetween(List.of(mondaySlot), LocalDate.of(2026, 7, 1), null, null, today.plusDays(5)));
+        // Monday 12 Oct is a holiday: nothing is owed for it.
+        assertEquals(0, TrackingServiceImpl.scheduledBetween(List.of(mondaySlot), LocalDate.of(2026, 7, 1), null, null, today.plusDays(5),
+                java.util.Set.of(LocalDate.of(2026, 10, 12))));
     }
 
     @Test

@@ -19,6 +19,11 @@ type Stage = 'upload' | 'review' | 'done';
  * rename units, edit topics, drop rows, add topics), then confirm to replace the course
  * syllabus. Nothing is saved until confirm.
  */
+/** Lecture N is the Nth topic of the document, counted across units (what gets saved as lectureOrder). */
+export function lectureNumberOf(parsed: ParsedSyllabusDto, unitIndex: number, topicIndex: number): number {
+  return parsed.units.slice(0, unitIndex).reduce((n, u) => n + u.topics.length, 0) + topicIndex + 1;
+}
+
 export function SyllabusImportModal({ courseId, courseCode, initialFile, onClose, onConfirmed }: SyllabusImportModalProps) {
   const [stage, setStage] = useState<Stage>('upload');
   const [file, setFile] = useState<File | null>(initialFile ?? null);
@@ -69,6 +74,16 @@ export function SyllabusImportModal({ courseId, courseCode, initialFile, onClose
         const data = await res.json().catch(() => ({}));
         throw new Error(data.detail || data.title || `Failed to save syllabus (${res.status})`);
       }
+      // Keep the document itself with the course, so it shows in the course's files.
+      if (file) {
+        const form = new FormData();
+        form.append('file', file);
+        form.append('category', 'COURSE_SYLLABUS');
+        form.append('courseId', String(courseId));
+        form.append('title', `${courseCode} syllabus`);
+        const saved = await fetch('/api/academic-documents/upload', { method: 'POST', credentials: 'include', body: form });
+        if (!saved.ok) throw new Error(`Topics saved, but the syllabus file could not be stored (${saved.status}).`);
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -105,7 +120,7 @@ export function SyllabusImportModal({ courseId, courseCode, initialFile, onClose
     if (!parsed) return;
     const units = parsed.units.map((u, i) =>
       i === unitIndex
-        ? { ...u, topics: [...u.topics, { topicName: 'New topic', targetWeek: u.topics.length > 0 ? u.topics[u.topics.length - 1].targetWeek : 1 }] }
+        ? { ...u, topics: [...u.topics, { topicName: 'New topic', targetWeek: 0 }] }
         : u
     );
     setParsed({ ...parsed, units });
@@ -207,6 +222,13 @@ export function SyllabusImportModal({ courseId, courseCode, initialFile, onClose
               <div className="text-[#6B6F76]">
                 <span className="font-mono text-[#16181D]">{parsed.sourceFileName}</span>
                 {' '}— {parsed.units.length} units, {topicCount} topics detected. Edit anything before saving.
+                {parsed.mismatches && parsed.mismatches.length > 0 && (
+                  <ul role="alert" className="mt-2 space-y-1 rounded border border-amber-300 bg-amber-50 p-2 text-amber-900">
+                    {parsed.mismatches.map((m) => (
+                      <li key={m}>{m}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
               <button
                 type="button"
@@ -235,6 +257,9 @@ export function SyllabusImportModal({ courseId, courseCode, initialFile, onClose
                   <div className="mt-3 space-y-1.5">
                     {unit.topics.map((topic, topicIndex) => (
                       <div key={topicIndex} className="flex items-center gap-2 group">
+                        <span className="w-10 shrink-0 text-right font-mono text-[11px] text-[#6B6F76]" title="Lecture number">
+                          L{lectureNumberOf(parsed, unitIndex, topicIndex)}
+                        </span>
                         <input
                           value={topic.topicName}
                           onChange={(e) => updateTopic(unitIndex, topicIndex, e.target.value)}

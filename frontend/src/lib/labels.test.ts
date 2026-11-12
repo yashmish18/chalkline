@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { batchLabel, sectionLabel, componentLabel, componentShort, canonicalComponent, localDateString } from './labels';
+import { batchLabel, sectionLabel, componentLabel, componentShort, canonicalComponent, localDateString, nameInitials } from './labels';
 
 describe('batchLabel', () => {
   it('shows nothing for the whole section', () => {
@@ -88,5 +88,15 @@ describe('localDateString', () => {
     expect(localDateString(new Date(2026, 0, 5))).toBe('2026-01-05');
     expect(localDateString(new Date(2026, 11, 31, 23, 59))).toBe('2026-12-31');
     expect(localDateString(new Date(2026, 9, 14, 0, 1))).toBe('2026-10-14');
+  });
+});
+
+describe('nameInitials', () => {
+  it('skips titles and dotted initials', () => {
+    expect(nameInitials('Dr. S. Taruna')).toBe('ST');
+    expect(nameInitials('Dr. Amit Sinhal')).toBe('AS');
+    expect(nameInitials('Prof. Taruna')).toBe('T');
+    expect(nameInitials('Mr. Mayank Kundalwal ')).toBe('MK');
+    expect(nameInitials('')).toBe('U');
   });
 });

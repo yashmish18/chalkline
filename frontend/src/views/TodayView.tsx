@@ -3,6 +3,7 @@ import { TodayClassDto, SyllabusTopicDto, CourseProgressDto } from '../types/aca
 import { FacultyProfileDto } from '../types/directory';
 import { DeadlineAssignmentDto } from '../types/deadlines';
 import { CourseDescriptionModal } from '../components/CourseDescriptionModal';
+import { PendingClasses } from '../components/PendingClasses';
 import {
   CheckCircle2,
   Check,
@@ -12,6 +13,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { sectionLabel, componentLabel, batchLabel, localDateString } from '../lib/labels';
+import { topicForLecture, lectureCount, lectureOptionLabel } from '../lib/lectures';
 
 export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }) {
   const [classes, setClasses] = useState<TodayClassDto[]>([]);
@@ -31,7 +33,9 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
   const [customTopic, setCustomTopic] = useState<string>('');
   const [lecturesTaken, setLecturesTaken] = useState<number>(1);
-  const [reasonNotHeld, setReasonNotHeld] = useState('Institutional Holiday / Event');
+  const [reasonNotHeld, setReasonNotHeld] = useState('');
+  const [lectureNumber, setLectureNumber] = useState<number>(1);
+  const [delayReason, setDelayReason] = useState('');
   const [note, setNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -44,6 +48,7 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
 
   // Classes can only be logged from the semester start date onwards.
   const [termStart, setTermStart] = useState<string | null>(null);
+  const [holidays, setHolidays] = useState<{ date: string; name: string }[]>([]);
   const [termError, setTermError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -53,7 +58,10 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
         const res = await fetch('/api/terms/active', { credentials: 'include' });
         if (res.ok) {
           const term = await res.json();
-          if (!cancelled) setTermStart(term?.startDate ?? null);
+          if (!cancelled) {
+            setTermStart(term?.startDate ?? null);
+            setHolidays(term?.holidays ?? []);
+          }
         }
       } catch {
         // Term dates are advisory here; the server enforces the rule anyway.
@@ -131,8 +139,9 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
       status: 'HELD',
       unitNumber: cls.currentUnitNumber,
       topicIds: cls.nextTopicId ? [cls.nextTopicId] : [],
-      customTopicName: cls.nextTopicId ? null : 'Scheduled session',
-      lecturesTaken: cls.component === 'PRACTICAL' || cls.component === 'LAB' ? 2 : 1,
+      customTopicName: null,
+      lectureNumber: cls.nextLectureNumber,
+      lecturesTaken: cls.component === 'PRACTICAL' ? 2 : 1,
       reasonNotHeld: null,
       note: null,
     };
@@ -195,9 +204,26 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
     setSelectedUnit(cls.currentUnitNumber || 1);
     setSelectedTopicId(cls.nextTopicId);
     setCustomTopic(cls.nextTopic || '');
-    setLecturesTaken(cls.component === 'PRACTICAL' || cls.component === 'LAB' ? 2 : 1);
-    setReasonNotHeld('Institutional Holiday / Event');
+    setLecturesTaken(cls.component === 'PRACTICAL' ? 2 : 1);
+    setReasonNotHeld('');
+    setLectureNumber(cls.nextLectureNumber ?? 1);
+    setDelayReason('');
     setNote('');
+    if ((cls.component || 'LECTURE') === 'LECTURE') selectTopicOfLecture(cls, cls.nextLectureNumber ?? 1);
+  };
+
+  /** A lecture's number names its topic: Lecture N is the syllabus's Nth topic (still changeable). */
+  const selectTopicOfLecture = (cls: TodayClassDto, n: number) => {
+    const topic = topicForLecture(cls.availableUnits, n);
+    if (!topic) return;
+    setSelectedUnit(topic.unitNumber);
+    setSelectedTopicId(topic.id);
+    setCustomTopic(topic.topicName);
+  };
+
+  const handleLectureNumberChange = (n: number) => {
+    setLectureNumber(n);
+    if (selectedClass && selectedComponent === 'LECTURE') selectTopicOfLecture(selectedClass, n);
   };
 
   const handleUnitChange = (unitNum: number) => {
@@ -249,6 +275,8 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
       customTopicName: sessionStatus === 'HELD' && !selectedTopicId && customTopic.trim() ? customTopic.trim() : null,
       lecturesTaken: sessionStatus === 'HELD' ? lecturesTaken : 0,
       reasonNotHeld: sessionStatus !== 'HELD' ? reasonNotHeld : null,
+      lectureNumber: sessionStatus === 'HELD' ? lectureNumber : null,
+      delayReason: isLate ? delayReason.trim() : null,
       note: note.trim().length > 0 ? note.trim() : null,
     };
 
@@ -279,6 +307,13 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
       setIsSubmitting(false);
     }
   };
+
+  /** Matches the server: a class more than 2 days old needs a reason for the late log. */
+  const isLate = useMemo(() => {
+    const lateBefore = new Date();
+    lateBefore.setDate(lateBefore.getDate() - 2);
+    return selectedDate < localDateString(lateBefore);
+  }, [selectedDate]);
 
   const getTopicsForCurrentModalUnit = (): SyllabusTopicDto[] => {
     if (!selectedClass || !selectedClass.availableUnits) return [];
@@ -316,7 +351,7 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
       const c = (component ?? '').toUpperCase();
       if (c === 'ALL' || c.startsWith('LEC') || c === 'THEORY') return 0;
       if (c.startsWith('TUT') || c === 'T') return 1;
-      if (c.startsWith('PRA') || c.startsWith('LAB') || c === 'P') return 2;
+      if (c.startsWith('PRA') || c === 'P') return 2;
       return 3;
     };
     const groups = new Map<number, TodayClassDto[]>();
@@ -427,6 +462,8 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
         </div>
       </dl>
 
+      <PendingClasses refreshKey={classes} onOpenDay={setSelectedDate} />
+
       {/* Classes */}
       <section>
         <div className="mb-3 flex items-end justify-between">
@@ -450,7 +487,11 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
         {loading && classes.length === 0 ? (
           <p className="card px-5 py-10 text-center text-[14px] text-[var(--ink-subtle)]">Loading…</p>
         ) : classes.length === 0 ? (
-          <p className="card px-5 py-10 text-center text-[14px] text-[var(--ink-subtle)]">No classes on this day.</p>
+          <p className="card px-5 py-10 text-center text-[14px] text-[var(--ink-subtle)]">
+            {holidays.find((h) => h.date === selectedDate)
+              ? `Holiday — ${holidays.find((h) => h.date === selectedDate)?.name}. No classes to log.`
+              : 'No classes on this day.'}
+          </p>
         ) : (
           <div className="space-y-3">
             {groupedClasses.map(({ head, items }) => {
@@ -626,36 +667,30 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
 
               {sessionStatus === 'HELD' && (
                 <>
-                  {/* 2. LTP Component & Sub-section Selector */}
+                  {/* 2. What class this is (from the timetable / allocation), and which lecture */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">LTP Component</label>
+                      <span className="block font-bold text-slate-700 mb-1">Class</span>
+                      <p className="p-2 border border-border rounded-md bg-slate-50 text-slate-800">
+                        {componentLabel(selectedComponent)} · {sectionLabel(selectedClass.section, null, selectedSubSection)}
+                      </p>
+                    </div>
+                    <div>
+                      <label htmlFor="lecture-number" className="block font-bold text-slate-700 mb-1">
+                        {componentLabel(selectedComponent)} number
+                      </label>
                       <select
-                        value={selectedComponent}
-                        onChange={(e) => {
-                          const c = e.target.value;
-                          setSelectedComponent(c);
-                          if (c === 'PRACTICAL' || c === 'LAB') setLecturesTaken(2);
-                          else setLecturesTaken(1);
-                        }}
+                        id="lecture-number"
+                        value={lectureNumber}
+                        onChange={(e) => handleLectureNumberChange(Number(e.target.value))}
                         className="w-full p-2 border border-border rounded-md bg-white text-slate-800"
                       >
-                        <option value="LECTURE">Lecture (L)</option>
-                        <option value="TUTORIAL">Tutorial (T)</option>
-                        <option value="PRACTICAL">Practical / Lab (P)</option>
-                        <option value="PBL">Project-Based Learning (PBL)</option>
+                        {Array.from({ length: lectureCount(selectedClass.availableUnits, selectedClass.nextLectureNumber ?? 1) }, (_, i) => i + 1).map((n) => (
+                          <option key={n} value={n}>
+                            {lectureOptionLabel(componentLabel(selectedComponent), n, selectedClass.availableUnits, selectedClass.nextLectureNumber ?? 1)}
+                          </option>
+                        ))}
                       </select>
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-slate-700 mb-1">Batch / Sub-Section</label>
-                      <input
-                        type="text"
-                        value={selectedSubSection}
-                        onChange={(e) => setSelectedSubSection(e.target.value)}
-                        placeholder="e.g. ALL, Batch G1"
-                        className="w-full p-2 border border-border rounded-md bg-white text-slate-800"
-                      />
                     </div>
                   </div>
 
@@ -735,18 +770,37 @@ export function TodayView({ onNavigate }: { onNavigate?: (tab: string) => void }
 
               {sessionStatus !== 'HELD' && (
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Reason for Non-Conduct</label>
+                  <label htmlFor="reason-not-held" className="block font-bold text-slate-700 mb-1">Reason for Non-Conduct</label>
                   <select
+                    id="reason-not-held"
+                    required
                     value={reasonNotHeld}
                     onChange={(e) => setReasonNotHeld(e.target.value)}
                     className="w-full p-2 border border-border rounded-md bg-white text-slate-800"
                   >
+                    <option value="" disabled>Choose a reason…</option>
                     <option value="Institutional Holiday / Event">Institutional Holiday / Event</option>
                     <option value="Faculty on Approved Leave">Faculty on Approved Leave</option>
                     <option value="Department Meeting">Department Meeting</option>
                     <option value="Rescheduled to Alternative Slot">Rescheduled to Alternative Slot</option>
                     <option value="Student Placement Drive">Student Placement Drive</option>
                   </select>
+                </div>
+              )}
+
+              {isLate && (
+                <div>
+                  <label htmlFor="delay-reason" className="block font-bold text-slate-700 mb-1">
+                    Why is this logged late? (class was on {selectedDate})
+                  </label>
+                  <input
+                    id="delay-reason"
+                    type="text"
+                    required
+                    value={delayReason}
+                    onChange={(e) => setDelayReason(e.target.value)}
+                    className="w-full p-2 border border-border rounded-md bg-white text-slate-800"
+                  />
                 </div>
               )}
 

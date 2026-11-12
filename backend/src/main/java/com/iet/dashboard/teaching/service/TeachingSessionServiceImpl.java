@@ -1,5 +1,7 @@
 package com.iet.dashboard.teaching.service;
 
+import com.iet.dashboard.academics.domain.CourseComponent;
+
 import com.iet.dashboard.academics.domain.CourseOffering;
 import com.iet.dashboard.academics.domain.SyllabusTopic;
 import com.iet.dashboard.academics.repo.CourseOfferingRepository;
@@ -33,6 +35,11 @@ public class TeachingSessionServiceImpl implements TeachingSessionService {
     private final CourseOfferingRepository offeringRepository;
     private final SyllabusTopicRepository topicRepository;
     private final AcademicsService academicsService;
+    /** The institute's clock. The server runs in UTC; "today" and "has the class started" are Indian time. */
+    private java.time.Clock clock = java.time.Clock.system(java.time.ZoneId.of("Asia/Kolkata"));
+
+    /** A log is "late" once this many days have passed since the class. */
+    static final int LATE_AFTER_DAYS = 2;
 
     public TeachingSessionServiceImpl(
             TeachingSessionRepository sessionRepository,
@@ -44,6 +51,10 @@ public class TeachingSessionServiceImpl implements TeachingSessionService {
         this.offeringRepository = offeringRepository;
         this.topicRepository = topicRepository;
         this.academicsService = academicsService;
+    }
+
+    void setClock(java.time.Clock clock) {
+        this.clock = clock;
     }
 
     @Override
@@ -76,19 +87,43 @@ public class TeachingSessionServiceImpl implements TeachingSessionService {
         CourseOffering offering = offeringRepository.findById(request.offeringId())
                 .orElseThrow(() -> new ResourceNotFoundException("Course offering not found: " + request.offeringId()));
 
+        // One vocabulary: a "LAB" from any screen is stored as PRACTICAL, so logs line up with the timetable.
+        CourseComponent component = CourseComponent.parse(request.sessionType() != null ? request.sessionType() : "LECTURE");
+        if (component == CourseComponent.ALL) {
+            throw new ValidationException("Say whether the class was a lecture, tutorial or practical");
+        }
+        String batch = com.iet.dashboard.academics.domain.SubSections.normalise(request.subSection(), offering.getSection());
+        checkTiming(request, currentFacultyId, component, batch);
+
+        if (request.lectureNumber() != null) {
+            if (request.lectureNumber() < 1) {
+                throw new ValidationException("Lecture number must be 1 or more");
+            }
+            sessionRepository.findByOfferingIdAndSessionTypeAndSubSectionAndLectureNumber(
+                            offering.getId(), component.name(), batch, request.lectureNumber()).stream()
+                    .findFirst()
+                    .ifPresent(existing -> {
+                        throw new ValidationException(componentWord(component) + " " + request.lectureNumber()
+                                + " is already logged on " + existing.getSessionDate() + ". Pick the right number, "
+                                + "or remove that log first.");
+                    });
+        }
+
         TeachingSession session = new TeachingSession(
                 offering,
                 currentFacultyId,
                 request.sessionDate(),
-                request.sessionType() != null ? request.sessionType() : "LECTURE",
+                component.name(),
                 request.status(),
                 request.unitNumber(),
                 request.customTopicName(),
-                com.iet.dashboard.academics.domain.SubSections.normalise(request.subSection(), offering.getSection()),
+                batch,
                 request.lecturesTaken() != null ? request.lecturesTaken() : 1,
                 request.note(),
                 request.reasonNotHeld()
         );
+        session.setLectureNumber(request.lectureNumber());
+        session.setDelayReason(request.delayReason() == null || request.delayReason().isBlank() ? null : request.delayReason().trim());
 
         if (request.status() == SessionStatus.HELD && request.topicIds() != null && !request.topicIds().isEmpty()) {
             List<SyllabusTopic> topics = topicRepository.findAllById(request.topicIds());
@@ -102,6 +137,95 @@ public class TeachingSessionServiceImpl implements TeachingSessionService {
     }
 
     /**
+     * A class can't be logged before it has happened, and a late log needs a reason. Unscheduled
+     * classes (no timetable slot) are checked by date only.
+     */
+    private void checkTiming(LogSessionRequest request, Long facultyId, CourseComponent component, String batch) {
+        LocalDate today = LocalDate.now(clock);
+        LocalDate date = request.sessionDate();
+        if (date.isAfter(today)) {
+            throw new ValidationException("A class on " + date + " hasn't happened yet; log it on or after that day.");
+        }
+        if (date.equals(today)) {
+            java.time.LocalTime now = java.time.LocalTime.now(clock);
+            List<java.time.LocalTime> starts = academicsService.getTimetableForFaculty(facultyId).stream()
+                    .filter(s -> s.offeringId().equals(request.offeringId())
+                            && date.getDayOfWeek().name().equalsIgnoreCase(s.dayOfWeek())
+                            && CourseComponent.parse(s.component()) == component
+                            && batch.equals(s.subSection()))
+                    .map(s -> java.time.LocalTime.parse(s.startTime()))
+                    .toList();
+            if (!starts.isEmpty() && starts.stream().allMatch(start -> start.isAfter(now))) {
+                throw new ValidationException("This class starts at " + starts.get(0) + "; log it once it has begun.");
+            }
+        }
+        if (date.isBefore(today.minusDays(LATE_AFTER_DAYS))
+                && (request.delayReason() == null || request.delayReason().isBlank())) {
+            throw new ValidationException("This class was on " + date + ", more than " + LATE_AFTER_DAYS
+                    + " days ago. Say why it is being logged late.");
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<com.iet.dashboard.teaching.web.PendingClassDto> getPendingClasses(Long facultyId, LocalDate from, LocalDate to) {
+        LocalDate today = LocalDate.now(clock);
+        AcademicTermDto term = academicsService.getActiveTerm();
+        LocalDate start = from != null ? from : term != null && term.startDate() != null ? term.startDate() : today.minusDays(27);
+        LocalDate end = to != null && to.isBefore(today) ? to : today;
+        if (term != null && term.startDate() != null && start.isBefore(term.startDate())) {
+            start = term.startDate();
+        }
+        if (term != null && term.endDate() != null && end.isAfter(term.endDate())) {
+            end = term.endDate();
+        }
+        if (start.isAfter(end)) {
+            return List.of();
+        }
+        var slots = academicsService.getTimetableForFaculty(facultyId);
+        List<TeachingSession> logged = sessionRepository.findByFacultyIdAndSessionDateBetween(facultyId, start, end);
+        java.time.LocalTime now = java.time.LocalTime.now(clock);
+
+        List<com.iet.dashboard.teaching.web.PendingClassDto> pending = new ArrayList<>();
+        for (LocalDate day = start; !day.isAfter(end); day = day.plusDays(1)) {
+            if (term != null && term.isHoliday(day)) {
+                continue;   // a holiday's classes are not owed
+            }
+            for (var slot : slots) {
+                if (!day.getDayOfWeek().name().equalsIgnoreCase(slot.dayOfWeek())
+                        || (day.equals(today) && java.time.LocalTime.parse(slot.endTime()).isAfter(now))) {
+                    continue;
+                }
+                LocalDate date = day;
+                CourseComponent component = CourseComponent.parse(slot.component());
+                boolean done = logged.stream().anyMatch(s -> s.getSessionDate().equals(date)
+                        && s.getOffering().getId().equals(slot.offeringId())
+                        && CourseComponent.parse(s.getSessionType()) == component
+                        && slot.subSection().equals(s.getSubSection()));
+                if (!done) {
+                    pending.add(new com.iet.dashboard.teaching.web.PendingClassDto(date, slot.offeringId(),
+                            slot.courseCode(), slot.courseName(), slot.section(), slot.subSection(), component.name(),
+                            slot.startTime() + " – " + slot.endTime(), slot.room()));
+                }
+            }
+        }
+        return pending;
+    }
+
+    private int nextLectureNumber(Long offeringId, CourseComponent component, String batch) {
+        Integer last = sessionRepository.findLastLectureNumber(offeringId, component.name(), batch);
+        return last == null ? 1 : last + 1;
+    }
+
+    private static String componentWord(CourseComponent component) {
+        return switch (component) {
+            case TUTORIAL -> "Tutorial";
+            case PRACTICAL -> "Practical";
+            default -> "Lecture";
+        };
+    }
+
+    /**
      * The classes a faculty member should log on a date. With an uploaded timetable this is exactly
      * that weekday's slots, in time order. Without one, every allocation is listed as unscheduled so
      * logging still works — but no time or room is invented.
@@ -112,8 +236,12 @@ public class TeachingSessionServiceImpl implements TeachingSessionService {
         if (facultyId == null) {
             return List.of();
         }
-        LocalDate targetDate = date != null ? date : LocalDate.now();
+        LocalDate targetDate = date != null ? date : LocalDate.now(clock);
         String weekday = targetDate.getDayOfWeek().name();
+        AcademicTermDto activeTerm = academicsService.getActiveTerm();
+        if (activeTerm != null && activeTerm.isHoliday(targetDate)) {
+            return List.of();   // nothing to log on a holiday
+        }
 
         List<TeachingAssignmentDto> assignments = academicsService.getTeachingAssignmentsForFaculty(facultyId);
         List<TeachingSession> sessionsThatDay = sessionRepository.findByFacultyIdAndSessionDate(facultyId, targetDate);
@@ -186,7 +314,8 @@ public class TeachingSessionServiceImpl implements TeachingSessionService {
                 coveredTopicIds.size(),
                 logged,
                 availableUnits,
-                scheduled
+                scheduled,
+                nextLectureNumber(offering.id(), ownComponent, batch)
         );
     }
 

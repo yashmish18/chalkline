@@ -634,6 +634,12 @@ public class TrackingServiceImpl implements TrackingService {
      * (today's classes may not have happened yet) and never past the semester end.
      */
     static int scheduledBetween(List<TimetableSlot> facultySlots, LocalDate termStart, LocalDate termEnd, LocalDate from, LocalDate today) {
+        return scheduledBetween(facultySlots, termStart, termEnd, from, today, java.util.Set.of());
+    }
+
+    /** Timetabled classes owed in the window; a holiday owes nothing. */
+    static int scheduledBetween(List<TimetableSlot> facultySlots, LocalDate termStart, LocalDate termEnd, LocalDate from,
+                                LocalDate today, java.util.Set<LocalDate> holidays) {
         LocalDate last = today.minusDays(1);
         if (termEnd != null && termEnd.isBefore(last)) {
             last = termEnd;
@@ -645,7 +651,7 @@ public class TrackingServiceImpl implements TrackingService {
                     .filter(Objects::nonNull).max(Comparator.naturalOrder()).orElse(uploaded);
             java.time.DayOfWeek dow = java.time.DayOfWeek.valueOf(slot.getDayOfWeek());
             for (LocalDate d = first; !d.isAfter(last); d = d.plusDays(1)) {
-                if (d.getDayOfWeek() == dow) {
+                if (d.getDayOfWeek() == dow && !holidays.contains(d)) {
                     count++;
                 }
             }
@@ -696,9 +702,9 @@ public class TrackingServiceImpl implements TrackingService {
             Integer daysSince = last != null ? (int) ChronoUnit.DAYS.between(last, today) : null;
 
             List<TimetableSlot> mySlots = slotsByFaculty.getOrDefault(facultyId, List.of());
-            int scheduled = termRunning ? scheduledBetween(mySlots, termStart, termEnd, null, today) : 0;
+            int scheduled = termRunning ? scheduledBetween(mySlots, termStart, termEnd, null, today, term.holidayDates()) : 0;
             int scheduledLastWeek = termRunning
-                    ? scheduledBetween(mySlots, termStart, termEnd, today.minusDays(NOT_LOGGING_AFTER_DAYS), today) : 0;
+                    ? scheduledBetween(mySlots, termStart, termEnd, today.minusDays(NOT_LOGGING_AFTER_DAYS), today, term.holidayDates()) : 0;
             Integer rate = scheduled > 0 ? (int) Math.round(Math.min(heldCount + cancelledCount, scheduled) * 100.0 / scheduled) : null;
 
             Set<Long> offeringIds = offeringsByFaculty.getOrDefault(facultyId, Set.of());

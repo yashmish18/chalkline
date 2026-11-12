@@ -59,6 +59,9 @@ public interface AcademicsService {
 
     List<com.iet.dashboard.academics.web.TimetableSlotDto> getTimetableForFaculty(Long facultyId);
 
+    /** Offering id → one weekday name per timetabled LECTURE slot of that section (the pacing baseline). */
+    java.util.Map<Long, List<String>> getLectureDaysByOffering();
+
     void deleteTeachingAssignment(Long assignmentId);
     
     void deleteTeachingAssignments(Integer semester);

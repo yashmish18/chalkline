@@ -117,6 +117,35 @@ class AcademicsServiceTest {
         assertTrue(result.active());
     }
 
+    /** Holidays are typed by the coordinator: inside the semester, one per date, each with a name. */
+    @Test
+    void holidaysAreSavedWithTheSemesterAndChecked() {
+        var term = new com.iet.dashboard.academics.domain.AcademicTerm(
+                "Odd", "2026-2027", java.time.LocalDate.of(2026, 7, 15), java.time.LocalDate.of(2026, 12, 15), true);
+        when(termRepository.findByActiveTrue()).thenReturn(Optional.of(term));
+        when(termRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        java.util.function.Function<List<com.iet.dashboard.academics.web.AcademicTermDto.Holiday>, com.iet.dashboard.academics.web.UpdateTermRequest> req = h ->
+                new com.iet.dashboard.academics.web.UpdateTermRequest("Odd", "2026-2027",
+                        java.time.LocalDate.of(2026, 7, 15), java.time.LocalDate.of(2026, 12, 15), null, h);
+
+        var saved = academicsService.updateActiveTerm(req.apply(List.of(
+                new com.iet.dashboard.academics.web.AcademicTermDto.Holiday(java.time.LocalDate.of(2026, 11, 8), " Diwali "),
+                new com.iet.dashboard.academics.web.AcademicTermDto.Holiday(java.time.LocalDate.of(2026, 10, 2), "Gandhi Jayanti"))));
+        assertEquals(List.of(new com.iet.dashboard.academics.web.AcademicTermDto.Holiday(java.time.LocalDate.of(2026, 10, 2), "Gandhi Jayanti"),
+                new com.iet.dashboard.academics.web.AcademicTermDto.Holiday(java.time.LocalDate.of(2026, 11, 8), "Diwali")), saved.holidays());
+        assertTrue(saved.isHoliday(java.time.LocalDate.of(2026, 11, 8)));
+
+        assertThrows(IllegalArgumentException.class, () -> academicsService.updateActiveTerm(req.apply(List.of(
+                new com.iet.dashboard.academics.web.AcademicTermDto.Holiday(java.time.LocalDate.of(2027, 1, 26), "Republic Day")))), "outside the semester");
+        assertThrows(IllegalArgumentException.class, () -> academicsService.updateActiveTerm(req.apply(List.of(
+                new com.iet.dashboard.academics.web.AcademicTermDto.Holiday(java.time.LocalDate.of(2026, 10, 2), "A"), new com.iet.dashboard.academics.web.AcademicTermDto.Holiday(java.time.LocalDate.of(2026, 10, 2), "B")))), "same date twice");
+        assertThrows(IllegalArgumentException.class, () -> academicsService.updateActiveTerm(req.apply(List.of(
+                new com.iet.dashboard.academics.web.AcademicTermDto.Holiday(java.time.LocalDate.of(2026, 10, 2), "  ")))), "no name");
+        // Leaving holidays out of the request keeps them.
+        var kept = academicsService.updateActiveTerm(req.apply(null));
+        assertEquals(2, kept.holidays().size());
+    }
+
     @Test
     void testGetSyllabusForCourse() {
         Course course = new Course("CS501", "Networks", "THEORY");
@@ -488,11 +517,13 @@ class AcademicsServiceTest {
         when(assignmentRepository.findAllWithCourseAndOffering()).thenReturn(List.of(lecture, lab, tutorial));
         when(facultyService.getAllFaculty(null, null)).thenReturn(List.of(
                 new FacultyDto(2L, 2L, "Dr. Amit", "Assoc Prof", "PhD", "IT", Collections.emptyList()),
-                new FacultyDto(3L, 3L, "Prof. Priya", "Asst Prof", "PhD", "IT", Collections.emptyList())));
+                new FacultyDto(3L, 3L, "Prof. Priya", "Asst Prof", "PhD", "IT", Collections.emptyList()),
+                new FacultyDto(4L, 4L, "Dr. New Joiner", "Asst Prof", "PhD", "IT", Collections.emptyList())));
 
         List<FacultyLtpLoadDto> load = academicsService.getFacultyLtpLoad();
 
-        assertEquals(2, load.size());
+        assertEquals(3, load.size(), "a faculty member with no course is still listed");
+        assertEquals(0, load.get(2).totalHours());
         // Sorted by total hours descending — Dr. Amit (3L + 2P = 5) first
         FacultyLtpLoadDto amit = load.get(0);
         assertEquals("Dr. Amit", amit.facultyName());
@@ -501,6 +532,9 @@ class AcademicsServiceTest {
         assertEquals(2, amit.practicalHours());
         assertEquals(5, amit.totalHours());
         assertEquals(2, amit.assignmentCount());
+        assertEquals(List.of("LECTURE ALL 3", "PRACTICAL A1 2"), amit.lines().stream()
+                .map(l -> l.component() + " " + l.batch() + " " + l.hours()).toList(), "the load section by section");
+        assertEquals("A", amit.lines().get(0).section());
 
         FacultyLtpLoadDto priya = load.get(1);
         assertEquals(1, priya.tutorialHours());

@@ -34,6 +34,20 @@ public class AcademicTerm {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
+    @jakarta.persistence.ElementCollection(fetch = jakarta.persistence.FetchType.EAGER)
+    @jakarta.persistence.CollectionTable(name = "term_holiday", joinColumns = @jakarta.persistence.JoinColumn(name = "term_id"))
+    @jakarta.persistence.OrderBy("date ASC")
+    private java.util.List<TermHoliday> holidays = new java.util.ArrayList<>();
+
+    public java.util.List<TermHoliday> getHolidays() {
+        return holidays;
+    }
+
+    public void setHolidays(java.util.List<TermHoliday> holidays) {
+        this.holidays.clear();
+        this.holidays.addAll(holidays);
+    }
+
     public AcademicTerm() {
     }
 

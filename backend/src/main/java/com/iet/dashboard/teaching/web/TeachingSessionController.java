@@ -49,8 +49,18 @@ public class TeachingSessionController {
     ) {
         UserDto currentUser = userService.getCurrentUser();
         Long facultyId = resolveFacultyId(currentUser);
-        LocalDate targetDate = date != null ? date : LocalDate.now();
-        return ResponseEntity.ok(teachingSessionService.getTodayClassesForFaculty(facultyId, targetDate));
+        return ResponseEntity.ok(teachingSessionService.getTodayClassesForFaculty(facultyId, date));
+    }
+
+    /** The signed-in faculty member's timetabled classes that passed with nothing logged. */
+    @GetMapping("/pending")
+    @PreAuthorize("hasAnyRole('FACULTY', 'COORDINATOR')")
+    public ResponseEntity<List<com.iet.dashboard.teaching.web.PendingClassDto>> getPendingClasses(
+            @RequestParam(value = "from", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(value = "to", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+    ) {
+        Long facultyId = resolveFacultyId(userService.getCurrentUser());
+        return ResponseEntity.ok(facultyId == null ? List.of() : teachingSessionService.getPendingClasses(facultyId, from, to));
     }
 
     @GetMapping("/offering/{offeringId}")
@@ -77,7 +87,7 @@ public class TeachingSessionController {
                 .map(FacultyDto::id)
                 .orElseGet(() -> {
                     if ("COORDINATOR".equals(currentUser.role())) {
-                        return 1L; // Coordinator fallback to faculty ID 1
+                        return null; // a coordinator who teaches nothing has no classes of their own
                     }
                     throw new ForbiddenException("Faculty profile not linked to user account: " + currentUser.email());
                 });

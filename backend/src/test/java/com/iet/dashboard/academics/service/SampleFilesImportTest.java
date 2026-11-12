@@ -28,6 +28,8 @@ class SampleFilesImportTest {
 
     private static final Path SAMPLES = Path.of("..", "docs", "samples", "complete");
 
+    @Autowired com.iet.dashboard.directory.repo.SkillRepository skillRepo;
+    @Autowired com.iet.dashboard.academics.repo.TimetableSlotRepository slotRepo;
     @Autowired AppUserRepository users;
     @Autowired FacultyRepository faculty;
     @Autowired DepartmentRepository departments;
@@ -44,7 +46,7 @@ class SampleFilesImportTest {
     @Test
     void theCompleteSampleSetImportsCleanly() throws Exception {
         AllocationImportResultDto allocations = new AllocationImportServiceImpl(
-                users, faculty, departments, courses, offerings, assignments, terms)
+                users, faculty, departments, courses, offerings, assignments, terms, skillRepo, slotRepo)
                 .importAllocations(sample("allocations-complete.csv"));
         assertThat(allocations.issues()).as("only role notices, no problems")
                 .allSatisfy(i -> assertThat(i.severity()).isEqualTo("INFO"));

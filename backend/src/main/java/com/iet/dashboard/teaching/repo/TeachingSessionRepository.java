@@ -19,6 +19,16 @@ public interface TeachingSessionRepository extends JpaRepository<TeachingSession
 
     List<TeachingSession> findByFacultyIdAndSessionDate(Long facultyId, LocalDate sessionDate);
 
+    List<TeachingSession> findByFacultyIdAndSessionDateBetween(Long facultyId, LocalDate from, LocalDate to);
+
+    List<TeachingSession> findByOfferingIdAndSessionTypeAndSubSectionAndLectureNumber(
+            Long offeringId, String sessionType, String subSection, Integer lectureNumber);
+
+    @Query("SELECT MAX(s.lectureNumber) FROM TeachingSession s WHERE s.offering.id = :offeringId "
+            + "AND s.sessionType = :sessionType AND s.subSection = :subSection")
+    Integer findLastLectureNumber(@Param("offeringId") Long offeringId, @Param("sessionType") String sessionType,
+                                  @Param("subSection") String subSection);
+
     @Query("SELECT DISTINCT t.id FROM TeachingSession s JOIN s.topicsCovered t WHERE s.offering.id = :offeringId AND s.status = 'HELD'")
     Set<Long> findCoveredTopicIdsForOffering(@Param("offeringId") Long offeringId);
 

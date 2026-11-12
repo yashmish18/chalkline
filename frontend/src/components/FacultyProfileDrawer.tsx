@@ -16,7 +16,7 @@ import {
   TrendingUp,
   FileText,
 } from 'lucide-react';
-import { batchLabel } from '../lib/labels';
+import { batchLabel, nameInitials } from '../lib/labels';
 
 interface FacultyProfileDrawerProps {
   facultyId: number;
@@ -112,14 +112,7 @@ export function FacultyProfileDrawer({ facultyId, onClose }: FacultyProfileDrawe
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3 min-w-0">
                   <div className="w-11 h-11 rounded-full bg-[#EFEEE9] ring-1 ring-[#D6D3CA] text-[#16181D] flex items-center justify-center text-sm font-semibold shrink-0">
-                    {profile.name
-                      .replace(/^(Dr|Prof|Mr|Ms|Mrs)\.?\s+/i, '')
-                      .split(' ')
-                      .filter(Boolean)
-                      .slice(0, 2)
-                      .map((n) => n[0])
-                      .join('')
-                      .toUpperCase()}
+                    {nameInitials(profile.name)}
                   </div>
                   <div className="min-w-0">
                     <h2 className="font-sans text-lg font-semibold text-slate-900 truncate">

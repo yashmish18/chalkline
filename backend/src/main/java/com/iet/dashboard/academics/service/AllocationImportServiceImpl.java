@@ -10,39 +10,51 @@ import com.iet.dashboard.academics.repo.AcademicTermRepository;
 import com.iet.dashboard.academics.repo.CourseOfferingRepository;
 import com.iet.dashboard.academics.repo.CourseRepository;
 import com.iet.dashboard.academics.repo.TeachingAssignmentRepository;
+import com.iet.dashboard.academics.repo.TimetableSlotRepository;
 import com.iet.dashboard.academics.web.AllocationImportResultDto;
 import com.iet.dashboard.academics.web.AllocationImportResultDto.Issue;
 import com.iet.dashboard.directory.domain.Department;
 import com.iet.dashboard.directory.domain.Faculty;
+import com.iet.dashboard.directory.domain.Skill;
 import com.iet.dashboard.directory.repo.DepartmentRepository;
 import com.iet.dashboard.directory.repo.FacultyRepository;
+import com.iet.dashboard.directory.repo.SkillRepository;
 import com.iet.dashboard.identity.domain.AppUser;
 import com.iet.dashboard.identity.domain.Role;
-import com.iet.dashboard.identity.config.AppSettings;
 import com.iet.dashboard.identity.repo.AppUserRepository;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.beans.factory.annotation.Autowired;
 import com.iet.dashboard.shared.spreadsheet.SpreadsheetReader;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.charset.StandardCharsets;
-import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * The one importer. The sheet is the source of truth for the semester: each row is one teaching
- * assignment, and re-importing the same sheet updates rows in place instead of duplicating them.
- * A row that cannot be read is reported and skipped — nothing is guessed.
+ * The one importer, and the only way people and allocations enter the system. The sheet is the
+ * source of truth for the semester:
+ * <ul>
+ *   <li>Nothing is invented. Every value stored is a value the sheet wrote; a missing required value
+ *       is an error, never a default.</li>
+ *   <li>The whole file is checked first. One error anywhere and nothing is saved, so a half-imported
+ *       semester can't exist.</li>
+ *   <li>A value repeated across rows (a course's name, a section's strength, a person's designation)
+ *       must be identical on every row that gives it.</li>
+ *   <li>Re-importing replaces the semester's allocations: rows that left the sheet are removed.</li>
+ * </ul>
  */
 @Service
 @Transactional
@@ -53,6 +65,9 @@ public class AllocationImportServiceImpl implements AllocationImportService {
             Map.entry("email", List.of("email", "emailid", "mail")),
             Map.entry("designation", List.of("designation", "rank", "=title")),
             Map.entry("department", List.of("department", "dept")),
+            Map.entry("role", List.of("=role", "access", "dashboardrole", "accessrole")),
+            Map.entry("skills", List.of("skills", "skill", "expertise")),
+            Map.entry("pbl", List.of("pblhours", "=pbl")),
             Map.entry("code", List.of("coursecode", "subjectcode", "=code")),
             Map.entry("course", List.of("coursename", "subjectname", "coursetitle", "=course")),
             Map.entry("ltp", List.of("ltp")),
@@ -62,16 +77,14 @@ public class AllocationImportServiceImpl implements AllocationImportService {
             Map.entry("component", List.of("component", "=type")),
             Map.entry("batch", List.of("batch", "subsection")),
             Map.entry("batchstudents", List.of("batchstudents", "batchstrength")),
-            Map.entry("hours", List.of("weeklyhours", "contacthours", "=hours")),
-            Map.entry("pbl", List.of("pblhours", "=pbl")),
-            // Dashboard access per person: "Coordinator" or "Faculty". Blank leaves the role as it is.
-            Map.entry("role", List.of("=role", "access", "dashboardrole", "accessrole"))
+            // Optional: when given it must equal what the L-T-P says, so a typo can't slip through.
+            Map.entry("hours", List.of("weeklyhours", "contacthours", "=hours"))
     );
 
-    private static final Pattern NUMBER = Pattern.compile("\\d+");
-    private static final Pattern LTP = Pattern.compile("(\\d+)\\s*[-/ ]\\s*(\\d+)\\s*[-/ ]\\s*(\\d+)");
+    private static final Pattern WHOLE_NUMBER = Pattern.compile("\\d+");
+    private static final Pattern LTP = Pattern.compile("(\\d+)\\s*-\\s*(\\d+)\\s*-\\s*(\\d+)");
+    private static final Pattern EMAIL = Pattern.compile("[^@\\s]+@[^@\\s]+\\.[^@\\s]+");
     private static final Pattern PARENTHETICAL = Pattern.compile("\\(([^)]*)\\)");
-    private static final Pattern TITLE = Pattern.compile("\\b(?:Dr|Mr|Mrs|Ms|Prof)\\b\\.?", Pattern.CASE_INSENSITIVE);
 
     private final AppUserRepository userRepository;
     private final FacultyRepository facultyRepository;
@@ -80,9 +93,9 @@ public class AllocationImportServiceImpl implements AllocationImportService {
     private final CourseOfferingRepository offeringRepository;
     private final TeachingAssignmentRepository assignmentRepository;
     private final AcademicTermRepository termRepository;
-    private final String emailDomain;
+    private final SkillRepository skillRepository;
+    private final TimetableSlotRepository slotRepository;
 
-    @Autowired
     public AllocationImportServiceImpl(
             AppUserRepository userRepository,
             FacultyRepository facultyRepository,
@@ -91,7 +104,8 @@ public class AllocationImportServiceImpl implements AllocationImportService {
             CourseOfferingRepository offeringRepository,
             TeachingAssignmentRepository assignmentRepository,
             AcademicTermRepository termRepository,
-            AppSettings settings
+            SkillRepository skillRepository,
+            TimetableSlotRepository slotRepository
     ) {
         this.userRepository = userRepository;
         this.facultyRepository = facultyRepository;
@@ -100,27 +114,33 @@ public class AllocationImportServiceImpl implements AllocationImportService {
         this.offeringRepository = offeringRepository;
         this.assignmentRepository = assignmentRepository;
         this.termRepository = termRepository;
-        this.emailDomain = settings.emailDomain();
+        this.skillRepository = skillRepository;
+        this.slotRepository = slotRepository;
     }
 
-    /** With the default email domain; for tests. */
-    public AllocationImportServiceImpl(
-            AppUserRepository userRepository,
-            FacultyRepository facultyRepository,
-            DepartmentRepository departmentRepository,
-            CourseRepository courseRepository,
-            CourseOfferingRepository offeringRepository,
-            TeachingAssignmentRepository assignmentRepository,
-            AcademicTermRepository termRepository
-    ) {
-        this.userRepository = userRepository;
-        this.facultyRepository = facultyRepository;
-        this.departmentRepository = departmentRepository;
-        this.courseRepository = courseRepository;
-        this.offeringRepository = offeringRepository;
-        this.assignmentRepository = assignmentRepository;
-        this.termRepository = termRepository;
-        this.emailDomain = new AppSettings(false, false).emailDomain();
+    /** One person as the sheet describes them; blank optional fields stay null ("not given"). */
+    private record Person(int row, String name, String email, String designation, String department,
+                          Role role, List<String> skills, Integer pbl) {}
+
+    /** One allocation row. */
+    private record Allocation(int row, String email, String code, String courseName, int l, int t, int p,
+                              int semester, String section, int sectionStudents,
+                              CourseComponent component, String batch, Integer batchStudents) {
+        int hours() {
+            return switch (component) {
+                case TUTORIAL -> t;
+                case PRACTICAL -> p;
+                default -> l;
+            };
+        }
+
+        String sectionKey() {
+            return code + "|" + semester + "|" + section;
+        }
+
+        String key() {
+            return sectionKey() + "|" + email + "|" + component + "|" + batch;
+        }
     }
 
     @Override
@@ -133,101 +153,272 @@ public class AllocationImportServiceImpl implements AllocationImportService {
             throw new IllegalArgumentException("The sheet has no rows below the header.");
         }
         Map<String, String> columns = SpreadsheetReader.detectColumns(rows.get(0).keySet(), HEADER_RULES);
-        for (String required : List.of("name", "code", "semester")) {
+        for (String required : List.of("name", "email")) {
             if (!SpreadsheetReader.hasColumn(columns, required)) {
                 throw new IllegalArgumentException("Missing column \"" + required
                         + "\". Download the template to see the expected headers.");
             }
         }
 
+        List<Issue> issues = new ArrayList<>();
+        Map<String, Person> people = new LinkedHashMap<>();
+        Map<String, Allocation> allocations = new LinkedHashMap<>();
+        Consistency same = new Consistency(issues);
+
+        for (int i = 0; i < rows.size(); i++) {
+            int row = i + 2;
+            Map<String, String> cells = rows.get(i);
+            Function<String, String> cell = column -> SpreadsheetReader.valueOf(cells, columns, column).trim();
+            int errorsBefore = errorCount(issues);
+
+            Person person = readPerson(row, cell, issues);
+            if (person == null) {
+                continue;
+            }
+            same.check(row, "name of " + person.email(), person.email(), person.name());
+            same.check(row, "email of " + person.name(), person.name().toLowerCase(Locale.ROOT), person.email());
+            same.check(row, "designation of " + person.email(), person.email() + "|d", person.designation());
+            same.check(row, "department of " + person.email(), person.email() + "|dep", person.department());
+            same.check(row, "role of " + person.email(), person.email() + "|r", person.role());
+            same.check(row, "skills of " + person.email(), person.email() + "|s", person.skills());
+            same.check(row, "PBL hours of " + person.email(), person.email() + "|p", person.pbl());
+            people.merge(person.email(), person, AllocationImportServiceImpl::fillBlanks);
+
+            Allocation allocation = readAllocation(row, person.email(), cell, issues);
+            if (allocation == null || errorCount(issues) > errorsBefore) {
+                continue;
+            }
+            same.check(row, "name of course " + allocation.code(), allocation.code() + "|n", allocation.courseName());
+            same.check(row, "L-T-P of course " + allocation.code(), allocation.code() + "|ltp",
+                    allocation.l() + "-" + allocation.t() + "-" + allocation.p());
+            same.check(row, "Section Students of " + label(allocation), allocation.sectionKey(), allocation.sectionStudents());
+            if (!SubSections.WHOLE_SECTION.equals(allocation.batch())) {
+                same.check(row, "Batch Students of " + label(allocation) + " batch " + allocation.batch(),
+                        allocation.sectionKey() + "|" + allocation.component() + "|" + allocation.batch(),
+                        allocation.batchStudents());
+            }
+            if (allocations.putIfAbsent(allocation.key(), allocation) != null) {
+                issues.add(new Issue(row, "WARN", "Same allocation as row " + allocations.get(allocation.key()).row()
+                        + "; counted once."));
+            }
+        }
+        checkBatchesFitTheirSection(allocations.values(), issues);
+
+        if (errorCount(issues) > 0) {
+            issues.add(0, new Issue(0, "ERROR", errorCount(issues) + " problem(s) found. Nothing was imported; "
+                    + "fix the rows below and upload the sheet again."));
+            return new AllocationImportResultDto(rows.size(), false, 0, 0, 0, 0, 0, 0, 0, issues);
+        }
+        return apply(rows.size(), people, allocations.values(), issues);
+    }
+
+    // ------------------------------------------------------------------ reading one row
+
+    private static Person readPerson(int row, Function<String, String> cell, List<Issue> issues) {
+        String rawName = cell.apply("name");
+        String email = cell.apply("email").toLowerCase(Locale.ROOT);
+        if (rawName.isEmpty()) {
+            issues.add(new Issue(row, "ERROR", "Faculty Name is empty."));
+        }
+        if (email.isEmpty()) {
+            issues.add(new Issue(row, "ERROR", "Email is empty. Enter the email they sign in with."));
+        } else if (!EMAIL.matcher(email).matches()) {
+            issues.add(new Issue(row, "ERROR", "Email \"" + email + "\" is not an email address."));
+        }
+        if (rawName.isEmpty() || email.isEmpty() || !EMAIL.matcher(email).matches()) {
+            return null;
+        }
+        // "Dr. Kishtiz Verma (Visiting Faculty)": the note is a designation, not part of the name.
+        Matcher note = PARENTHETICAL.matcher(rawName);
+        String noted = note.find() ? note.group(1).trim() : "";
+        String name = PARENTHETICAL.matcher(rawName).replaceAll(" ").replaceAll("\\s+", " ").trim();
+        String designation = cell.apply("designation");
+        if (designation.isEmpty() && !noted.isEmpty()) {
+            designation = noted;
+        }
+
+        String rawRole = cell.apply("role").toLowerCase(Locale.ROOT);
+        Role role = null;
+        if (rawRole.contains("coord") || rawRole.contains("admin")) {
+            role = Role.COORDINATOR;
+        } else if (rawRole.contains("faculty") || rawRole.contains("teach")) {
+            role = Role.FACULTY;
+        } else if (!rawRole.isEmpty()) {
+            issues.add(new Issue(row, "ERROR", "Role \"" + cell.apply("role") + "\" must be Faculty or Coordinator."));
+        }
+
+        List<String> skills = null;
+        if (!cell.apply("skills").isEmpty()) {
+            skills = new ArrayList<>(new LinkedHashSet<>(List.of(cell.apply("skills").split("\\s*[;|]\\s*")).stream()
+                    .map(String::trim).filter(s -> !s.isEmpty()).toList()));
+        }
+        Integer pbl = wholeNumber(row, "PBL Hours", cell.apply("pbl"), issues);
+        return new Person(row, name, email, blankToNull(designation), blankToNull(cell.apply("department")),
+                role, skills, pbl);
+    }
+
+    /** Null for a faculty-only row (no course code) or a row with errors (already reported). */
+    private static Allocation readAllocation(int row, String email, Function<String, String> cell, List<Issue> issues) {
+        String code = cell.apply("code").toUpperCase(Locale.ROOT);
+        if (code.isEmpty()) {
+            for (String column : List.of("course", "ltp", "semester", "section", "component", "batch")) {
+                if (!cell.apply(column).isEmpty()) {
+                    issues.add(new Issue(row, "ERROR", "The row has course details but no Course Code."));
+                    break;
+                }
+            }
+            return null;
+        }
+        List<String> missing = new ArrayList<>();
+        String courseName = require(cell, "course", "Course Name", missing);
+        String rawLtp = require(cell, "ltp", "L-T-P", missing);
+        String rawSemester = require(cell, "semester", "Semester", missing);
+        String section = require(cell, "section", "Section", missing).toUpperCase(Locale.ROOT);
+        String rawStudents = require(cell, "sectionstudents", "Section Students", missing);
+        String rawComponent = require(cell, "component", "Component", missing);
+        if (!missing.isEmpty()) {
+            issues.add(new Issue(row, "ERROR", code + ": " + String.join(", ", missing) + " missing."));
+            return null;
+        }
+
+        Matcher ltp = LTP.matcher(rawLtp);
+        if (!ltp.matches()) {
+            issues.add(new Issue(row, "ERROR", "L-T-P \"" + rawLtp + "\" must look like 3-0-2."));
+        }
+        Integer semester = wholeNumber(row, "Semester", rawSemester, issues);
+        if (semester != null && (semester < 1 || semester > 8)) {
+            issues.add(new Issue(row, "ERROR", "Semester must be 1–8, not " + semester + "."));
+        }
+        Integer sectionStudents = wholeNumber(row, "Section Students", rawStudents, issues);
+        CourseComponent component = rawComponent.toUpperCase(Locale.ROOT).matches("L|T|P|LECTURE|THEORY|TUT|TUTORIAL|PRACTICAL|LAB")
+                ? CourseComponent.parse(rawComponent) : null;
+        if (component == null) {
+            issues.add(new Issue(row, "ERROR", "Component \"" + rawComponent + "\" must be Lecture, Tutorial or Practical."));
+            return null;
+        }
+        if (!ltp.matches() || semester == null || sectionStudents == null) {
+            return null;
+        }
+
+        String rawBatch = cell.apply("batch");
+        String batch = SubSections.normalise(rawBatch, section);
+        if (component == CourseComponent.PRACTICAL && rawBatch.isEmpty()) {
+            issues.add(new Issue(row, "ERROR", "Practical rows need a Batch (e.g. " + section
+                    + "1), or ALL for the whole section."));
+            return null;
+        }
+        if (component == CourseComponent.LECTURE && !SubSections.WHOLE_SECTION.equals(batch)) {
+            issues.add(new Issue(row, "ERROR", "A lecture is for the whole section; leave Batch blank or ALL, not \""
+                    + rawBatch + "\"."));
+            return null;
+        }
+        Integer batchStudents = wholeNumber(row, "Batch Students", cell.apply("batchstudents"), issues);
+        if (SubSections.WHOLE_SECTION.equals(batch)) {
+            if (batchStudents != null && !batchStudents.equals(sectionStudents)) {
+                issues.add(new Issue(row, "ERROR", "Batch Students (" + batchStudents + ") on a whole-section row must "
+                        + "equal Section Students (" + sectionStudents + ") or be blank."));
+            }
+            batchStudents = null;
+        } else if (batchStudents == null) {
+            issues.add(new Issue(row, "ERROR", "Batch " + batch + " needs Batch Students."));
+        }
+
+        Allocation allocation = new Allocation(row, email, code, courseName,
+                Integer.parseInt(ltp.group(1)), Integer.parseInt(ltp.group(2)), Integer.parseInt(ltp.group(3)),
+                semester, section, sectionStudents, component, batch, batchStudents);
+        if (allocation.hours() == 0) {
+            issues.add(new Issue(row, "ERROR", code + " has L-T-P " + rawLtp + ", which gives "
+                    + component.name().toLowerCase(Locale.ROOT) + " 0 hours a week."));
+        }
+        String rawHours = cell.apply("hours");
+        if (!rawHours.isEmpty() && !rawHours.equals(String.valueOf(allocation.hours()))) {
+            issues.add(new Issue(row, "ERROR", "Weekly Hours " + rawHours + " doesn't match L-T-P " + rawLtp
+                    + " (" + component.name().toLowerCase(Locale.ROOT) + " = " + allocation.hours()
+                    + "). Fix one, or leave Weekly Hours blank."));
+        }
+        return allocation;
+    }
+
+    private static void checkBatchesFitTheirSection(Iterable<Allocation> allocations, List<Issue> issues) {
+        Map<String, Map<String, Allocation>> batches = new LinkedHashMap<>();
+        Map<String, Integer> sectionStudents = new HashMap<>();
+        for (Allocation a : allocations) {
+            sectionStudents.putIfAbsent(a.sectionKey(), a.sectionStudents());
+            if (a.batchStudents() != null) {
+                batches.computeIfAbsent(a.sectionKey() + "|" + a.component(), k -> new LinkedHashMap<>())
+                        .putIfAbsent(a.batch(), a);
+            }
+        }
+        batches.values().forEach(group -> {
+            Allocation first = group.values().iterator().next();
+            int total = group.values().stream().mapToInt(Allocation::batchStudents).sum();
+            int section = sectionStudents.get(first.sectionKey());
+            if (total > section) {
+                issues.add(new Issue(first.row(), "ERROR", label(first) + " " + first.component().name().toLowerCase(Locale.ROOT)
+                        + " batches " + String.join(", ", group.keySet()) + " add up to " + total
+                        + " students, more than the section's " + section + "."));
+            }
+        });
+    }
+
+    // ------------------------------------------------------------------ saving
+
+    private AllocationImportResultDto apply(int rowCount, Map<String, Person> people,
+                                            Iterable<Allocation> allocations, List<Issue> issues) {
         AcademicTerm term = termRepository.findByActiveTrue().orElse(null);
         String academicYear = term != null ? term.getAcademicYear() : "";
         Counts counts = new Counts();
-        List<Issue> issues = new ArrayList<>();
+
+        Map<String, Faculty> members = new HashMap<>();
         Map<Long, Role> wantedRoles = new LinkedHashMap<>();
-        Map<Long, Integer> roleRows = new LinkedHashMap<>();
-        Set<String> derivedEmailWarned = new HashSet<>();
+        Map<Long, Integer> roleRows = new HashMap<>();
+        for (Person person : people.values()) {
+            Faculty member = upsertFaculty(person, counts);
+            members.put(person.email(), member);
+            if (person.role() != null) {
+                wantedRoles.put(member.getUserId(), person.role());
+                roleRows.put(member.getUserId(), person.row());
+            }
+        }
 
-        for (int i = 0; i < rows.size(); i++) {
-            int rowNumber = i + 2;
-            Map<String, String> row = rows.get(i);
-            String rawName = cell(row, columns, "name");
-            if (rawName.isEmpty()) {
-                issues.add(new Issue(rowNumber, "ERROR", "No faculty name; row skipped."));
-                continue;
-            }
-            Integer semester = number(cell(row, columns, "semester"));
-            if (semester == null || semester < 1 || semester > 8) {
-                issues.add(new Issue(rowNumber, "ERROR", "Semester must be 1–8; row skipped."));
-                continue;
-            }
-            String code = cell(row, columns, "code").toUpperCase(Locale.ROOT);
-            if (code.isEmpty()) {
-                issues.add(new Issue(rowNumber, "ERROR", "No course code; row skipped."));
-                continue;
-            }
-            String rawComponent = cell(row, columns, "component");
-            CourseComponent component;
-            try {
-                component = rawComponent.isEmpty() ? CourseComponent.LECTURE : CourseComponent.parseStrict(rawComponent);
-            } catch (IllegalArgumentException e) {
-                issues.add(new Issue(rowNumber, "ERROR", "Component \"" + rawComponent
-                        + "\" is not Lecture, Tutorial or Practical; row skipped."));
-                continue;
-            }
-
-            Faculty member = upsertFaculty(row, columns, rawName, counts);
-            if (cell(row, columns, "email").isEmpty() && derivedEmailWarned.add(member.getName())) {
-                String derived = userRepository.findById(member.getUserId()).map(AppUser::getEmail).orElse("");
-                issues.add(new Issue(rowNumber, "WARN", "No email for " + member.getName() + "; using " + derived
-                        + ". It must match their Microsoft email, or they can't sign in."));
-            }
-            String role = cell(row, columns, "role").toLowerCase(Locale.ROOT);
-            if (role.contains("coord") || role.contains("admin")) {
-                wantedRoles.put(member.getUserId(), Role.COORDINATOR);   // any Coordinator row wins
-                roleRows.putIfAbsent(member.getUserId(), rowNumber);
-            } else if (role.contains("faculty") || role.contains("teach")) {
-                wantedRoles.putIfAbsent(member.getUserId(), Role.FACULTY);
-                roleRows.putIfAbsent(member.getUserId(), rowNumber);
-            } else if (!role.isEmpty()) {
-                issues.add(new Issue(rowNumber, "WARN", "Role \"" + cell(row, columns, "role")
-                        + "\" is not Faculty or Coordinator; treated as Faculty."));
-            }
-            Course course = upsertCourse(row, columns, code, counts);
-            // A course belongs to the department the sheet names on its rows (first one wins).
-            if (course.getDepartmentId() == null && member.getDepartmentId() != null) {
-                course.setDepartmentId(member.getDepartmentId());
-                courseRepository.save(course);
-            }
-            String section = cell(row, columns, "section").toUpperCase(Locale.ROOT);
-            if (section.isEmpty()) {
-                section = SubSections.WHOLE_SECTION;
-            }
-            CourseOffering offering = upsertOffering(row, columns, course, academicYear, semester, section, term, counts);
-
-            String batch = SubSections.normalise(cell(row, columns, "batch"), section);
-            Integer hours = number(cell(row, columns, "hours"));
-            Integer batchStudents = SubSections.WHOLE_SECTION.equals(batch) ? null : number(cell(row, columns, "batchstudents"));
-
+        Set<Long> kept = new HashSet<>();
+        Map<String, Course> courses = new HashMap<>();
+        for (Allocation a : allocations) {
+            Faculty member = members.get(a.email());
+            Course course = courses.computeIfAbsent(a.code(), code -> upsertCourse(a, member, counts));
+            CourseOffering offering = upsertOffering(a, course, academicYear, term, counts);
             TeachingAssignment assignment = assignmentRepository
-                    .findByOfferingIdAndFacultyIdAndComponentAndSubSection(offering.getId(), member.getId(), component, batch)
+                    .findByOfferingIdAndFacultyIdAndComponentAndSubSection(offering.getId(), member.getId(), a.component(), a.batch())
                     .orElse(null);
             if (assignment == null) {
-                assignment = new TeachingAssignment(offering, member.getId(), component, batch, 0);
+                assignment = new TeachingAssignment(offering, member.getId(), a.component(), a.batch(), 0);
                 counts.assignmentsCreated++;
             } else {
                 counts.assignmentsUpdated++;
             }
-            assignment.setContactHours(hours != null && hours > 0 ? hours : plannedHours(course, component));
-            assignment.setStudentCount(batchStudents);
-            assignmentRepository.save(assignment);
+            assignment.setContactHours(a.hours());
+            assignment.setStudentCount(a.batchStudents());
+            kept.add(assignmentRepository.save(assignment).getId());
         }
-
+        removeAllocationsNoLongerInTheSheet(academicYear, kept, counts);
         assignRoles(wantedRoles, roleRows, counts, issues);
 
-        return new AllocationImportResultDto(rows.size(), counts.facultyCreated, counts.coursesCreated,
+        return new AllocationImportResultDto(rowCount, true, counts.facultyCreated, counts.coursesCreated,
                 counts.offeringsCreated, counts.assignmentsCreated, counts.assignmentsUpdated,
-                counts.rolesChanged, issues);
+                counts.assignmentsRemoved, counts.rolesChanged, issues);
+    }
+
+    /** The sheet is the whole semester: an allocation it no longer lists is gone, with its timetable slots. */
+    private void removeAllocationsNoLongerInTheSheet(String academicYear, Set<Long> kept, Counts counts) {
+        for (TeachingAssignment old : assignmentRepository.findAllWithCourseAndOffering()) {
+            if (kept.contains(old.getId()) || !Objects.equals(old.getOffering().getAcademicYear(), academicYear)) {
+                continue;
+            }
+            slotRepository.deleteByOfferingIdAndFacultyIdAndComponentAndSubSection(
+                    old.getOffering().getId(), old.getFacultyId(), old.getComponent().name(), old.getSubSection());
+            assignmentRepository.delete(old);
+            counts.assignmentsRemoved++;
+        }
     }
 
     /**
@@ -255,131 +446,146 @@ public class AllocationImportServiceImpl implements AllocationImportService {
         }));
     }
 
-    private Faculty upsertFaculty(Map<String, String> row, Map<String, String> columns, String rawName, Counts counts) {
-        // "Dr. Kishtiz Verma (Visiting Faculty)": the note is a designation, not part of the name.
-        String note = "";
-        Matcher m = PARENTHETICAL.matcher(rawName);
-        if (m.find()) {
-            note = m.group(1).trim();
-        }
-        String name = PARENTHETICAL.matcher(rawName).replaceAll(" ").replaceAll("\\s+", " ").trim();
-        String designation = cell(row, columns, "designation");
-        if (designation.isEmpty() && note.toLowerCase(Locale.ROOT).contains("visit")) {
-            designation = "Visiting Faculty";
-        }
-
-        String email = cell(row, columns, "email").toLowerCase(Locale.ROOT);
-        if (email.isEmpty()) {
-            email = emailSlug(name) + "@" + emailDomain;
-        }
-        AppUser user = userRepository.findByEmailIgnoreCase(email).orElse(null);
-        if (user == null) {
-            user = userRepository.save(new AppUser(email, name, Role.FACULTY));
-        }
-
-        Faculty member = facultyRepository.findByUserId(user.getId()).orElse(null);
-        if (member == null) {
-            member = new Faculty(user.getId(), name, designation.isEmpty() ? "Assistant Professor" : designation, "", null);
-            counts.facultyCreated++;
-        } else {
-            if (!designation.isEmpty()) {
-                member.setDesignation(designation);
-            }
-            // The sheet names people; an account created before it (e.g. the admin) takes that name.
-            if (!name.equals(member.getName())) {
-                member.setName(name);
-            }
-        }
-        if (!name.equals(user.getName())) {
-            user.setName(name);
+    private Faculty upsertFaculty(Person person, Counts counts) {
+        AppUser user = userRepository.findByEmailIgnoreCase(person.email())
+                .orElseGet(() -> userRepository.save(new AppUser(person.email(), person.name(), Role.FACULTY)));
+        if (!person.name().equals(user.getName())) {
+            user.setName(person.name());
             userRepository.save(user);
         }
-        Department department = department(cell(row, columns, "department"));
-        if (department != null) {
-            member.setDepartment(department);
+        Faculty member = facultyRepository.findByUserId(user.getId()).orElse(null);
+        if (member == null) {
+            member = new Faculty(user.getId(), person.name(), "", "", null);
+            counts.facultyCreated++;
         }
-        Integer pbl = number(cell(row, columns, "pbl"));
-        if (pbl != null) {
-            member.setPblHours(pbl);
+        member.setName(person.name());
+        if (person.designation() != null) {
+            member.setDesignation(person.designation());
+        }
+        if (person.department() != null) {
+            member.setDepartment(department(person.department()));
+        }
+        if (person.pbl() != null) {
+            member.setPblHours(person.pbl());
+        }
+        if (person.skills() != null) {
+            Set<Skill> skills = new LinkedHashSet<>();
+            for (String name : person.skills()) {
+                skills.add(skillRepository.findByNameIgnoreCase(name)
+                        .orElseGet(() -> skillRepository.save(new Skill(name, "Technical"))));
+            }
+            member.setSkills(skills);
         }
         return facultyRepository.save(member);
     }
 
-    private Course upsertCourse(Map<String, String> row, Map<String, String> columns, String code, Counts counts) {
-        Course course = courseRepository.findByCodeIgnoreCase(code).orElse(null);
-        String name = cell(row, columns, "course");
+    private Course upsertCourse(Allocation a, Faculty member, Counts counts) {
+        Course course = courseRepository.findByCodeIgnoreCase(a.code()).orElse(null);
         if (course == null) {
-            course = new Course(code, name.isEmpty() ? code : name, "THEORY");
+            course = new Course(a.code(), a.courseName(), "THEORY");
             counts.coursesCreated++;
-        } else if (!name.isEmpty()) {
-            course.setName(name);
         }
-        Matcher ltp = LTP.matcher(cell(row, columns, "ltp"));
-        if (ltp.find()) {
-            int l = Integer.parseInt(ltp.group(1));
-            int t = Integer.parseInt(ltp.group(2));
-            int p = Integer.parseInt(ltp.group(3));
-            course.setLtp(l + "-" + t + "-" + p);
-            course.setLectureHours(l);
-            course.setTutorialHours(t);
-            course.setPracticalHours(p);
+        course.setName(a.courseName());
+        course.setLtp(a.l() + "-" + a.t() + "-" + a.p());
+        course.setLectureHours(a.l());
+        course.setTutorialHours(a.t());
+        course.setPracticalHours(a.p());
+        // A course belongs to the department of the first person the sheet lists for it.
+        if (course.getDepartmentId() == null && member.getDepartmentId() != null) {
+            course.setDepartmentId(member.getDepartmentId());
         }
         return courseRepository.save(course);
     }
 
-    private CourseOffering upsertOffering(Map<String, String> row, Map<String, String> columns, Course course,
-                                          String academicYear, int semester, String section, AcademicTerm term, Counts counts) {
-        int yearOfStudy = (semester + 1) / 2;
+    private CourseOffering upsertOffering(Allocation a, Course course, String academicYear, AcademicTerm term, Counts counts) {
+        int yearOfStudy = (a.semester() + 1) / 2;
         CourseOffering offering = offeringRepository
                 .findFirstByCourseIdAndAcademicYearAndYearOfStudyAndSemesterAndSection(
-                        course.getId(), academicYear, yearOfStudy, semester, section)
+                        course.getId(), academicYear, yearOfStudy, a.semester(), a.section())
                 .orElse(null);
         if (offering == null) {
-            offering = new CourseOffering(course, academicYear, yearOfStudy, semester, section, term);
+            offering = new CourseOffering(course, academicYear, yearOfStudy, a.semester(), a.section(), term);
             counts.offeringsCreated++;
         }
-        Integer students = number(cell(row, columns, "sectionstudents"));
-        if (students != null && students > 0) {
-            offering.setStudentCount(students);
-        }
+        offering.setStudentCount(a.sectionStudents());
         return offeringRepository.save(offering);
     }
 
     private Department department(String codeOrName) {
-        if (codeOrName.isEmpty()) {
-            return null;
-        }
         return departmentRepository.findByCodeIgnoreCase(codeOrName)
                 .or(() -> departmentRepository.findByNameIgnoreCase(codeOrName))
                 .orElseGet(() -> departmentRepository.save(new Department(
                         codeOrName.replaceAll("[^A-Za-z]", "").toUpperCase(Locale.ROOT), codeOrName)));
     }
 
-    /** Weekly hours the course's L-T-P plans for a component, used when the sheet gives none. */
-    private static int plannedHours(Course course, CourseComponent component) {
-        return switch (component) {
-            case TUTORIAL -> course.getTutorialHours();
-            case PRACTICAL, LAB -> course.getPracticalHours();
-            case ALL -> course.getLectureHours() + course.getTutorialHours() + course.getPracticalHours();
-            case LECTURE, THEORY -> course.getLectureHours();
-        };
+    // ------------------------------------------------------------------ helpers
+
+    /** Remembers the first value each key was given and reports any row that gives a different one. */
+    private static final class Consistency {
+        private final Map<String, Map.Entry<Integer, Object>> seen = new HashMap<>();
+        private final List<Issue> issues;
+
+        Consistency(List<Issue> issues) {
+            this.issues = issues;
+        }
+
+        void check(int row, String what, String key, Object value) {
+            if (value == null) {
+                return;
+            }
+            Map.Entry<Integer, Object> first = seen.putIfAbsent(key, Map.entry(row, value));
+            if (first != null && !first.getValue().equals(value)) {
+                issues.add(new Issue(row, "ERROR", "The " + what + " is \"" + display(value) + "\" here but \""
+                        + display(first.getValue()) + "\" on row " + first.getKey() + "."));
+            }
+        }
+
+        private static String display(Object value) {
+            return value instanceof List<?> list ? String.join("; ", list.stream().map(String::valueOf).toList())
+                    : String.valueOf(value);
+        }
     }
 
-    /** "Dr. Amit Sinhal" → "amit.sinhal": the account name for a row without an email. */
-    static String emailSlug(String name) {
-        String base = TITLE.matcher(name).replaceAll(" ");
-        base = Normalizer.normalize(base, Normalizer.Form.NFKD).replaceAll("\\p{M}", "");
-        base = base.replaceAll("[^A-Za-z0-9]+", ".").replaceAll("(^\\.+|\\.+$)", "").toLowerCase(Locale.ROOT);
-        return base.isEmpty() ? "faculty" : base;
+    /** A person's optional details may sit on any one of their rows. */
+    private static Person fillBlanks(Person first, Person later) {
+        return new Person(first.row(), first.name(), first.email(),
+                first.designation() != null ? first.designation() : later.designation(),
+                first.department() != null ? first.department() : later.department(),
+                first.role() != null ? first.role() : later.role(),
+                first.skills() != null ? first.skills() : later.skills(),
+                first.pbl() != null ? first.pbl() : later.pbl());
     }
 
-    private static String cell(Map<String, String> row, Map<String, String> columns, String column) {
-        return SpreadsheetReader.valueOf(row, columns, column).trim();
+    private static String require(Function<String, String> cell, String column, String label, List<String> missing) {
+        String value = cell.apply(column);
+        if (value.isEmpty()) {
+            missing.add(label);
+        }
+        return value;
     }
 
-    private static Integer number(String raw) {
-        Matcher m = NUMBER.matcher(raw);
-        return m.find() ? Integer.parseInt(m.group()) : null;
+    /** A cell that must be a plain whole number: "64" yes, "6O" or "64 approx" no. Blank is null. */
+    private static Integer wholeNumber(int row, String label, String raw, List<Issue> issues) {
+        if (raw.isEmpty()) {
+            return null;
+        }
+        if (!WHOLE_NUMBER.matcher(raw).matches()) {
+            issues.add(new Issue(row, "ERROR", label + " \"" + raw + "\" must be a whole number."));
+            return null;
+        }
+        return Integer.parseInt(raw);
+    }
+
+    private static String label(Allocation a) {
+        return a.code() + " Sem " + a.semester() + " Sec " + a.section();
+    }
+
+    private static String blankToNull(String value) {
+        return value.isEmpty() ? null : value;
+    }
+
+    private static int errorCount(List<Issue> issues) {
+        return (int) issues.stream().filter(i -> i.severity().equals("ERROR")).count();
     }
 
     private static final class Counts {
@@ -388,17 +594,19 @@ public class AllocationImportServiceImpl implements AllocationImportService {
         int offeringsCreated;
         int assignmentsCreated;
         int assignmentsUpdated;
+        int assignmentsRemoved;
         int rolesChanged;
     }
 
     @Override
     public byte[] templateCsv() {
         String csv = """
-                Faculty Name,Email,Designation,Department,Course Code,Course Name,L-T-P,Semester,Section,Section Students,Component,Batch,Batch Students,Weekly Hours,PBL Hours,Role
-                Dr. S Taruna,s.taruna@jklu.edu.in,Professor,CSE,CS2105,Data Structures,3-1-2,3,B,60,Lecture,ALL,60,3,2,Coordinator
-                Dr. Amit Sinhal,amit.sinhal@jklu.edu.in,Professor,CSE,CS1139,Programming-I,3-0-2,1,C,64,Lecture,ALL,64,3,2,Faculty
-                Dr. Amit Sinhal,amit.sinhal@jklu.edu.in,Professor,CSE,CS1139,Programming-I,3-0-2,1,C,64,Practical,C1,32,2,2,Faculty
-                Dr. Surbhi Chhabra,surbhi.chhabra@jklu.edu.in,Assistant Professor,CSE,CS1139,Programming-I,3-0-2,1,C,64,Practical,C2,32,2,2,Faculty
+                Faculty Name,Email,Designation,Department,Role,Skills,PBL Hours,Course Code,Course Name,L-T-P,Semester,Section,Section Students,Component,Batch,Batch Students
+                Dr. S Taruna,s.taruna@jklu.edu.in,Professor,CSE,Coordinator,Databases; Data Mining,2,CS1133,Database Management Systems,3-0-4,3,A,60,Lecture,,
+                Dr. S Taruna,s.taruna@jklu.edu.in,,,,,,CS1133,Database Management Systems,3-0-4,3,A,60,Practical,A1,30
+                Dr. S Taruna,s.taruna@jklu.edu.in,,,,,,CS1133,Database Management Systems,3-0-4,3,A,60,Practical,A2,30
+                Dr. Amit Sinhal,amit.sinhal@jklu.edu.in,Professor,CSE,Faculty,Programming,2,CS1139,Programming-I,3-0-2,1,C,64,Lecture,,
+                Dr. New Joiner,new.joiner@jklu.edu.in,Assistant Professor,CSE,Faculty,Machine Learning,,,,,,,,,,
                 """;
         return csv.getBytes(StandardCharsets.UTF_8);
     }

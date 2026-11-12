@@ -40,6 +40,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 class ActivityResetServiceTest {
 
+    @Autowired com.iet.dashboard.directory.repo.SkillRepository skillRepo;
+    @Autowired com.iet.dashboard.academics.repo.TimetableSlotRepository slotRepo;
     @Autowired AppUserRepository users;
     @Autowired FacultyRepository faculty;
     @Autowired DepartmentRepository departments;
@@ -63,7 +65,7 @@ class ActivityResetServiceTest {
     void setUp() {
         service = new ActivityResetServiceImpl(sessions, assessments, plans, slots,
                 deadlineAssignments, deadlines, notifications, syllabus);
-        new AllocationImportServiceImpl(users, faculty, departments, courses, offerings, assignments, terms)
+        new AllocationImportServiceImpl(users, faculty, departments, courses, offerings, assignments, terms, skillRepo, slotRepo)
                 .importAllocations(new MockMultipartFile("file", "a.csv", "text/csv", """
                         Faculty Name,Email,Course Code,Course Name,L-T-P,Semester,Section,Section Students,Component
                         Dr. Amit Sinhal,amit@iet.edu,CS1139,Programming-I,3-0-2,1,C,64,Lecture

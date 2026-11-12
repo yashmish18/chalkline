@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { nameInitials } from '../lib/labels';
 import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard,
@@ -76,16 +77,7 @@ export function Sidebar({
         },
       ];
 
-  const initials = user?.name
-    ? user.name
-        .replace(/^(Dr|Prof|Mr|Ms|Mrs)\.?\s+/i, '')
-        .split(' ')
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-    : 'U';
+  const initials = nameInitials(user?.name);
 
   return (
     <aside

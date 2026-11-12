@@ -15,6 +15,9 @@ public interface SyllabusImportService {
     /** Extracts text (Apache Tika) and parses it. Nothing is persisted. */
     ParsedSyllabusDto parse(MultipartFile file);
 
+    /** Parses, then names every difference between the document and the course in the allocation sheet. */
+    ParsedSyllabusDto parse(MultipartFile file, Long courseId);
+
     /** Parses already-extracted text — the seam used by tests and text uploads. */
     ParsedSyllabusDto parseText(String text, String sourceName);
 

@@ -143,7 +143,7 @@ export function MismatchTable({ items }: { items: Mismatch[] }) {
   );
 }
 
-const PACE: Record<string, string> = { AHEAD: 'Ahead', ON_TRACK: 'On plan', BEHIND: 'Behind', NO_SYLLABUS: 'No syllabus' };
+const PACE: Record<string, string> = { AHEAD: 'Ahead', ON_TRACK: 'On plan', BEHIND: 'Behind', NO_SYLLABUS: 'No syllabus', NOT_MEASURED: 'Not measured' };
 
 export function RemedialChip({ status }: { status: RemedialStatus }) {
   const cls = status === 'REQUIRED' ? 'chip chip-bad' : status === 'FILED' ? 'chip chip-warn' : status === 'COMPLETED' ? 'chip chip-ok' : 'text-[var(--ink-tertiary)]';

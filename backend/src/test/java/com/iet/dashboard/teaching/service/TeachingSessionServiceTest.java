@@ -53,6 +53,31 @@ class TeachingSessionServiceTest {
     @InjectMocks
     private TeachingSessionServiceImpl sessionService;
 
+    /** Thursday 1 Oct 2026, 15:30 in India. */
+    private static final java.time.ZoneId IST = java.time.ZoneId.of("Asia/Kolkata");
+    private static final LocalDate TODAY = LocalDate.of(2026, 10, 1);
+
+    @org.junit.jupiter.api.BeforeEach
+    void fixTheClock() {
+        sessionService.setClock(java.time.Clock.fixed(TODAY.atTime(15, 30).atZone(IST).toInstant(), IST));
+    }
+
+    private CourseOffering cs501() {
+        CourseOffering offering = new CourseOffering(new Course("CS501", "Computer Networks", "THEORY"), "2026-2027", 3, 5, "A");
+        offering.setId(1L);
+        return offering;
+    }
+
+    private static com.iet.dashboard.academics.web.TimetableSlotDto slot(String day, String start, String end, String component, String batch) {
+        return new com.iet.dashboard.academics.web.TimetableSlotDto(1L, 1L, "CS501", "Computer Networks", "", "", "A", batch,
+                component, day, start, end, "LT-1", 2L);
+    }
+
+    private static LogSessionRequest held(LocalDate date, String type, String batch, Integer lecture, String delayReason) {
+        return new LogSessionRequest(1L, date, type, SessionStatus.HELD, null, List.of(), null, batch, 1, null, null,
+                lecture, delayReason);
+    }
+
     @Test
     void testLogSession_Success() {
         Course course = new Course("CS501", "Computer Networks", "THEORY");
@@ -280,5 +305,100 @@ class TeachingSessionServiceTest {
         TodayClassDto tut = classes.stream().filter(c -> "TUTORIAL".equals(c.component())).findFirst().orElseThrow();
         assertTrue(lec.isLogged(), "the lecture that was logged shows as logged");
         assertFalse(tut.isLogged(), "the tutorial must not be marked logged by the lecture");
+    }
+
+    // ---- Class-logging rules ---------------------------------------------------------------------
+
+    @Test
+    void aFutureClassCannotBeLogged() {
+        when(offeringRepository.findById(1L)).thenReturn(java.util.Optional.of(cs501()));
+        ValidationException e = assertThrows(ValidationException.class,
+                () -> sessionService.logSession(held(TODAY.plusDays(1), "LECTURE", "ALL", null, null), 2L));
+        assertTrue(e.getMessage().contains("hasn't happened yet"), e.getMessage());
+        verify(sessionRepository, never()).save(any());
+    }
+
+    @Test
+    void todaysClassCannotBeLoggedBeforeItStarts() {
+        when(offeringRepository.findById(1L)).thenReturn(java.util.Optional.of(cs501()));
+        when(academicsService.getTimetableForFaculty(2L)).thenReturn(List.of(slot("THURSDAY", "16:00", "16:50", "LECTURE", "ALL")));
+        ValidationException e = assertThrows(ValidationException.class,
+                () -> sessionService.logSession(held(TODAY, "LECTURE", "ALL", null, null), 2L));
+        assertTrue(e.getMessage().contains("16:00"), e.getMessage());
+    }
+
+    @Test
+    void aLateLogNeedsAReasonAndKeepsIt() {
+        when(offeringRepository.findById(1L)).thenReturn(java.util.Optional.of(cs501()));
+        assertThrows(ValidationException.class,
+                () -> sessionService.logSession(held(TODAY.minusDays(3), "LECTURE", "ALL", null, " "), 2L));
+
+        when(sessionRepository.save(any(TeachingSession.class))).thenAnswer(inv -> inv.getArgument(0));
+        TeachingSessionDto saved = sessionService.logSession(held(TODAY.minusDays(3), "LECTURE", "ALL", null, "Was on exam duty"), 2L);
+        assertEquals("Was on exam duty", saved.delayReason());
+    }
+
+    @Test
+    void aLabIsStoredAsAPracticalWithItsLectureNumber() {
+        when(offeringRepository.findById(1L)).thenReturn(java.util.Optional.of(cs501()));
+        when(sessionRepository.save(any(TeachingSession.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        TeachingSessionDto saved = sessionService.logSession(held(TODAY.minusDays(1), "LAB", "A1", 4, null), 2L);
+
+        assertEquals("PRACTICAL", saved.sessionType());
+        assertEquals("A1", saved.subSection());
+        assertEquals(4, saved.lectureNumber());
+    }
+
+    @Test
+    void theSameLectureNumberCannotBeLoggedTwice() {
+        CourseOffering offering = cs501();
+        when(offeringRepository.findById(1L)).thenReturn(java.util.Optional.of(offering));
+        TeachingSession earlier = new TeachingSession(offering, 2L, TODAY.minusDays(2), "LECTURE", SessionStatus.HELD, null, null, "ALL", 1, null, null);
+        when(sessionRepository.findByOfferingIdAndSessionTypeAndSubSectionAndLectureNumber(1L, "LECTURE", "ALL", 15))
+                .thenReturn(List.of(earlier));
+
+        ValidationException e = assertThrows(ValidationException.class,
+                () -> sessionService.logSession(held(TODAY, "LECTURE", "ALL", 15, null), 2L));
+        assertTrue(e.getMessage().contains("Lecture 15 is already logged on 2026-09-29"), e.getMessage());
+    }
+
+    /** A holiday is not a class someone forgot: it is never pending, and Today has nothing to log. */
+    @Test
+    void holidaysAreNeverPendingAndTodayIsEmptyOnAHoliday() {
+        when(academicsService.getActiveTerm()).thenReturn(new AcademicTermDto(1L, "Odd", "2026-2027",
+                LocalDate.of(2026, 9, 28), LocalDate.of(2026, 12, 20), true, 3,
+                List.of(new com.iet.dashboard.academics.web.AcademicTermDto.Holiday(TODAY, "Gandhi Jayanti (observed)"))));
+        when(academicsService.getTimetableForFaculty(2L)).thenReturn(List.of(
+                slot("MONDAY", "09:00", "09:50", "LECTURE", "ALL"),
+                slot("THURSDAY", "13:00", "14:50", "PRACTICAL", "A1")));
+        TeachingSession mondayLogged = new TeachingSession(cs501(), 2L, LocalDate.of(2026, 9, 28), "LECTURE",
+                SessionStatus.HELD, null, null, "ALL", 1, null, null);
+        when(sessionRepository.findByFacultyIdAndSessionDateBetween(2L, LocalDate.of(2026, 9, 28), TODAY))
+                .thenReturn(List.of(mondayLogged));
+
+        assertEquals(List.of(), sessionService.getPendingClasses(2L, null, null), "Thursday's lab falls on the holiday");
+        assertEquals(List.of(), sessionService.getTodayClassesForFaculty(2L, TODAY));
+    }
+
+    @Test
+    void pendingClassesAreTheTimetabledOnesWithNothingLogged() {
+        when(academicsService.getActiveTerm()).thenReturn(new AcademicTermDto(1L, "Odd", "2026-2027",
+                LocalDate.of(2026, 9, 28), LocalDate.of(2026, 12, 20), true));
+        when(academicsService.getTimetableForFaculty(2L)).thenReturn(List.of(
+                slot("MONDAY", "09:00", "09:50", "LECTURE", "ALL"),
+                slot("THURSDAY", "13:00", "14:50", "PRACTICAL", "A1"),
+                slot("THURSDAY", "16:00", "16:50", "LECTURE", "ALL")));
+        TeachingSession mondayLogged = new TeachingSession(cs501(), 2L, LocalDate.of(2026, 9, 28), "LECTURE",
+                SessionStatus.HELD, null, null, "ALL", 1, null, null);
+        when(sessionRepository.findByFacultyIdAndSessionDateBetween(2L, LocalDate.of(2026, 9, 28), TODAY))
+                .thenReturn(List.of(mondayLogged));
+
+        var pending = sessionService.getPendingClasses(2L, null, null);
+
+        assertEquals(1, pending.size(), "Monday is logged; Thursday's 16:00 lecture hasn't ended yet");
+        assertEquals(TODAY, pending.get(0).date());
+        assertEquals("PRACTICAL", pending.get(0).component());
+        assertEquals("A1", pending.get(0).subSection());
     }
 }

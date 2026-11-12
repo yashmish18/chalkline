@@ -87,6 +87,7 @@ public class FacultyController {
     }
 
     @PutMapping("/faculty/{id}/skills")
+    @PreAuthorize("hasRole('COORDINATOR')")
     public ResponseEntity<FacultyDto> updateSkills(
             @PathVariable Long id,
             @Valid @RequestBody UpdateFacultySkillsRequest request
@@ -96,6 +97,7 @@ public class FacultyController {
     }
 
     @PutMapping("/faculty/{id}/skills-by-name")
+    @PreAuthorize("hasRole('COORDINATOR')")
     public ResponseEntity<FacultyDto> updateSkillsByName(
             @PathVariable Long id,
             @Valid @RequestBody UpdateFacultySkillsByNameRequest request

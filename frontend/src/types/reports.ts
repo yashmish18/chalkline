@@ -65,7 +65,7 @@ export interface SectionPerformance {
   coveredTopics: number;
   totalTopics: number;
   coveragePct: number;
-  pacingStatus: 'AHEAD' | 'ON_TRACK' | 'BEHIND' | 'NO_SYLLABUS';
+  pacingStatus: 'AHEAD' | 'ON_TRACK' | 'BEHIND' | 'NO_SYLLABUS' | 'NOT_MEASURED';
   topicDelta: number;
   held: number;
   cancelled: number;

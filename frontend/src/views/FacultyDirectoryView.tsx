@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { nameInitials } from '../lib/labels';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FacultyDto, SkillDto, DepartmentDto } from '../types/directory';
 import { useAuth } from '../context/AuthContext';
@@ -449,7 +450,7 @@ export function FacultyDirectoryView() {
                         </button>
                       )}
                       <div className="h-9 w-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-700 shrink-0">
-                        {f.name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                        {nameInitials(f.name)}
                       </div>
                     </div>
                   </div>

@@ -27,6 +27,7 @@ public class AcademicsController {
     private final com.iet.dashboard.academics.service.SyllabusImportService syllabusImportService;
     private final com.iet.dashboard.academics.service.AllocationImportService allocationImportService;
     private final com.iet.dashboard.academics.service.TimetableImportService timetableImportService;
+    private final com.iet.dashboard.academics.service.AcademicDocumentService academicDocumentService;
 
     public AcademicsController(
             AcademicsService academicsService,
@@ -35,7 +36,8 @@ public class AcademicsController {
             FacultyService facultyService,
             com.iet.dashboard.academics.service.SyllabusImportService syllabusImportService,
             com.iet.dashboard.academics.service.AllocationImportService allocationImportService,
-            com.iet.dashboard.academics.service.TimetableImportService timetableImportService
+            com.iet.dashboard.academics.service.TimetableImportService timetableImportService,
+            com.iet.dashboard.academics.service.AcademicDocumentService academicDocumentService
     ) {
         this.academicsService = academicsService;
         this.pacingService = pacingService;
@@ -44,6 +46,7 @@ public class AcademicsController {
         this.syllabusImportService = syllabusImportService;
         this.allocationImportService = allocationImportService;
         this.timetableImportService = timetableImportService;
+        this.academicDocumentService = academicDocumentService;
     }
 
     @GetMapping("/courses")
@@ -102,17 +105,20 @@ public class AcademicsController {
     }
 
     @GetMapping("/teaching-assignments")
+    @PreAuthorize("hasRole('COORDINATOR')")
     public ResponseEntity<List<TeachingAssignmentDto>> getAllAssignments(
             @RequestParam(required = false) Long departmentId) {
         return ResponseEntity.ok(academicsService.getAllTeachingAssignments(departmentId));
     }
 
     @GetMapping("/faculty/{facultyId}/teaching-assignments")
+    @PreAuthorize("hasRole('COORDINATOR')")
     public ResponseEntity<List<TeachingAssignmentDto>> getAssignmentsForFaculty(@PathVariable Long facultyId) {
         return ResponseEntity.ok(academicsService.getTeachingAssignmentsForFaculty(facultyId));
     }
 
     @GetMapping("/teaching-assignments/faculty-load")
+    @PreAuthorize("hasRole('COORDINATOR')")
     public ResponseEntity<List<FacultyLtpLoadDto>> getFacultyLtpLoad() {
         return ResponseEntity.ok(academicsService.getFacultyLtpLoad());
     }
@@ -126,7 +132,7 @@ public class AcademicsController {
             @PathVariable Long courseId,
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
         assertCanManageSyllabus(courseId);
-        return ResponseEntity.ok(syllabusImportService.parse(file));
+        return ResponseEntity.ok(syllabusImportService.parse(file, courseId));
     }
 
     /** Saves the reviewed preview, replacing the course's existing syllabus topics. */
@@ -244,8 +250,9 @@ public class AcademicsController {
     }
 
     /**
-     * Timetable upload. The coordinator's sheet is the master timetable and replaces every slot;
-     * a faculty member's sheet is theirs by definition and replaces only their own slots.
+     * Timetable upload. A coordinator's sheet (master or one person's) replaces the timetable of each
+     * faculty member it has classes for, and leaves everyone else's alone; a faculty member's sheet is
+     * theirs by definition and replaces only their own slots.
      */
     @PostMapping(value = "/timetable/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('COORDINATOR', 'FACULTY')")
@@ -253,7 +260,14 @@ public class AcademicsController {
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
         UserDto currentUser = userService.getCurrentUser();
         Long onlyFacultyId = "COORDINATOR".equals(currentUser.role()) ? null : resolveFacultyId(currentUser);
-        return ResponseEntity.ok(timetableImportService.importTimetable(file, onlyFacultyId));
+        TimetableImportResultDto result = timetableImportService.importTimetable(file, onlyFacultyId);
+        // The PDF itself is kept too, so "my timetable file" is the one just imported, not a second upload.
+        String name = file.getOriginalFilename();
+        if (name != null && name.toLowerCase(java.util.Locale.ROOT).endsWith(".pdf")) {
+            academicDocumentService.uploadDocument(file, com.iet.dashboard.academics.domain.AcademicDocumentCategory.MASTER_TIMETABLE,
+                    "Timetable — " + currentUser.name(), null, null, null, currentUser.id(), currentUser.name());
+        }
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/timetable/import-template")
@@ -269,8 +283,9 @@ public class AcademicsController {
         return facultyService.getFacultyByUserId(currentUser.id())
                 .map(FacultyDto::id)
                 .orElseGet(() -> {
+                    // A coordinator who teaches nothing has no faculty profile: they get nobody's classes, not faculty #1's.
                     if ("COORDINATOR".equals(currentUser.role())) {
-                        return 1L;
+                        return null;
                     }
                     throw new ForbiddenException("Faculty profile not found for user: " + currentUser.email());
                 });
